@@ -1,5 +1,7 @@
+<!-- frontend/src/components/org/OverviewTab.vue -->
 <template>
     <div class="space-y-8">
+        <!-- Logo Section -->
         <div class="bg-white dark:bg-abyss-800 border border-gray-200 dark:border-abyss-700 rounded-xl p-8 shadow-xl">
             <h2 class="text-xl font-semibold text-gray-800 dark:text-platinum-50 mb-6 flex items-center gap-2">
                 <Camera class="w-5 h-5 text-kaitoke-green-600 dark:text-kaitoke-green-400" /> Organization Logo
@@ -37,10 +39,12 @@
                         </button>
                     </div>
 
-                    <p v-if="logoError" class="mt-3 text-rose-600 dark:text-rose-400 text-sm font-medium flex items-center gap-1">
+                    <p v-if="logoError"
+                        class="mt-3 text-rose-600 dark:text-rose-400 text-sm font-medium flex items-center gap-1">
                         <AlertTriangle class="w-4 h-4" /> {{ logoError }}
                     </p>
-                    <p v-if="logoSuccess" class="mt-3 text-kaitoke-green-600 dark:text-kaitoke-green-400 text-sm font-medium flex items-center gap-1">
+                    <p v-if="logoSuccess"
+                        class="mt-3 text-kaitoke-green-600 dark:text-kaitoke-green-400 text-sm font-medium flex items-center gap-1">
                         <CheckCircle class="w-4 h-4" /> {{ logoSuccess }}
                     </p>
                 </div>
@@ -58,6 +62,7 @@
             </div>
         </div>
 
+        <!-- Organization Details -->
         <div class="bg-white dark:bg-abyss-800 border border-gray-200 dark:border-abyss-700 rounded-xl p-8 shadow-xl">
             <div class="flex items-center justify-between mb-6">
                 <h2 class="text-xl font-semibold text-gray-800 dark:text-platinum-50 flex items-center gap-2">
@@ -88,37 +93,76 @@
                 </div>
 
                 <div class="border-b border-gray-100 dark:border-abyss-700 pb-4">
-                    <label class="block text-sm text-gray-500 dark:text-platinum-400 mb-1 font-medium">Description</label>
+                    <label
+                        class="block text-sm text-gray-500 dark:text-platinum-400 mb-1 font-medium">Description</label>
                     <textarea v-if="isEditing" v-model="form.description" rows="3"
                         class="w-full px-4 py-2 rounded-lg bg-gray-50 dark:bg-abyss-900 border border-gray-300 dark:border-abyss-700 text-gray-800 dark:text-platinum-50 focus:outline-none focus:border-kaitoke-green-600 focus:ring-1 focus:ring-kaitoke-green-600 shadow-inner resize-none"></textarea>
-                    <p v-else class="text-gray-800 dark:text-platinum-50 whitespace-pre-wrap text-sm">{{ organization?.description || 'No description provided.' }}</p>
+                    <p v-else class="text-gray-800 dark:text-platinum-50 whitespace-pre-wrap text-sm">{{
+                        organization?.description || 'No description provided.' }}</p>
                 </div>
 
                 <div class="border-b border-gray-100 dark:border-abyss-700 pb-4">
                     <label class="block text-sm text-gray-500 dark:text-platinum-400 mb-1 font-medium">Mission</label>
                     <textarea v-if="isEditing" v-model="form.mission" rows="3"
                         class="w-full px-4 py-2 rounded-lg bg-gray-50 dark:bg-abyss-900 border border-gray-300 dark:border-abyss-700 text-gray-800 dark:text-platinum-50 focus:outline-none focus:border-kaitoke-green-600 focus:ring-1 focus:ring-kaitoke-green-600 shadow-inner resize-none"></textarea>
-                    <p v-else class="text-gray-800 dark:text-platinum-50 whitespace-pre-wrap text-sm">{{ organization?.mission || 'No mission statement provided.' }}</p>
+                    <p v-else class="text-gray-800 dark:text-platinum-50 whitespace-pre-wrap text-sm">{{
+                        organization?.mission || 'No mission statement provided.' }}</p>
                 </div>
 
                 <div class="border-b border-gray-100 dark:border-abyss-700 pb-4">
                     <label class="block text-sm text-gray-500 dark:text-platinum-400 mb-1 font-medium">Vision</label>
                     <textarea v-if="isEditing" v-model="form.vision" rows="3"
                         class="w-full px-4 py-2 rounded-lg bg-gray-50 dark:bg-abyss-900 border border-gray-300 dark:border-abyss-700 text-gray-800 dark:text-platinum-50 focus:outline-none focus:border-kaitoke-green-600 focus:ring-1 focus:ring-kaitoke-green-600 shadow-inner resize-none"></textarea>
-                    <p v-else class="text-gray-800 dark:text-platinum-50 whitespace-pre-wrap text-sm">{{ organization?.vision || 'No vision statement provided.' }}</p>
+                    <p v-else class="text-gray-800 dark:text-platinum-50 whitespace-pre-wrap text-sm">{{
+                        organization?.vision || 'No vision statement provided.' }}</p>
                 </div>
 
-                <div>
+                <div class="border-b border-gray-100 dark:border-abyss-700 pb-4">
                     <label class="block text-sm text-gray-500 dark:text-platinum-400 mb-1 font-medium">Website</label>
                     <input v-if="isEditing" v-model="form.website" type="url"
                         class="w-full px-4 py-2 rounded-lg bg-gray-50 dark:bg-abyss-900 border border-gray-300 dark:border-abyss-700 text-gray-800 dark:text-platinum-50 focus:outline-none focus:border-kaitoke-green-600 focus:ring-1 focus:ring-kaitoke-green-600 shadow-inner" />
                     <a v-else-if="organization?.website" :href="organization.website" target="_blank"
-                        class="text-kaitoke-green-600 dark:text-kaitoke-green-400 hover:underline flex items-center gap-1">{{ organization.website }} <ExternalLink class="w-4 h-4" /></a>
+                        class="text-kaitoke-green-600 dark:text-kaitoke-green-400 hover:underline flex items-center gap-1">{{
+                            organization.website }}
+                        <ExternalLink class="w-4 h-4" />
+                    </a>
                     <p v-else class="text-gray-500 dark:text-platinum-500 text-sm">No website</p>
+                </div>
+
+                <!-- Enhanced Location Section -->
+                <div>
+                    <label
+                        class="block text-sm text-gray-500 dark:text-platinum-400 mb-3 font-medium flex items-center gap-2">
+                        <MapPin class="w-4 h-4" /> Location
+                    </label>
+
+                    <!-- Edit Mode: Enhanced Interactive Map -->
+                    <div v-if="isEditing">
+                        <MapDisplay v-model:lat="form.location_lat" v-model:lng="form.location_lng"
+                            v-model:address="form.location_address" :zoom="15" :editable="true" :show-controls="true"
+                            height="400px" @location-changed="handleLocationChange" />
+                    </div>
+
+                    <!-- View Mode: Display Map with Distance -->
+                    <div v-else>
+                        <p v-if="organization?.location?.address"
+                            class="text-gray-800 dark:text-platinum-50 text-sm mb-3">
+                            {{ organization.location.address }}
+                        </p>
+                        <p v-else class="text-gray-500 dark:text-platinum-500 text-sm mb-3">No location specified</p>
+
+                        <MapDisplay v-if="organization?.location?.lat && organization?.location?.lng"
+                            :lat="parseFloat(organization.location.lat)" :lng="parseFloat(organization.location.lng)"
+                            :zoom="15" :address="organization.location.address" :marker-title="organization.name"
+                            :editable="false" :show-controls="true" height="400px" />
+                    </div>
                 </div>
             </div>
 
-            <p v-if="saveError" class="mt-4 text-rose-600 dark:text-rose-400 text-sm font-medium flex items-center gap-1"><AlertTriangle class="w-4 h-4" /> {{ saveError }}</p>
+            <p v-if="saveError"
+                class="mt-4 text-rose-600 dark:text-rose-400 text-sm font-medium flex items-center gap-1">
+                <AlertTriangle class="w-4 h-4" /> {{ saveError }}
+            </p>
         </div>
     </div>
 </template>
@@ -126,7 +170,11 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import axios from '@/utils/api'
-import { Camera, Image, Upload, Trash2, CheckCircle, AlertTriangle, Pencil, X, Save, Info, ExternalLink } from 'lucide-vue-next'
+import {
+    Camera, Image, Upload, Trash2, CheckCircle, AlertTriangle,
+    Pencil, X, Save, Info, ExternalLink, MapPin
+} from 'lucide-vue-next'
+import MapDisplay from '@/components/ui/map.vue'
 
 const props = defineProps({
     organization: { type: Object, required: true }
@@ -156,7 +204,10 @@ const form = ref({
     description: '',
     mission: '',
     vision: '',
-    website: ''
+    website: '',
+    location_address: '',
+    location_lat: null,
+    location_lng: null,
 })
 
 watch(() => props.organization, (newOrg) => {
@@ -167,44 +218,30 @@ watch(() => props.organization, (newOrg) => {
             description: newOrg.description || '',
             mission: newOrg.mission || '',
             vision: newOrg.vision || '',
-            website: newOrg.website || ''
+            website: newOrg.website || '',
+            location_address: newOrg.location_address || '',
+            location_lat: newOrg.location_lat || null,
+            location_lng: newOrg.location_lng || null,
         }
     }
 }, { immediate: true })
 
 const currentLogoUrl = computed(() => {
-
     if (previewLogo.value) return previewLogo.value
-
     if (props.organization?.logo_url) return props.organization.logo_url
 
-    // 3. Fallback: construct URL using the R2 Worker proxy
     const path = props.organization?.logo
     if (!path) return ''
-    if (path.startsWith('http')) return path // Safety check for existing full URLs
-
+    if (path.startsWith('http')) return path
 
     if (R2_WORKER_ENDPOINT) {
-        // Clean up leading/trailing slashes for clean concatenation:
         const cleanEndpoint = R2_WORKER_ENDPOINT.replace(/\/$/, '')
         const cleanPath = path.startsWith('/') ? path.substring(1) : path
-
         return `${cleanEndpoint}/${cleanPath}`
     }
 
-
-    // If no endpoint is configured, return empty string
     return ''
-
 })
-
-function getLogoUrl(path) {
-    if (!path) return ''
-    if (path.startsWith('http')) return path
-    // For S3/R2, the backend returns the full URL
-    return path
-}
-
 
 function handleFileSelect(e) {
     const file = e.target.files?.[0]
@@ -213,19 +250,16 @@ function handleFileSelect(e) {
     logoError.value = ''
     logoSuccess.value = ''
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
         logoError.value = 'Please select an image file'
         return
     }
 
-    // Validate file size (2MB)
     if (file.size > 2 * 1024 * 1024) {
         logoError.value = 'Image must be smaller than 2MB'
         return
     }
 
-    // Create preview
     const reader = new FileReader()
     reader.onload = (e) => {
         const img = new Image()
@@ -315,7 +349,10 @@ function cancelEditing() {
         description: props.organization.description || '',
         mission: props.organization.mission || '',
         vision: props.organization.vision || '',
-        website: props.organization.website || ''
+        website: props.organization.website || '',
+        location_address: props.organization.location_address || '',
+        location_lat: props.organization.location_lat || null,
+        location_lng: props.organization.location_lng || null,
     }
 }
 
@@ -333,5 +370,10 @@ async function saveChanges() {
     } finally {
         isSaving.value = false
     }
+}
+
+function handleLocationChange(locationData) {
+    // Location changed via map interaction
+    console.log('Location changed:', locationData)
 }
 </script>

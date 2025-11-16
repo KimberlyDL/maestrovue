@@ -1,9 +1,7 @@
-<!-- Updated page styling to support light and dark mode -->
 <template>
     <div class="space-y-6">
         <div>
-            <MyRequests :requests="myRequests" :loading="loadingRequests" @cancel-request="cancelRequest" />
-            <!-- Updated empty state styling for light and dark mode -->
+            <MyRequests :requests="myRequests" :loading="loadingRequests" @cancel-request="handleCancelRequest" />
             <div v-if="!loadingRequests && myRequests.length === 0"
                 class="p-6 bg-sun-50 dark:bg-abyss-800 border border-sun-200 dark:border-abyss-700 rounded-lg text-center text-abyss-700 dark:text-platinum-400">
                 You have no outstanding join requests.
@@ -15,7 +13,10 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import axios from '@/utils/api'
+import { useToast } from '@/utils/useToast'
 import MyRequests from '@components/user/MyRequests.vue'
+
+const toast = useToast()
 
 // Data
 const myRequests = ref([])
@@ -31,12 +32,11 @@ onMounted(async () => {
 async function loadMyRequests() {
     loadingRequests.value = true
     try {
-        // TODO: Create this endpoint in backend
         const { data } = await axios.get('/api/organizations/my-requests')
         myRequests.value = data
     } catch (error) {
         console.error('Failed to load requests:', error)
-        // Mock data for now
+        toast.error('Failed to load your join requests')
         myRequests.value = []
     } finally {
         loadingRequests.value = false
@@ -44,14 +44,20 @@ async function loadMyRequests() {
 }
 
 // Actions
-async function cancelRequest(requestId) {
+async function handleCancelRequest(requestId) {
+    if (!confirm('Are you sure you want to cancel this join request?')) {
+        return
+    }
+
     try {
         await axios.delete(`/api/organizations/requests/${requestId}`)
-        // Remove the cancelled request or reload the list
+        // Remove the cancelled request from the list
         myRequests.value = myRequests.value.filter(req => req.id !== requestId)
-        alert('Request cancelled successfully.')
+        toast.success('Request cancelled successfully')
     } catch (error) {
-        alert('Failed to cancel request')
+        console.error('Failed to cancel request:', error)
+        const message = error.response?.data?.message || 'Failed to cancel request'
+        toast.error(message)
     }
 }
 </script>

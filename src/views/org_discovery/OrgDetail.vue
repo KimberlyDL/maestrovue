@@ -1,235 +1,9 @@
-<template>
-    <div class="min-h-screen bg-platinum-50 dark:bg-abyss-900 py-8">
-        <div class="max-w-4xl mx-auto px-6">
-            <!-- Skeleton Loading -->
-            <div v-if="loading" class="space-y-6 animate-pulse">
-                <!-- Header/Hero Skeleton -->
-                <div class="bg-sun-50 dark:bg-abyss-800 border border-sun-200 dark:border-abyss-700 rounded-lg p-8">
-                    <div class="flex items-start gap-6">
-                        <!-- Logo Skeleton -->
-                        <div class="w-24 h-24 rounded-lg bg-sun-200 dark:bg-abyss-700 flex-shrink-0"></div>
-
-                        <!-- Title / description Skeleton -->
-                        <div class="flex-1 space-y-3 pt-2">
-                            <!-- Name -->
-                            <div class="h-8 bg-sun-200 dark:bg-abyss-700 rounded w-3/4"></div>
-                            <!-- Member Count -->
-                            <div class="h-4 bg-sun-200 dark:bg-abyss-700 rounded w-1/4"></div>
-                            <!-- Description Lines -->
-                            <div class="h-4 bg-sun-200 dark:bg-abyss-700 rounded w-full"></div>
-                            <div class="h-4 bg-sun-200 dark:bg-abyss-700 rounded w-5/6"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- CTA buttons Skeleton -->
-                <div class="flex gap-3">
-                    <div class="h-12 w-40 rounded-lg bg-sun-200 dark:bg-abyss-700"></div>
-                </div>
-
-                <!-- Mission / Vision Skeleton -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Mission Card Skeleton -->
-                    <div
-                        class="bg-sun-50 dark:bg-abyss-800 border border-sun-200 dark:border-abyss-700 rounded-lg p-6 h-40">
-                        <!-- Mission Title -->
-                        <div class="h-6 bg-sun-200 dark:bg-abyss-700 rounded w-1/3 mb-4"></div>
-                        <!-- Mission Body -->
-                        <div class="space-y-2">
-                            <div class="h-4 bg-sun-200 dark:bg-abyss-700 rounded w-full"></div>
-                            <div class="h-4 bg-sun-200 dark:bg-abyss-700 rounded w-5/6"></div>
-                            <div class="h-4 bg-sun-200 dark:bg-abyss-700 rounded w-4/6"></div>
-                        </div>
-                    </div>
-                    <!-- Vision Card Skeleton -->
-                    <div
-                        class="bg-sun-50 dark:bg-abyss-800 border border-sun-200 dark:border-abyss-700 rounded-lg p-6 h-40">
-                        <!-- Vision Title -->
-                        <div class="h-6 bg-sun-200 dark:bg-abyss-700 rounded w-1/3 mb-4"></div>
-                        <!-- Vision Body -->
-                        <div class="space-y-2">
-                            <div class="h-4 bg-sun-200 dark:bg-abyss-700 rounded w-full"></div>
-                            <div class="h-4 bg-sun-200 dark:bg-abyss-700 rounded w-5/6"></div>
-                            <div class="h-4 bg-sun-200 dark:bg-abyss-700 rounded w-4/6"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Location Skeleton (Map) -->
-                <div>
-                    <!-- Title -->
-                    <div class="h-6 bg-sun-200 dark:bg-abyss-700 rounded w-1/4 mb-4"></div>
-                    <!-- Address -->
-                    <div class="h-5 bg-sun-200 dark:bg-abyss-700 rounded w-1/2 mb-4"></div>
-                    <!-- Map Placeholder -->
-                    <div
-                        class="h-96 w-full rounded-md bg-sun-200 dark:bg-abyss-700 border border-sun-200 dark:border-abyss-700">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Error -->
-            <div v-else-if="org === null"
-                class="text-center p-8 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-lg text-red-700 dark:text-red-400">
-                <p class="mb-4 text-lg">⚠️ Failed to load organization details.</p>
-                <button @click="goBack"
-                    class="mt-4 px-4 py-2 rounded-md border border-abyss-300 dark:border-platinum-700 text-abyss-900 dark:text-platinum-200 hover:bg-sun-100 dark:hover:bg-abyss-700 transition-colors">
-                    Back to Organizations
-                </button>
-            </div>
-
-            <!-- Content -->
-            <div v-else-if="org" class="space-y-6">
-                <!-- Hero with logo -->
-                <div
-                    class="bg-gradient-to-r relative from-platinum-50 to-sun-50 dark:from-abyss-800 dark:to-abyss-900 border border-sun-200 dark:border-abyss-700 rounded-lg overflow-hidden">
-
-                    <!-- Already member / admin -->
-                    <div class="absolute top-4 right-4 flex space-x-2 z-20">
-                        <button v-if="isMemberOrAdmin == `Admin`" title="Admin"
-                            class="p-2 text-sun-500 dark:text-sun-400 hover:text-sun-600 dark:hover:text-sun-300 hover:bg-sun-200 dark:hover:bg-abyss-700 rounded-full transition-colors">
-                            <Crown class="w-6 h-6" :stroke-width="1.25" fill="currentColor" />
-                        </button>
-                        <button v-if="isMemberOrAdmin == `Member`" title="Member"
-                            class="p-2 text-kaitoke-green-600 dark:text-kaitoke-green-400 hover:text-kaitoke-green-700 dark:hover:text-red-300 hover:bg-sun-200 dark:hover:bg-abyss-700 rounded-full transition-colors">
-                            <Users2 class="w-6 h-6" :stroke-width="1.25" />
-                        </button>
-
-                        <button v-if="isMemberOrAdmin" @click="navigateToManage" title="Manage Organization"
-                            class="p-2 text-kaitoke-green-600 dark:text-kaitoke-green-400 hover:text-kaitoke-green-700 dark:hover:text-kaitoke-green-300 hover:bg-sun-200 dark:hover:bg-abyss-700 rounded-full transition-colors">
-                            <SquareArrowOutUpRight class="w-6 h-6" :stroke-width="1.25" />
-                        </button>
-
-                    </div>
-
-                    <div class="p-8">
-                        <div class="flex items-start gap-6 mb-6">
-                            <!-- Logo -->
-                            <div class="flex-shrink-0">
-                                <img v-if="orgLogoUrl" :src="orgLogoUrl" :alt="org.name"
-                                    class="w-24 h-24 rounded-lg object-cover" />
-                                <div v-else
-                                    class="w-24 h-24 rounded-lg bg-gradient-to-br from-kaitoke-green-500 to-electric-lime-500 dark:from-kaitoke-green-600 dark:to-electric-lime-600 flex items-center justify-center">
-                                    <svg class="w-12 h-12 text-platinum-50 dark:text-abyss-900" fill="currentColor"
-                                        viewBox="0 0 20 20">
-                                        <path
-                                            d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v2h8v-2zM2 9a2 2 0 11-4 0 2 2 0 014 0zM16 12a1 1 0 100-2 1 1 0 000 2z" />
-                                    </svg>
-                                </div>
-                            </div>
-
-                            <!-- Title / description -->
-                            <div class="flex-1">
-                                <h1 class="text-3xl font-bold text-abyss-900 dark:text-platinum-50 mb-2">
-                                    {{ org.name }}
-                                </h1>
-                                <p class="font-body text-sun-600 dark:text-sun-400 text-sm mb-4">
-                                    {{ org.members || 0 }} {{ org.members <= 1 ? "Member" : "Members" }} </p>
-                                        <p v-if="org.description"
-                                            class="font-heading text-abyss-700 dark:text-platinum-300 text-sm">
-                                            {{ org.description }}
-                                        </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- CTA buttons -->
-                <div class="flex gap-3 flex-wrap">
-                    <!-- Request join -->
-                    <button v-if="!isMemberOrAdmin && !joinStatus.isPending" @click="requestJoinOrg"
-                        :disabled="isSubmitting" class="px-6 py-3 rounded-lg font-medium transition-all duration-300"
-                        :class="[
-                            isSubmitting
-                                ? 'bg-sun-200 dark:bg-abyss-700 text-abyss-500 dark:text-platinum-400 cursor-not-allowed'
-                                : 'bg-kaitoke-green-600 hover:bg-kaitoke-green-700 dark:hover:bg-kaitoke-green-500 text-platinum-50 dark:text-abyss-900 shadow-lg shadow-kaitoke-green-500/20'
-                        ]">
-                        {{ isSubmitting ? 'Sending Request...' : 'Request to Join' }}
-                    </button>
-
-                    <!-- Pending -->
-                    <span v-else-if="joinStatus.isPending"
-                        class="px-6 py-3 rounded-lg bg-sun-200 dark:bg-platinum-700/30 text-abyss-700 dark:text-platinum-300 font-medium border border-sun-300 dark:border-platinum-600">
-                        Request Pending ⏳
-                    </span>
-                </div>
-
-                <!-- Mission / Vision -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div v-if="org.mission"
-                        class="relative bg-sun-50 dark:bg-abyss-800 border border-sun-200 dark:border-abyss-700 rounded-lg p-6 overflow-hidden">
-
-                        <div
-                            class="absolute -top-20 -left-14 text-kaitoke-green-200 dark:text-kaitoke-green-800 opacity-40 transform z-0">
-                            <Target class="w-36 h-36 md:w-48 md:h-48" />
-                        </div>
-
-                        <div class="relative z-10">
-                            <h2
-                                class="text-lg font-semibold mb-3 text-kaitoke-green-700 dark:text-kaitoke-green-400 flex items-center gap-2">
-                                <Target class="w-5 h-5 -mt-2 -ml-2" />
-                                Mission
-                            </h2>
-                            <p class="text-abyss-700 dark:text-platinum-300 text-sm leading-relaxed">
-                                {{ org.mission }}
-                            </p>
-                        </div>
-                    </div>
-
-                    <div v-if="org.vision"
-                        class="relative bg-sun-50 dark:bg-abyss-800 border border-sun-200 dark:border-abyss-700 rounded-lg p-6 overflow-hidden">
-
-                        <div
-                            class="absolute -top-25 -left-14 text-electric-lime-200 dark:text-electric-lime-800 opacity-40 transform z-0">
-                            <Eye class="w-36 h-36 md:w-48 md:h-48" />
-                        </div>
-
-                        <div class="relative z-10">
-                            <h2
-                                class="text-lg font-semibold mb-3 text-electric-lime-700 dark:text-electric-lime-400 flex items-center gap-2">
-                                <Eye class="w-5 h-5 -mt-2 -ml-2" />
-                                Vision
-                            </h2>
-                            <p class="text-abyss-700 dark:text-platinum-300 text-sm leading-relaxed">
-                                {{ org.vision }}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Location & Map -->
-                <div>
-                    <h2 class="text-xl font-semibold mb-2 text-abyss-900 dark:text-platinum-50">Location</h2>
-                    <p class="text-abyss-600 dark:text-platinum-400 mb-4">
-                        {{ org.location && org.location.address ? org.location.address : 'Location Not Specified' }}
-                    </p>
-                    <div v-if="org.location && org.location.lat && org.location.lng"
-                        class="h-96 w-full rounded-md overflow-hidden border border-sun-200 dark:border-abyss-700">
-                        <MapDisplay v-if="org.location && org.location.lat && org.location.lng" :lat="org.location.lat"
-                            :lng="org.location.lng" :zoom="12" :address="org.location.address" height="100%" />
-                        <div v-else
-                            class="flex items-center justify-center h-full text-abyss-600 dark:text-platinum-400">
-                            Map data unavailable.
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Back button -->
-                <button @click="goBack"
-                    class="mt-4 px-4 py-2 rounded-md border border-abyss-300 dark:border-platinum-700 text-abyss-900 dark:text-platinum-200 hover:bg-sun-100 dark:hover:bg-abyss-700 transition-colors">
-                    Back to Organizations
-                </button>
-            </div>
-        </div>
-    </div>
-</template>
-
 <script setup>
-import { ref, computed, onMounted, watchEffect } from 'vue' // <-- Import watchEffect
+import { ref, computed, onMounted, watchEffect } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from '@/utils/api'
-import MapDisplay from '@components/ui/map.vue'
-import { SquareArrowOutUpRight, Crown, Users2, Target, Eye } from 'lucide-vue-next'
+import MapDisplay from '@/components/ui/map.vue'
+import { SquareArrowOutUpRight, Crown, Users2, Target, Eye, MapPin } from 'lucide-vue-next'
 import { useToast } from '@/utils/useToast'
 
 const toast = useToast()
@@ -238,7 +12,6 @@ const router = useRouter()
 
 const org = ref(null)
 const loading = ref(true)
-// const error = ref('')
 const isSubmitting = ref(false)
 const message = ref({ text: '', type: '' })
 
@@ -278,16 +51,13 @@ const isMemberOrAdmin = computed(() => {
 
 async function fetchOrganizationDetails() {
     if (!orgId.value) {
-        // 4. ⚡️ Use toast for invalid ID error
         toast.error('Could not load organization. Please try again later.')
         loading.value = false
-        // Since we removed `error.value`, we set `org.value = null` to trigger the error state template
         org.value = null
         return
     }
 
     loading.value = true
-    // error.value = '' // ❌ Removed
     try {
         const { data } = await axios.get(`/api/organizations/${orgId.value}`)
         org.value = data
@@ -305,9 +75,8 @@ async function fetchOrganizationDetails() {
         }
     } catch (err) {
         console.error('API Error:', err)
-        org.value = null // Set org to null to prevent content from rendering and trigger error state
+        org.value = null
 
-        // 5. ⚡️ Use toast for fetch error
         const errorMessage = err.response?.data?.message || 'Failed to load organization details from the server.'
         toast.error(errorMessage, 5000)
     } finally {
@@ -317,24 +86,22 @@ async function fetchOrganizationDetails() {
 
 async function requestJoinOrg() {
     isSubmitting.value = true
-    message.value = { text: '', type: '' } // Keep the flash message for join success/failure for now, as it's neatly formatted
+    message.value = { text: '', type: '' }
 
-    const orgName = org.value?.name || 'the organization'; // Safe fallback
+    const orgName = org.value?.name || 'the organization'
 
     try {
         await axios.post('/api/organizations/join/request', {
-            organization_name: orgName, // Changed to organization_id as per previous context/convention
+            organization_name: orgName,
         })
 
         joinStatus.value.isPending = true
-        // 6. ⚡️ Use toast for success (in addition to local message)
         toast.success(`Request sent to join ${orgName}!`, 3000)
         message.value = {
             text: `Join request sent to ${orgName}. An admin will review it shortly.`,
             type: 'success',
         }
     } catch (err) {
-        // 7. ⚡️ Use toast for request error
         const errorMessage = err.response?.data?.message || 'Failed to send join request.'
         toast.error(errorMessage, 5000)
         message.value = {
@@ -355,13 +122,179 @@ function goBack() {
     router.push({ name: 'orgs.orgs' })
 }
 
-// ✅ NEW FIX: watchEffect runs on mount AND whenever orgId.value changes
 watchEffect(() => {
-    // This will run immediately, and then again whenever the value of orgId.value changes.
-    // The orgId computed property is dependent on route.params.id, so navigation changes
-    // will automatically trigger a re-fetch.
     if (orgId.value) {
         fetchOrganizationDetails()
     }
 })
 </script>
+
+<template>
+    <div class="min-h-screen bg-platinum-50 dark:bg-abyss-900 py-8">
+        <div class="max-w-4xl mx-auto px-6">
+            <!-- Skeleton Loading -->
+            <div v-if="loading" class="space-y-6 animate-pulse">
+                <!-- Header/Hero Skeleton -->
+                <div class="bg-sun-50 dark:bg-abyss-800 border border-sun-200 dark:border-abyss-700 rounded-lg p-8">
+                    <div class="flex items-start gap-6">
+                        <div class="w-24 h-24 rounded-lg bg-sun-200 dark:bg-abyss-700 flex-shrink-0"></div>
+                        <div class="flex-1 space-y-3 pt-2">
+                            <div class="h-8 bg-sun-200 dark:bg-abyss-700 rounded w-3/4"></div>
+                            <div class="h-4 bg-sun-200 dark:bg-abyss-700 rounded w-1/4"></div>
+                            <div class="h-4 bg-sun-200 dark:bg-abyss-700 rounded w-full"></div>
+                            <div class="h-4 bg-sun-200 dark:bg-abyss-700 rounded w-5/6"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- More skeleton content... -->
+            </div>
+
+            <!-- Error -->
+            <div v-else-if="org === null"
+                class="text-center p-8 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-lg text-red-700 dark:text-red-400">
+                <p class="mb-4 text-lg">⚠️ Failed to load organization details.</p>
+                <button @click="goBack"
+                    class="mt-4 px-4 py-2 rounded-md border border-abyss-300 dark:border-platinum-700 text-abyss-900 dark:text-platinum-200 hover:bg-sun-100 dark:hover:bg-abyss-700 transition-colors">
+                    Back to Organizations
+                </button>
+            </div>
+
+            <!-- Content -->
+            <div v-else-if="org" class="space-y-6">
+                <!-- Hero with logo -->
+                <div
+                    class="bg-gradient-to-r relative from-platinum-50 to-sun-50 dark:from-abyss-800 dark:to-abyss-900 border border-sun-200 dark:border-abyss-700 rounded-lg overflow-hidden">
+
+                    <div class="absolute top-4 right-4 flex space-x-2 z-20">
+                        <button v-if="isMemberOrAdmin == `Admin`" title="Admin"
+                            class="p-2 text-sun-500 dark:text-sun-400 hover:text-sun-600 dark:hover:text-sun-300 hover:bg-sun-200 dark:hover:bg-abyss-700 rounded-full transition-colors">
+                            <Crown class="w-6 h-6" :stroke-width="1.25" fill="currentColor" />
+                        </button>
+                        <button v-if="isMemberOrAdmin == `Member`" title="Member"
+                            class="p-2 text-kaitoke-green-600 dark:text-kaitoke-green-400 hover:text-kaitoke-green-700 dark:hover:text-red-300 hover:bg-sun-200 dark:hover:bg-abyss-700 rounded-full transition-colors">
+                            <Users2 class="w-6 h-6" :stroke-width="1.25" />
+                        </button>
+
+                        <button v-if="isMemberOrAdmin" @click="navigateToManage" title="Manage Organization"
+                            class="p-2 text-kaitoke-green-600 dark:text-kaitoke-green-400 hover:text-kaitoke-green-700 dark:hover:text-kaitoke-green-300 hover:bg-sun-200 dark:hover:bg-abyss-700 rounded-full transition-colors">
+                            <SquareArrowOutUpRight class="w-6 h-6" :stroke-width="1.25" />
+                        </button>
+                    </div>
+
+                    <div class="p-8">
+                        <div class="flex items-start gap-6 mb-6">
+                            <div class="flex-shrink-0">
+                                <img v-if="orgLogoUrl" :src="orgLogoUrl" :alt="org.name"
+                                    class="w-24 h-24 rounded-lg object-cover" />
+                                <div v-else
+                                    class="w-24 h-24 rounded-lg bg-gradient-to-br from-kaitoke-green-500 to-electric-lime-500 dark:from-kaitoke-green-600 dark:to-electric-lime-600 flex items-center justify-center">
+                                    <svg class="w-12 h-12 text-platinum-50 dark:text-abyss-900" fill="currentColor"
+                                        viewBox="0 0 20 20">
+                                        <path
+                                            d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v2h8v-2zM2 9a2 2 0 11-4 0 2 2 0 014 0zM16 12a1 1 0 100-2 1 1 0 000 2z" />
+                                    </svg>
+                                </div>
+                            </div>
+
+                            <div class="flex-1">
+                                <h1 class="text-3xl font-bold text-abyss-900 dark:text-platinum-50 mb-2">
+                                    {{ org.name }}
+                                </h1>
+                                <p class="font-body text-sun-600 dark:text-sun-400 text-sm mb-4">
+                                    {{ org.members || 0 }} {{ org.members <= 1 ? "Member" : "Members" }} </p>
+                                        <p v-if="org.description"
+                                            class="font-heading text-abyss-700 dark:text-platinum-300 text-sm">
+                                            {{ org.description }}
+                                        </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CTA buttons -->
+                <div class="flex gap-3 flex-wrap">
+                    <button v-if="!isMemberOrAdmin && !joinStatus.isPending" @click="requestJoinOrg"
+                        :disabled="isSubmitting" class="px-6 py-3 rounded-lg font-medium transition-all duration-300"
+                        :class="[
+                            isSubmitting
+                                ? 'bg-sun-200 dark:bg-abyss-700 text-abyss-500 dark:text-platinum-400 cursor-not-allowed'
+                                : 'bg-kaitoke-green-600 hover:bg-kaitoke-green-700 dark:hover:bg-kaitoke-green-500 text-platinum-50 dark:text-abyss-900 shadow-lg shadow-kaitoke-green-500/20'
+                        ]">
+                        {{ isSubmitting ? 'Sending Request...' : 'Request to Join' }}
+                    </button>
+
+                    <span v-else-if="joinStatus.isPending"
+                        class="px-6 py-3 rounded-lg bg-sun-200 dark:bg-platinum-700/30 text-abyss-700 dark:text-platinum-300 font-medium border border-sun-300 dark:border-platinum-600">
+                        Request Pending ⏳
+                    </span>
+                </div>
+
+                <!-- Mission / Vision -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div v-if="org.mission"
+                        class="relative bg-sun-50 dark:bg-abyss-800 border border-sun-200 dark:border-abyss-700 rounded-lg p-6 overflow-hidden">
+                        <div
+                            class="absolute -top-20 -left-14 text-kaitoke-green-200 dark:text-kaitoke-green-800 opacity-40 transform z-0">
+                            <Target class="w-36 h-36 md:w-48 md:h-48" />
+                        </div>
+                        <div class="relative z-10">
+                            <h2
+                                class="text-lg font-semibold mb-3 text-kaitoke-green-700 dark:text-kaitoke-green-400 flex items-center gap-2">
+                                <Target class="w-5 h-5 -mt-2 -ml-2" />
+                                Mission
+                            </h2>
+                            <p class="text-abyss-700 dark:text-platinum-300 text-sm leading-relaxed">
+                                {{ org.mission }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div v-if="org.vision"
+                        class="relative bg-sun-50 dark:bg-abyss-800 border border-sun-200 dark:border-abyss-700 rounded-lg p-6 overflow-hidden">
+                        <div
+                            class="absolute -top-25 -left-14 text-electric-lime-200 dark:text-electric-lime-800 opacity-40 transform z-0">
+                            <Eye class="w-36 h-36 md:w-48 md:h-48" />
+                        </div>
+                        <div class="relative z-10">
+                            <h2
+                                class="text-lg font-semibold mb-3 text-electric-lime-700 dark:text-electric-lime-400 flex items-center gap-2">
+                                <Eye class="w-5 h-5 -mt-2 -ml-2" />
+                                Vision
+                            </h2>
+                            <p class="text-abyss-700 dark:text-platinum-300 text-sm leading-relaxed">
+                                {{ org.vision }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Location & Map -->
+                <div>
+                    <h2 class="text-xl font-semibold mb-2 text-abyss-900 dark:text-platinum-50">Location</h2>
+                    <p class="text-abyss-600 dark:text-platinum-400 mb-4">
+                        {{ org.location && org.location.address ? org.location.address : 'Location Not Specified' }}
+                    </p>
+
+                    <!-- Enhanced Map with Distance Calculator -->
+                    <MapDisplay v-if="org.location && org.location.lat && org.location.lng" :lat="org.location.lat"
+                        :lng="org.location.lng" :zoom="15" :address="org.location.address" :marker-title="org.name"
+                        :editable="false" :show-controls="true" height="500px" />
+
+                    <div v-else
+                        class="h-96 w-full rounded-md flex items-center justify-center bg-platinum-100 dark:bg-abyss-800 border border-sun-200 dark:border-abyss-700">
+                        <div class="text-center text-abyss-600 dark:text-platinum-400">
+                            <MapPin class="w-12 h-12 mx-auto mb-2 text-platinum-400" />
+                            <p>No location set for this organization</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Back button -->
+                <button @click="goBack"
+                    class="mt-4 px-4 py-2 rounded-md border border-abyss-300 dark:border-platinum-700 text-abyss-900 dark:text-platinum-200 hover:bg-sun-100 dark:hover:bg-abyss-700 transition-colors">
+                    Back to Organizations
+                </button>
+            </div>
+        </div>
+    </div>
+</template>
