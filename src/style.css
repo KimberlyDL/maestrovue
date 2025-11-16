@@ -1,0 +1,288 @@
+/* src\style.css */
+/* ================================== */
+/* 1. FONT FACE DECLARATIONS (@font-face) */
+/* This loads the static .ttf font files into the browser. */
+/* ================================== */
+
+/* --- Poppins Font Family (Weights 100-900, Normal & Italic) --- */
+
+/* Poppins Thin (100) */
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/Poppins-Thin.ttf") format("truetype");
+  font-weight: 100;
+  font-style: thin;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/Poppins-ThinItalic.ttf") format("truetype");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Poppins ExtraLight (200) */
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/Poppins-ExtraLight.ttf") format("truetype");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+/* ... Poppins ExtraLight Italic (200) ... */
+
+/* Poppins Light (300) */
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/Poppins-Light.ttf") format("truetype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+/* ... Poppins Light Italic (300) ... */
+
+/* Poppins Regular (400) */
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/Poppins-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/Poppins-Italic.ttf") format("truetype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Poppins Medium (500) */
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/Poppins-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-style: medium;
+  font-display: swap;
+}
+/* ... Poppins Medium Italic (500) ... */
+
+/* Poppins SemiBold (600) */
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/Poppins-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+/* ... Poppins SemiBold Italic (600) ... */
+
+/* Poppins Bold (700) */
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/Poppins-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/Poppins-BoldItalic.ttf") format("truetype");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Poppins ExtraBold (800) */
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/Poppins-ExtraBold.ttf") format("truetype");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+/* ... Poppins ExtraBold Italic (800) ... */
+
+/* Poppins Black (900) */
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/Poppins-Black.ttf") format("truetype");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+/* ... Poppins Black Italic (900) ... */
+
+/* --- Open Sans Font Family (Weights 300-800, Normal & Italic) --- */
+
+/* Open Sans Light (300) */
+@font-face {
+  font-family: "OpenSans";
+  src: url("/fonts/OpenSans-Light.ttf") format("truetype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+/* ... continue for all Open Sans weights (300, 400, 500, 600, 700, 800) and their italics ... */
+
+/* Open Sans Regular (400) */
+@font-face {
+  font-family: "OpenSans";
+  src: url("/fonts/OpenSans-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+/* ... Open Sans Italic (400) ... */
+
+/* Open Sans Bold (700) */
+@font-face {
+  font-family: "OpenSans";
+  src: url("/fonts/OpenSans-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+/* ... Open Sans Bold Italic (700) ... */
+
+/* ================================== */
+/* 2. TAILWIND THEME (@theme) */
+/* This generates the utility classes (bg-kaitoke-green-500, font-heading, etc.) */
+/* ================================== */
+
+@import "tailwindcss";
+
+@theme {
+  /* --- CUSTOM FONT FAMILIES --- */
+
+  /* Creates the utility class: font-heading */
+  --font-heading: "Poppins", sans-serif;
+
+  /* Creates the utility class: font-body */
+  --font-body: "OpenSans", sans-serif;
+
+  /* Optionally override the default font-sans utility */
+  --font-sans: "OpenSans", ui-sans-serif, system-ui, sans-serif;
+
+  /* --- CUSTOM COLORS (FROM YOUR REQUEST) --- */
+  --color-kaitoke-green-50: #eefff4;
+  --color-kaitoke-green-100: #d8ffe8;
+  --color-kaitoke-green-200: #b4fed2;
+  --color-kaitoke-green-300: #79fcaf;
+  --color-kaitoke-green-400: #38f085;
+  --color-kaitoke-green-500: #0ed964;
+  --color-kaitoke-green-600: #05b44e;
+  --color-kaitoke-green-700: #088d41;
+  --color-kaitoke-green-800: #0c6f37;
+  --color-kaitoke-green-900: #0c5b2f;
+  --color-kaitoke-green-950: #004b23;
+
+  --color-electric-lime-50: #fbffe4;
+  --color-electric-lime-100: #f6ffc4;
+  --color-electric-lime-200: #ebff90;
+  --color-electric-lime-300: #d9ff50;
+  --color-electric-lime-400: #ccff33;
+  --color-electric-lime-500: #a7e600;
+  --color-electric-lime-600: #81b800;
+  --color-electric-lime-700: #618b00;
+  --color-electric-lime-800: #4d6d07;
+  --color-electric-lime-900: #415c0b;
+  --color-electric-lime-950: #213400;
+
+  --color-sun-50: #fff9eb;
+  --color-sun-100: #fdeec8;
+  --color-sun-200: #fadb8d;
+  --color-sun-300: #f8c451;
+  --color-sun-400: #f6ae2d;
+  --color-sun-500: #ef8b11;
+  --color-sun-600: #d4670b;
+  --color-sun-700: #b0470d;
+  --color-sun-800: #8f3711;
+  --color-sun-900: #752e12;
+  --color-sun-950: #431505;
+
+  --color-woodsmoke-50: #f8f7f8;
+  --color-woodsmoke-100: #f0eef0;
+  --color-woodsmoke-200: #dddadd;
+  --color-woodsmoke-300: #bfbabf;
+  --color-woodsmoke-400: #9c949c;
+  --color-woodsmoke-500: #7f7780;
+  --color-woodsmoke-600: #676168;
+  --color-woodsmoke-700: #554f55;
+  --color-woodsmoke-800: #494349;
+  --color-woodsmoke-900: #3e3b3f;
+  --color-woodsmoke-950: #100f10;
+
+  /* --- NEW NEUTRAL COLORS (Abyss & Platinum) --- */
+  /* Abyss: Darker scale (for dark theme backgrounds, light theme text) */
+  --color-abyss-50: #383639;
+  --color-abyss-100: #333034;
+  --color-abyss-200: #2d2b2e;
+  --color-abyss-300: #272629;
+  --color-abyss-400: #222023;
+  --color-abyss-500: #1c1b1d;
+  --color-abyss-600: #171618;
+  --color-abyss-700: #111012;
+  --color-abyss-800: #0c0b0c;
+  --color-abyss-900: #060606;
+  --color-abyss-950: #010101; /* Blackest tone */
+
+  /* Platinum: Lighter scale (for light theme backgrounds, dark theme text) */
+  --color-platinum-50: #fdfdfd; /* Whitest tone */
+  --color-platinum-100: #ecebec;
+  --color-platinum-200: #dadadb;
+  --color-platinum-300: #c9c8ca;
+  --color-platinum-400: #b7b6b8;
+  --color-platinum-500: #a6a5a7;
+  --color-platinum-600: #959396;
+  --color-platinum-700: #838184;
+  --color-platinum-800: #727073;
+  --color-platinum-900: #615e62;
+  --color-platinum-950: #4f4d50;
+}
+
+@import "flowbite-vue/index.css";
+@plugin "flowbite/plugin";
+@source "../node_modules/flowbite-vue";
+*/ * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Smooth transitions */
+* {
+  @apply transition-colors duration-200;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgb(15, 23, 42);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgb(71, 85, 105);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(100, 116, 139);
+}
