@@ -1,32 +1,16 @@
-// src\router\index.js
+// src/router/index.js
 import { createRouter, createWebHistory } from "vue-router"
-// import authRoutes from "@router/modules/auth"
 import adminRoutes from '@router/modules/admin'
 import { useAuthStore } from "@stores/auth"
-import orgRoutes from "@router/modules/org"
-import opsRoutes from "@router/modules/ops"
-import eventsRoutes from "@router/modules/events"
+import { usePermissions, PERMISSIONS } from "@/utils/usePermissions"
 import meRoutes from "@router/modules/me"
-import reviewRoutes from "@router/modules/reviews"
 import authenticatedRoutes from "@router/modules/authenticated"
 import dutyRoutes from "@router/modules/duty"
-
 import publicRoutes from "@router/modules/public"
-import api from "@/utils/api";
+import api from "@/utils/api"
 
 const routes = [
     ...publicRoutes,
-    // {
-    //     path: "/",
-    //     name: "Landing",
-    //     component: () => import("@views/Landing.vue"),
-    // },
-    // {
-    //     path: '/dashboard',
-    //     name: 'user.dashboard',
-    //     component: () => import('@/views/user/Dashboard.vue'),
-    //     meta: { requiresAuth: true }
-    // },
     {
         path: "/typography",
         name: "typography",
@@ -34,18 +18,13 @@ const routes = [
     },
     ...authenticatedRoutes,
     ...adminRoutes,
-    ...orgRoutes,
-    ...opsRoutes,
-    ...eventsRoutes,
     ...meRoutes,
     ...dutyRoutes,
-    // ...reviewRoutes,
-
-    // {
-    //     path: "/:pathMatch(.*)*",
-    //     name: "NotFound",
-    //     component: () => import("@views/NotFound.vue"),
-    // },
+    {
+        path: "/:pathMatch(.*)*",
+        name: "NotFound",
+        component: () => import("@views/NotFound.vue"),
+    },
 ]
 
 const router = createRouter({
@@ -53,43 +32,105 @@ const router = createRouter({
     routes,
 })
 
-// src/router/index.js
+// Helper function to check permissions
+async function checkRoutePermissions(to, auth) {
+    const orgId = to.params.id
+    
+    // Routes that don't need permission checks
+    if (!to.meta.requiresPermission && !to.meta.requiresAdmin && !to.meta.requiresMember) {
+        return true
+    }
 
-// router.beforeEach(async (to, from, next) => {
-//     const auth = useAuthStore();
+    if (!orgId) {
+        console.warn('No organization ID found for permission check')
+        return true // Let the component handle it
+    }
 
-//     // Determine if the route needs authentication
-//     const requiresAuth = to.matched.some((r) => r.meta.requiresAuth);
+    const { loadPermissions, isAdmin, isMember, hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions(orgId)
+    
+    try {
+        await loadPermissions(orgId)
 
-//     // If user not yet loaded, check session from backend once
-//     if (!auth.user && !auth.isLoading) {
-//         try {
-//             const { data } = await api.get("/api/user");
-//             auth.user = data;
-//         } catch {
-//             auth.user = null;
-//         }
-//     }
+        // Check admin requirement
+        if (to.meta.requiresAdmin && !isAdmin.value) {
+            return { name: 'org.manage', params: { id: orgId }, query: { error: 'admin_required' } }
+        }
 
-//     const isAuthenticated = !!auth.user;
+        // Check member requirement
+        if (to.meta.requiresMember && !isMember.value) {
+            return { name: 'home', query: { error: 'not_member' } }
+        }
 
-//     // --- Route protection logic ---
+        // Check specific permissions
+        if (to.meta.requiresPermission) {
+            const permission = to.meta.requiresPermission
+            
+            if (typeof permission === 'string') {
+                if (!hasPermission(permission)) {
+                    return { name: 'org.manage', params: { id: orgId }, query: { error: 'insufficient_permissions' } }
+                }
+            } else if (Array.isArray(permission)) {
+                const requireAll = to.meta.requiresAllPermissions === true
+                const hasAccess = requireAll 
+                    ? hasAllPermissions(permission)
+                    : hasAnyPermission(permission)
+                
+                if (!hasAccess) {
+                    return { name: 'org.manage', params: { id: orgId }, query: { error: 'insufficient_permissions' } }
+                }
+            }
+        }
 
-//     // 1️⃣  Needs login but user not logged in → redirect to login
-//     if (requiresAuth && !isAuthenticated) {
-//         return next({ name: "Login", query: { redirect: to.fullPath } });
-//     }
+        return true
+    } catch (error) {
+        console.error('Permission check failed:', error)
+        return { name: 'home', query: { error: 'permission_check_failed' } }
+    }
+}
 
-//     // 2️⃣  Logged-in user trying to visit Login/Signup → send to dashboard
-//     if (
-//         (to.name === "Login" || to.name === "SignUp") &&
-//         isAuthenticated
-//     ) {
-//         return next({ name: "Dashboard" });
-//     }
+router.beforeEach(async (to, from, next) => {
+    const auth = useAuthStore()
 
-//     // 3️⃣  Otherwise → allow
-//     next();
-// });
+    // Determine if the route needs authentication
+    const requiresAuth = to.matched.some((r) => r.meta.requiresAuth)
+
+    // If user not yet loaded, check session from backend once
+    if (!auth.user && !auth.isLoading) {
+        try {
+            await auth.restoreSession()
+        } catch {
+            auth.user = null
+        }
+    }
+
+    const isAuthenticated = !!auth.user
+
+    // 1️⃣ Needs login but user not logged in → redirect to login
+    if (requiresAuth && !isAuthenticated) {
+        return next({ name: "login", query: { redirect: to.fullPath } })
+    }
+
+    // 2️⃣ Logged-in user trying to visit Login/Signup → send to home
+    if ((to.name === "login" || to.name === "signup") && isAuthenticated) {
+        return next({ name: "home" })
+    }
+
+    // 3️⃣ Check permissions for organization routes
+    if (isAuthenticated && (to.meta.requiresPermission || to.meta.requiresAdmin || to.meta.requiresMember)) {
+        const permissionCheck = await checkRoutePermissions(to, auth)
+        
+        if (permissionCheck !== true) {
+            return next(permissionCheck)
+        }
+    }
+
+    // 4️⃣ Otherwise → allow
+    next()
+})
+
+// Optional: Add error handling for navigation errors
+router.onError((error) => {
+    console.error('Router error:', error)
+})
 
 export default router

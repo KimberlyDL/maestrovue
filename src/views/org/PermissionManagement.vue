@@ -1,123 +1,169 @@
 <template>
-    <div class="max-w-7xl mx-auto p-6">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Header -->
         <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
-                Permission Management
-            </h1>
-            <p class="mt-2 text-gray-600 dark:text-gray-400">
-                Manage member permissions and access control
-            </p>
+            <h1 class="text-3xl font-bold text-gray-900">Permission Management</h1>
+            <p class="mt-2 text-gray-600">Manage member permissions and access control</p>
         </div>
 
-        <!-- Member List -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
-            <div class="p-6 border-b border-gray-200 dark:border-gray-700">
-                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-                    Organization Members
-                </h2>
+        <!-- Loading State -->
+        <div v-if="loading" class="flex justify-center items-center h-64">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        </div>
+
+        <!-- Error State -->
+        <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p class="text-red-800">{{ error }}</p>
+            <button @click="loadData" class="mt-2 text-red-600 hover:text-red-800 underline">
+                Try Again
+            </button>
+        </div>
+
+        <!-- Main Content -->
+        <div v-else>
+            <!-- Search & Filter -->
+            <div class="mb-6 flex gap-4">
+                <div class="flex-1">
+                    <input v-model="searchQuery" type="text" placeholder="Search members..."
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                </div>
+                <select v-model="filterRole"
+                    class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="">All Roles</option>
+                    <option value="admin">Admin</option>
+                    <option value="member">Member</option>
+                </select>
             </div>
 
-            <div class="divide-y divide-gray-200 dark:divide-gray-700">
-                <div v-for="member in members" :key="member.id"
-                    class="p-6 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                    <div class="flex items-center justify-between">
-                        <!-- Member Info -->
-                        <div class="flex items-center space-x-4">
-                            <img :src="member.avatar || `https://ui-avatars.com/api/?name=${member.name}&background=random`"
-                                :alt="member.name" class="w-12 h-12 rounded-full" />
-                            <div>
-                                <h3 class="font-medium text-gray-900 dark:text-white">
-                                    {{ member.name }}
-                                </h3>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">
-                                    {{ member.email }}
-                                </p>
-                                <div class="flex items-center gap-2 mt-1">
-                                    <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
-                                        :class="getRoleBadgeClass(member.role)">
+            <!-- Members List -->
+            <div class="bg-white shadow rounded-lg overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Member
+                                </th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Role
+                                </th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Permissions
+                                </th>
+                                <th
+                                    class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Actions
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr v-if="filteredMembers.length === 0">
+                                <td colspan="4" class="px-6 py-8 text-center text-gray-500">
+                                    No members found
+                                </td>
+                            </tr>
+                            <tr v-for="member in filteredMembers" :key="member.id" class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <img :src="member.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}`"
+                                            :alt="member.name" class="h-10 w-10 rounded-full object-cover" />
+                                        <div class="ml-4">
+                                            <div class="text-sm font-medium text-gray-900">{{ member.name }}</div>
+                                            <div class="text-sm text-gray-500">{{ member.email }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span :class="[
+                                        'px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full',
+                                        member.is_admin
+                                            ? 'bg-purple-100 text-purple-800'
+                                            : 'bg-blue-100 text-blue-800'
+                                    ]">
                                         {{ member.role }}
                                     </span>
-                                    <span v-if="!member.is_admin && member.permissions_count > 0"
-                                        class="text-xs text-gray-600 dark:text-gray-400">
-                                        {{ member.permissions_count }} permission(s)
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div v-if="member.is_admin" class="text-sm text-gray-600">
+                                        All permissions (Admin)
+                                    </div>
+                                    <div v-else class="text-sm text-gray-900">
+                                        {{ member.permissions_count }} permission{{ member.permissions_count !== 1 ? 's'
+                                        : '' }}
+                                        <div v-if="member.permissions.length > 0" class="mt-1 text-xs text-gray-500">
+                                            {{ member.permissions.slice(0, 3).join(', ') }}
+                                            <span v-if="member.permissions.length > 3">
+                                                +{{ member.permissions.length - 3 }} more
+                                            </span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <button v-if="!member.is_admin" @click="openPermissionModal(member)"
+                                        class="text-blue-600 hover:text-blue-900">
+                                        Manage
+                                    </button>
+                                    <span v-else class="text-gray-400">
+                                        N/A
                                     </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Actions -->
-                        <button v-if="!member.is_admin" @click="selectMember(member)"
-                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
-                            <Lock :size="16" />
-                            Manage Permissions
-                        </button>
-                        <span v-else class="text-sm text-gray-500 dark:text-gray-400">
-                            Full Admin Access
-                        </span>
-                    </div>
-
-                    <!-- Current Permissions Preview -->
-                    <div v-if="!member.is_admin && member.permissions.length > 0" class="mt-4 flex flex-wrap gap-2">
-                        <span v-for="permission in member.permissions.slice(0, 5)" :key="permission"
-                            class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                            {{ permission }}
-                        </span>
-                        <span v-if="member.permissions.length > 5"
-                            class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
-                            +{{ member.permissions.length - 5 }} more
-                        </span>
-                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
 
         <!-- Permission Modal -->
-        <div v-if="selectedMember"
-            class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+        <div v-if="showModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50 p-4"
             @click.self="closeModal">
-            <div
-                class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
                 <!-- Modal Header -->
-                <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                    <div>
-                        <h3 class="text-xl font-bold text-gray-900 dark:text-white">
-                            Manage Permissions
-                        </h3>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                            {{ selectedMember.name }}
-                        </p>
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-900">
+                                Manage Permissions for {{ selectedMember?.name }}
+                            </h3>
+                            <p class="mt-1 text-sm text-gray-500">{{ selectedMember?.email }}</p>
+                        </div>
+                        <button @click="closeModal" class="text-gray-400 hover:text-gray-500">
+                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
                     </div>
-                    <button @click="closeModal"
-                        class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
-                        <X :size="20" />
-                    </button>
                 </div>
 
                 <!-- Modal Body -->
-                <div class="flex-1 overflow-y-auto p-6">
-                    <div v-if="loading" class="flex items-center justify-center py-12">
-                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                    </div>
-
-                    <div v-else class="space-y-6">
-                        <div v-for="(perms, category) in groupedPermissions" :key="category">
-                            <h4
-                                class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-3">
-                                {{ category }}
-                            </h4>
-                            <div class="space-y-2">
-                                <label v-for="permission in perms" :key="permission.name"
-                                    class="flex items-start p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors">
-                                    <input type="checkbox" :value="permission.name" v-model="selectedPermissions"
-                                        class="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                <div class="px-6 py-4 overflow-y-auto max-h-[calc(90vh-180px)]">
+                    <div v-if="allPermissions" class="space-y-6">
+                        <div v-for="(perms, category) in allPermissions" :key="category">
+                            <div class="flex items-center justify-between mb-3">
+                                <h4 class="text-sm font-medium text-gray-900 capitalize">{{ category }}</h4>
+                                <div class="flex gap-2">
+                                    <button @click="selectAllInCategory(category)"
+                                        class="text-xs text-blue-600 hover:text-blue-800">
+                                        Select All
+                                    </button>
+                                    <button @click="deselectAllInCategory(category)"
+                                        class="text-xs text-gray-600 hover:text-gray-800">
+                                        Deselect All
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="space-y-2 pl-4">
+                                <label v-for="perm in perms" :key="perm.id"
+                                    class="flex items-start cursor-pointer hover:bg-gray-50 p-2 rounded">
+                                    <input v-model="selectedPermissions" type="checkbox" :value="perm.name"
+                                        class="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
                                     <div class="ml-3">
-                                        <p class="font-medium text-gray-900 dark:text-white">
-                                            {{ permission.display_name }}
-                                        </p>
-                                        <p class="text-sm text-gray-500 dark:text-gray-400">
-                                            {{ permission.description }}
-                                        </p>
+                                        <div class="text-sm font-medium text-gray-900">{{ perm.display_name }}</div>
+                                        <div class="text-xs text-gray-500">{{ perm.description }}</div>
                                     </div>
                                 </label>
                             </div>
@@ -126,16 +172,21 @@
                 </div>
 
                 <!-- Modal Footer -->
-                <div class="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
-                    <button @click="closeModal"
-                        class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                        Cancel
-                    </button>
-                    <button @click="savePermissions" :disabled="saving"
-                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2">
-                        <Save :size="16" />
-                        {{ saving ? 'Saving...' : 'Save Changes' }}
-                    </button>
+                <div class="px-6 py-4 border-t border-gray-200 flex justify-between items-center">
+                    <div class="text-sm text-gray-600">
+                        {{ selectedPermissions.length }} permission{{ selectedPermissions.length !== 1 ? 's' : '' }}
+                        selected
+                    </div>
+                    <div class="flex gap-3">
+                        <button @click="closeModal"
+                            class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                            Cancel
+                        </button>
+                        <button @click="savePermissions" :disabled="savingPermissions"
+                            class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50">
+                            {{ savingPermissions ? 'Saving...' : 'Save Changes' }}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -144,109 +195,117 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { Lock, X, Save } from 'lucide-vue-next'
-import axios from 'axios'
+import { useRoute } from 'vue-router'
+import axios from '@/utils/api'
+import { useToast } from '@/utils/useToast'
 
-const props = defineProps({
-    organizationId: {
-        type: Number,
-        required: true
-    }
-})
+const route = useRoute()
+const toast = useToast()
 
+const organizationId = computed(() => route.params.id)
+
+// State
 const members = ref([])
-const allPermissions = ref({})
+const allPermissions = ref(null)
+const loading = ref(true)
+const error = ref(null)
+const searchQuery = ref('')
+const filterRole = ref('')
+const showModal = ref(false)
 const selectedMember = ref(null)
 const selectedPermissions = ref([])
-const originalPermissions = ref([])
-const loading = ref(false)
-const saving = ref(false)
+const savingPermissions = ref(false)
 
-const groupedPermissions = computed(() => {
-    return allPermissions.value
+// Computed
+const filteredMembers = computed(() => {
+    let filtered = members.value || []
+
+    if (searchQuery.value) {
+        const query = searchQuery.value.toLowerCase()
+        filtered = filtered.filter(m =>
+            m.name.toLowerCase().includes(query) ||
+            m.email.toLowerCase().includes(query)
+        )
+    }
+
+    if (filterRole.value) {
+        filtered = filtered.filter(m => m.role === filterRole.value)
+    }
+
+    return filtered
 })
 
-const getRoleBadgeClass = (role) => {
-    const classes = {
-        admin: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-        member: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-        viewer: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-    }
-    return classes[role] || classes.member
-}
-
-const fetchMembers = async () => {
-    try {
-        const { data } = await axios.get(`/api/organizations/${props.organizationId}/permissions/members`)
-        members.value = data
-    } catch (error) {
-        console.error('Failed to fetch members:', error)
-    }
-}
-
-const fetchAllPermissions = async () => {
-    try {
-        const { data } = await axios.get('/api/permissions')
-        allPermissions.value = data
-    } catch (error) {
-        console.error('Failed to fetch permissions:', error)
-    }
-}
-
-const selectMember = async (member) => {
-    selectedMember.value = member
+// Methods
+const loadData = async () => {
     loading.value = true
+    error.value = null
 
     try {
-        const { data } = await axios.get(
-            `/api/organizations/${props.organizationId}/permissions/users/${member.id}`
-        )
+        const [membersRes, permsRes] = await Promise.all([
+            axios.get(`/api/organizations/${organizationId.value}/permissions/members`),
+            axios.get('/api/permissions')
+        ])
 
-        selectedPermissions.value = data.granted_permissions || []
-        originalPermissions.value = [...selectedPermissions.value]
-    } catch (error) {
-        console.error('Failed to fetch user permissions:', error)
+        members.value = membersRes.data || []
+        allPermissions.value = permsRes.data || {}
+    } catch (err) {
+        console.error('Failed to load data:', err)
+        error.value = err.response?.data?.message || 'Failed to load data'
     } finally {
         loading.value = false
     }
 }
 
-const savePermissions = async () => {
-    if (!selectedMember.value) return
-
-    saving.value = true
-
-    try {
-        await axios.post(
-            `/api/organizations/${props.organizationId}/permissions/users/${selectedMember.value.id}/bulk`,
-            {
-                permissions: selectedPermissions.value
-            }
-        )
-
-        // Update local member data
-        const memberIndex = members.value.findIndex(m => m.id === selectedMember.value.id)
-        if (memberIndex !== -1) {
-            await fetchMembers() // Refresh the list
-        }
-
-        closeModal()
-    } catch (error) {
-        console.error('Failed to save permissions:', error)
-        alert('Failed to save permissions')
-    } finally {
-        saving.value = false
-    }
+const openPermissionModal = (member) => {
+    selectedMember.value = member
+    selectedPermissions.value = [...(member.permission_ids || [])]
+    showModal.value = true
 }
 
 const closeModal = () => {
+    showModal.value = false
     selectedMember.value = null
     selectedPermissions.value = []
-    originalPermissions.value = []
+}
+
+const selectAllInCategory = (category) => {
+    const categoryPerms = allPermissions.value[category] || []
+    categoryPerms.forEach(perm => {
+        if (!selectedPermissions.value.includes(perm.name)) {
+            selectedPermissions.value.push(perm.name)
+        }
+    })
+}
+
+const deselectAllInCategory = (category) => {
+    const categoryPerms = allPermissions.value[category] || []
+    const categoryPermNames = categoryPerms.map(p => p.name)
+    selectedPermissions.value = selectedPermissions.value.filter(
+        p => !categoryPermNames.includes(p)
+    )
+}
+
+const savePermissions = async () => {
+    savingPermissions.value = true
+
+    try {
+        await axios.post(
+            `/api/organizations/${organizationId.value}/permissions/users/${selectedMember.value.id}/bulk`,
+            { permissions: selectedPermissions.value }
+        )
+
+        toast.success('Permissions updated successfully')
+        closeModal()
+        await loadData()
+    } catch (err) {
+        console.error('Failed to save permissions:', err)
+        toast.error(err.response?.data?.message || 'Failed to save permissions')
+    } finally {
+        savingPermissions.value = false
+    }
 }
 
 onMounted(() => {
-    fetchMembers()
-    fetchAllPermissions()
+    loadData()
 })
 </script>

@@ -1,116 +1,198 @@
-import { computed } from 'vue'
-import { useAuthStore } from '@/stores/auth'
-import { useOrganizationStore } from '@/stores/organization'
+// src/utils/usePermissions.js
+import { ref, computed, watch } from 'vue'
+import axios from './api'
 
-/**
- * Vue composable for checking user permissions in the current organization
- */
-export const usePermissions = () => {
-    const authStore = useAuthStore()
-    const orgStore = useOrganizationStore()
+// Global permission cache to avoid redundant API calls
+const permissionCache = new Map()
 
-    const currentUser = computed(() => authStore.user)
-    const currentOrg = computed(() => orgStore.currentOrganization)
+export const usePermissions = (organizationId) => {
+    const permissions = ref([])
+    const userRole = ref(null)
+    const userId = ref(null)
+    const loading = ref(false)
+    const error = ref(null)
 
-    /**
-     * Check if current user is admin/owner (has all permissions)
-     */
-    const isAdmin = computed(() => {
-        if (!currentOrg.value || !currentUser.value) return false
-        const role = currentOrg.value.user_role
-        return ['admin', 'owner'].includes(role)
-    })
+    // Computed
+    const isAdmin = computed(() => userRole.value === 'admin' || userRole.value === 'owner')
+    const isMember = computed(() => !!userRole.value)
 
-    /**
-     * Get user's role in current organization
-     */
-    const userRole = computed(() => {
-        return currentOrg.value?.user_role || null
-    })
-
-    /**
-     * Check if user has a specific permission
-     * @param {string} permission - Permission name (e.g., 'manage_members')
-     * @returns {boolean}
-     */
     const hasPermission = (permission) => {
-        if (!currentOrg.value || !currentUser.value) return false
-
-        // Admins have all permissions
+        if (!permission) return true
         if (isAdmin.value) return true
-
-        // Check if user has the specific permission
-        const userPermissions = currentOrg.value.user_permissions || []
-        return userPermissions.includes(permission)
+        return permissions.value.includes(permission)
     }
 
-    /**
-     * Check if user has ANY of the given permissions
-     * @param {string[]} permissions - Array of permission names
-     * @returns {boolean}
-     */
-    const hasAnyPermission = (permissions) => {
-        if (!currentOrg.value || !currentUser.value) return false
+    const hasAnyPermission = (permissionList) => {
+        if (!permissionList || permissionList.length === 0) return true
         if (isAdmin.value) return true
-
-        return permissions.some(permission => hasPermission(permission))
+        return permissionList.some(p => permissions.value.includes(p))
     }
 
-    /**
-     * Check if user has ALL of the given permissions
-     * @param {string[]} permissions - Array of permission names
-     * @returns {boolean}
-     */
-    const hasAllPermissions = (permissions) => {
-        if (!currentOrg.value || !currentUser.value) return false
+    const hasAllPermissions = (permissionList) => {
+        if (!permissionList || permissionList.length === 0) return true
         if (isAdmin.value) return true
-
-        return permissions.every(permission => hasPermission(permission))
+        return permissionList.every(p => permissions.value.includes(p))
     }
 
-    /**
-     * Permission checks for specific features
-     */
-    const can = {
-        // Members
-        manageMembers: computed(() => hasPermission('manage_members')),
-        approveJoinRequests: computed(() => hasPermission('approve_join_requests')),
-        manageInvites: computed(() => hasPermission('manage_invites')),
+    // Check cache first
+    const getCachedPermissions = (orgId) => {
+        const cacheKey = `org_${orgId}`
+        return permissionCache.get(cacheKey)
+    }
 
-        // Documents
-        manageDocuments: computed(() => hasPermission('manage_documents')),
-        uploadDocuments: computed(() => hasPermission('upload_documents')),
-        deleteDocuments: computed(() => hasPermission('delete_documents')),
+    const setCachedPermissions = (orgId, data) => {
+        const cacheKey = `org_${orgId}`
+        permissionCache.set(cacheKey, {
+            permissions: data.permissions || [],
+            userRole: data.userRole,
+            userId: data.userId,
+            timestamp: Date.now()
+        })
+    }
 
-        // Reviews
-        createReviews: computed(() => hasPermission('create_reviews')),
-        manageReviews: computed(() => hasPermission('manage_reviews')),
+    const clearCache = (orgId = null) => {
+        if (orgId) {
+            permissionCache.delete(`org_${orgId}`)
+        } else {
+            permissionCache.clear()
+        }
+    }
 
-        // Announcements
-        createAnnouncements: computed(() => hasPermission('create_announcements')),
-        manageAnnouncements: computed(() => hasPermission('manage_announcements')),
+    // Actions
+    const loadPermissions = async (orgId = organizationId) => {
+        if (!orgId) {
+            console.warn('Organization ID is required for permission checks')
+            return false
+        }
 
-        // Duty
-        manageDutySchedules: computed(() => hasPermission('manage_duty_schedules')),
-        assignDutyOfficers: computed(() => hasPermission('assign_duty_officers')),
-        approveDutySwaps: computed(() => hasPermission('approve_duty_swaps')),
+        // Check cache first (valid for 5 minutes)
+        const cached = getCachedPermissions(orgId)
+        if (cached && (Date.now() - cached.timestamp < 300000)) {
+            permissions.value = cached.permissions
+            userRole.value = cached.userRole
+            userId.value = cached.userId
+            return true
+        }
 
-        // Settings
-        manageSettings: computed(() => hasPermission('manage_settings')),
-        viewStatistics: computed(() => hasPermission('view_statistics')),
+        loading.value = true
+        error.value = null
+
+        try {
+            // Get user's role in organization
+            const { data: orgData } = await axios.get(`/api/organizations/${orgId}`)
+            userRole.value = orgData.user_role
+            userId.value = orgData.user_id
+
+            // If admin, don't need to load individual permissions
+            if (userRole.value === 'admin' || userRole.value === 'owner') {
+                permissions.value = []
+                setCachedPermissions(orgId, {
+                    permissions: [],
+                    userRole: userRole.value,
+                    userId: userId.value
+                })
+                return true
+            }
+
+            // Load user's permissions
+            const { data } = await axios.get(`/api/organizations/${orgId}/permissions/users/${userId.value}`)
+            permissions.value = data.granted_permissions || []
+
+            // Cache the result
+            setCachedPermissions(orgId, {
+                permissions: permissions.value,
+                userRole: userRole.value,
+                userId: userId.value
+            })
+
+            return true
+        } catch (err) {
+            console.error('Failed to load permissions:', err)
+            error.value = err.response?.data?.message || 'Failed to load permissions'
+            permissions.value = []
+            userRole.value = null
+            userId.value = null
+            return false
+        } finally {
+            loading.value = false
+        }
+    }
+
+    // Watch for organization changes
+    if (organizationId) {
+        watch(() => organizationId, (newId) => {
+            if (newId) {
+                loadPermissions(newId)
+            }
+        }, { immediate: true })
     }
 
     return {
-        // State
-        isAdmin,
+        permissions,
         userRole,
-
-        // Methods
+        userId,
+        loading,
+        error,
+        isAdmin,
+        isMember,
         hasPermission,
         hasAnyPermission,
         hasAllPermissions,
-
-        // Specific checks
-        can,
+        loadPermissions,
+        clearCache
     }
+}
+
+// Permission definitions for easy reference
+export const PERMISSIONS = {
+    // Storage
+    VIEW_STORAGE: 'view_storage',
+    UPLOAD_DOCUMENTS: 'upload_documents',
+    CREATE_FOLDERS: 'create_folders',
+    DELETE_DOCUMENTS: 'delete_documents',
+    MANAGE_DOCUMENT_SHARING: 'manage_document_sharing',
+
+    // Reviews
+    VIEW_REVIEWS: 'view_reviews',
+    CREATE_REVIEWS: 'create_reviews',
+    MANAGE_REVIEWS: 'manage_reviews',
+    COMMENT_ON_REVIEWS: 'comment_on_reviews',
+    ASSIGN_REVIEWERS: 'assign_reviewers',
+
+    // Organization
+    VIEW_ORG_SETTINGS: 'view_org_settings',
+    MANAGE_ORG_SETTINGS: 'manage_org_settings',
+    EDIT_ORG_PROFILE: 'edit_org_profile',
+    UPLOAD_ORG_LOGO: 'upload_org_logo',
+
+    // Members
+    VIEW_MEMBERS: 'view_members',
+    MANAGE_MEMBER_ROLES: 'manage_member_roles',
+    REMOVE_MEMBERS: 'remove_members',
+    APPROVE_JOIN_REQUESTS: 'approve_join_requests',
+    MANAGE_INVITE_CODES: 'manage_invite_codes',
+
+    // Duties
+    VIEW_DUTY_SCHEDULES: 'view_duty_schedules',
+    CREATE_DUTY_SCHEDULES: 'create_duty_schedules',
+    EDIT_DUTY_SCHEDULES: 'edit_duty_schedules',
+    DELETE_DUTY_SCHEDULES: 'delete_duty_schedules',
+    ASSIGN_DUTIES: 'assign_duties',
+    APPROVE_DUTY_SWAPS: 'approve_duty_swaps',
+    MANAGE_DUTY_TEMPLATES: 'manage_duty_templates',
+
+    // Announcements
+    VIEW_ANNOUNCEMENTS: 'view_announcements',
+    CREATE_ANNOUNCEMENTS: 'create_announcements',
+    EDIT_ANNOUNCEMENTS: 'edit_announcements',
+    DELETE_ANNOUNCEMENTS: 'delete_announcements',
+
+    // Statistics & Logs
+    VIEW_STATISTICS: 'view_statistics',
+    VIEW_ACTIVITY_LOGS: 'view_activity_logs',
+    EXPORT_DATA: 'export_data',
+
+    // Advanced
+    ARCHIVE_ORGANIZATION: 'archive_organization',
+    TRANSFER_OWNERSHIP: 'transfer_ownership'
 }
