@@ -244,7 +244,7 @@ function goMyRequests() {
                 <section>
                     <div v-if="isFull || isMobileShown"
                         class="px-2 text-[11px] uppercase tracking-wide text-kaitoke-green-500 dark:text-kaitoke-green-400">
-                        All Organizations
+                        Discover Organizations
                     </div>
                     <div v-else class="my-2 border-t border-sun-200 dark:border-abyss-700"></div>
 

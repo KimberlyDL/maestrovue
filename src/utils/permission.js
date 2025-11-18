@@ -1,4 +1,4 @@
-// src/directives/permission.js
+// src\utils\permission.js
 import { usePermissions } from '@/utils/usePermissions'
 
 /**
