@@ -7,7 +7,6 @@ import meRoutes from "@router/modules/me"
 import authenticatedRoutes from "@router/modules/authenticated"
 import dutyRoutes from "@router/modules/duty"
 import publicRoutes from "@router/modules/public"
-import api from "@/utils/api"
 
 const routes = [
     ...publicRoutes,
@@ -36,14 +35,15 @@ const router = createRouter({
 async function checkRoutePermissions(to, auth) {
     const orgId = to.params.id
     
-    // Routes that don't need permission checks
+    // Routes that don't need permission checks (like home feed)
     if (!to.meta.requiresPermission && !to.meta.requiresAdmin && !to.meta.requiresMember) {
         return true
     }
 
+    // If no org ID but permission is required, something is wrong
     if (!orgId) {
-        console.warn('No organization ID found for permission check')
-        return true // Let the component handle it
+        console.warn('No organization ID found for permission check on route:', to.name)
+        return { name: 'home', query: { error: 'no_org_id' } }
     }
 
     const { loadPermissions, isAdmin, isMember, hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions(orgId)
@@ -51,14 +51,16 @@ async function checkRoutePermissions(to, auth) {
     try {
         await loadPermissions(orgId)
 
-        // Check admin requirement
-        if (to.meta.requiresAdmin && !isAdmin.value) {
-            return { name: 'org.manage', params: { id: orgId }, query: { error: 'admin_required' } }
+        // Check member requirement first
+        if (to.meta.requiresMember && !isMember.value) {
+            console.warn('User is not a member of organization:', orgId)
+            return { name: 'home', query: { error: 'not_member' } }
         }
 
-        // Check member requirement
-        if (to.meta.requiresMember && !isMember.value) {
-            return { name: 'home', query: { error: 'not_member' } }
+        // Check admin requirement
+        if (to.meta.requiresAdmin && !isAdmin.value) {
+            console.warn('User is not an admin of organization:', orgId)
+            return { name: 'org.manage', params: { id: orgId }, query: { error: 'admin_required' } }
         }
 
         // Check specific permissions
@@ -67,6 +69,7 @@ async function checkRoutePermissions(to, auth) {
             
             if (typeof permission === 'string') {
                 if (!hasPermission(permission)) {
+                    console.warn('User lacks permission:', permission)
                     return { name: 'org.manage', params: { id: orgId }, query: { error: 'insufficient_permissions' } }
                 }
             } else if (Array.isArray(permission)) {
@@ -76,6 +79,7 @@ async function checkRoutePermissions(to, auth) {
                     : hasAnyPermission(permission)
                 
                 if (!hasAccess) {
+                    console.warn('User lacks required permissions:', permission)
                     return { name: 'org.manage', params: { id: orgId }, query: { error: 'insufficient_permissions' } }
                 }
             }
@@ -98,7 +102,8 @@ router.beforeEach(async (to, from, next) => {
     if (!auth.user && !auth.isLoading) {
         try {
             await auth.restoreSession()
-        } catch {
+        } catch (err) {
+            console.error('Failed to restore session:', err)
             auth.user = null
         }
     }
@@ -107,19 +112,24 @@ router.beforeEach(async (to, from, next) => {
 
     // 1️⃣ Needs login but user not logged in → redirect to login
     if (requiresAuth && !isAuthenticated) {
+        console.log('Authentication required, redirecting to login')
         return next({ name: "login", query: { redirect: to.fullPath } })
     }
 
     // 2️⃣ Logged-in user trying to visit Login/Signup → send to home
     if ((to.name === "login" || to.name === "signup") && isAuthenticated) {
+        console.log('Already authenticated, redirecting to home')
         return next({ name: "home" })
     }
 
-    // 3️⃣ Check permissions for organization routes
-    if (isAuthenticated && (to.meta.requiresPermission || to.meta.requiresAdmin || to.meta.requiresMember)) {
+    // 3️⃣ Check permissions for organization routes ONLY
+    // Home route and other non-org routes should pass through
+    if (isAuthenticated && to.params.id && (to.meta.requiresPermission || to.meta.requiresAdmin || to.meta.requiresMember)) {
+        console.log('Checking permissions for route:', to.name)
         const permissionCheck = await checkRoutePermissions(to, auth)
         
         if (permissionCheck !== true) {
+            console.log('Permission check failed, redirecting')
             return next(permissionCheck)
         }
     }

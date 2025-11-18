@@ -2,10 +2,13 @@
 import { PERMISSIONS } from '@/utils/usePermissions'
 
 const authenticatedRoutes = [
+  // ========================================
+  // Home Feed - Public to all authenticated users
+  // ========================================
   {
     path: "/home",
     component: () => import("@/layouts/HomeLayout.vue"),
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true }, // Only requires authentication, no org permissions
     children: [
       {
         path: "",
@@ -16,10 +19,13 @@ const authenticatedRoutes = [
     ],
   },
 
+  // ========================================
+  // Organization Discovery - Public routes
+  // ========================================
   {
     path: "/orgs",
     component: () => import("@/layouts/HomeLayout.vue"),
-    meta: { requiresAuth: true, title: "Organizations" },
+    meta: { requiresAuth: true },
     children: [
       {
         path: ":id",
@@ -48,6 +54,9 @@ const authenticatedRoutes = [
     ],
   },
 
+  // ========================================
+  // Create Organization - No sidebar
+  // ========================================
   {
     path: "/orgs",
     component: () => import("@/layouts/HomeLayoutWithoutSidebar.vue"),
@@ -62,6 +71,9 @@ const authenticatedRoutes = [
     ],
   },
 
+  // ========================================
+  // Join Redirect
+  // ========================================
   {
     path: "/join",
     name: "JoinRedirect",
@@ -69,10 +81,16 @@ const authenticatedRoutes = [
     meta: { requiresAuth: true, title: "Join Organization" },
   },
 
+  // ========================================
+  // Organization Dashboard - Member access required
+  // ========================================
   {
     path: "/org/:id",
     component: () => import("@/layouts/AdminLayout.vue"),
-    meta: { requiresAuth: true, requiresMember: true },
+    meta: { 
+      requiresAuth: true, 
+      requiresMember: true // User must be a member of the organization
+    },
     children: [
       // Organization Management
       {
