@@ -1,7 +1,7 @@
-<!-- src/views/admin/SettingsTab.vue - WITH ORG DETAILS EDITING -->
+<!-- src/views/admin/SettingsTab.vue - COMPLETE WITH ALL FEATURES -->
 <template>
     <div class="space-y-8">
-        <!-- Logo Upload Section -->
+        <!-- Logo Upload Section (MOVED FROM OVERVIEW) -->
         <div class="bg-white dark:bg-abyss-800 border border-gray-200 dark:border-abyss-700 rounded-xl p-8 shadow-xl">
             <h2 class="text-xl font-semibold text-gray-800 dark:text-platinum-50 mb-6 flex items-center gap-2">
                 <Camera class="w-5 h-5 text-kaitoke-green-600 dark:text-kaitoke-green-400" /> Organization Logo
@@ -62,7 +62,7 @@
             </div>
         </div>
 
-        <!-- General Settings (Org Details) -->
+        <!-- General Settings (ORG DETAILS - MOVED FROM OVERVIEW) -->
         <div class="bg-white dark:bg-abyss-800 border border-gray-200 dark:border-abyss-700 rounded-xl p-8 shadow-xl">
             <div class="flex items-center justify-between mb-6">
                 <div>
@@ -134,16 +134,33 @@
                     <p v-else class="text-gray-500 dark:text-platinum-500 text-sm">No website</p>
                 </div>
 
+                <!-- Location with Map -->
                 <div>
                     <label
                         class="block text-sm text-gray-700 dark:text-platinum-400 mb-2 font-medium flex items-center gap-2">
                         <MapPin class="w-4 h-4" /> Location
                     </label>
-                    <input v-if="isEditingDetails" v-model="detailsForm.location_address" type="text"
-                        placeholder="Organization address"
-                        class="w-full px-4 py-2.5 rounded-lg bg-gray-50 dark:bg-abyss-900 border border-gray-300 dark:border-abyss-700 text-gray-800 dark:text-platinum-50 focus:outline-none focus:border-kaitoke-green-600 focus:ring-1 focus:ring-kaitoke-green-600 shadow-inner" />
-                    <p v-else class="text-gray-800 dark:text-platinum-50 text-sm">{{ organization?.location_address ||
-                        organization?.location?.address || 'No location set' }}</p>
+
+                    <!-- Edit Mode: Interactive Map -->
+                    <div v-if="isEditingDetails">
+                        <MapDisplay v-model:lat="detailsForm.location_lat" v-model:lng="detailsForm.location_lng"
+                            v-model:address="detailsForm.location_address" :zoom="15" :editable="true"
+                            :show-controls="true" height="400px" @location-changed="handleLocationChange" />
+                    </div>
+
+                    <!-- View Mode: Display Map -->
+                    <div v-else>
+                        <p v-if="organization?.location?.address"
+                            class="text-gray-800 dark:text-platinum-50 text-sm mb-3">
+                            {{ organization.location.address }}
+                        </p>
+                        <p v-else class="text-gray-500 dark:text-platinum-500 text-sm mb-3">No location specified</p>
+
+                        <MapDisplay v-if="organization?.location?.lat && organization?.location?.lng"
+                            :lat="parseFloat(organization.location.lat)" :lng="parseFloat(organization.location.lng)"
+                            :zoom="15" :address="organization.location.address" :marker-title="organization.name"
+                            :editable="false" :show-controls="true" height="400px" />
+                    </div>
                 </div>
             </div>
 
@@ -153,7 +170,7 @@
             </p>
         </div>
 
-        <!-- Access Control Settings -->
+        <!-- Access Control Settings (ORIGINAL) -->
         <div class="bg-white dark:bg-abyss-800 border border-gray-200 dark:border-abyss-700 rounded-xl p-8 shadow-xl">
             <h2 class="text-xl font-semibold text-gray-800 dark:text-platinum-50 mb-6 flex items-center gap-2">
                 <Zap class="w-5 h-5 text-kaitoke-green-600 dark:text-kaitoke-green-400" /> Access Control
@@ -207,7 +224,7 @@
             </div>
         </div>
 
-        <!-- Data & Privacy (Keep existing functionality) -->
+        <!-- Data & Privacy (ORIGINAL) -->
         <div class="bg-white dark:bg-abyss-800 border border-gray-200 dark:border-abyss-700 rounded-xl p-8 shadow-xl">
             <h2 class="text-xl font-semibold text-gray-800 dark:text-platinum-50 mb-6 flex items-center gap-2">
                 <Shield class="w-5 h-5 text-kaitoke-green-600 dark:text-kaitoke-green-400" /> Data & Privacy
@@ -240,7 +257,7 @@
             </div>
         </div>
 
-        <!-- Danger Zone (Keep existing functionality) -->
+        <!-- Danger Zone (ORIGINAL - ALL FEATURES) -->
         <div
             class="bg-rose-50 dark:bg-rose-900/10 border border-rose-400 dark:border-rose-700/50 rounded-xl p-8 shadow-2xl">
             <h2 class="text-xl font-semibold text-rose-700 dark:text-rose-400 mb-6 flex items-center gap-2">
@@ -248,6 +265,18 @@
             </h2>
 
             <div class="space-y-6">
+                <div class="flex items-center justify-between pb-4 border-b border-rose-300 dark:border-rose-700/30">
+                    <div>
+                        <div class="text-gray-800 dark:text-platinum-50 font-medium">Transfer Ownership</div>
+                        <div class="text-gray-500 dark:text-platinum-500 text-sm mt-1">Transfer organization admin
+                            rights to another member</div>
+                    </div>
+                    <button @click="showTransferModal = true"
+                        class="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-medium shadow-md flex items-center gap-2">
+                        <Users class="w-4 h-4" /> Transfer
+                    </button>
+                </div>
+
                 <div class="flex items-center justify-between pb-4 border-b border-rose-300 dark:border-rose-700/30">
                     <div>
                         <div class="text-gray-800 dark:text-platinum-50 font-medium">Archive Organization</div>
@@ -259,9 +288,106 @@
                         <Archive class="w-4 h-4" /> Archive
                     </button>
                 </div>
+
+                <div class="flex items-center justify-between pt-2">
+                    <div>
+                        <div class="text-rose-700 dark:text-rose-400 font-bold">Permanently Delete Organization</div>
+                        <div class="text-gray-500 dark:text-platinum-500 text-sm mt-1">This action is irreversible and
+                            deletes all data</div>
+                    </div>
+                    <button @click="confirmDelete"
+                        class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold shadow-lg flex items-center gap-2">
+                        <Trash2 class="w-4 h-4" /> Delete
+                    </button>
+                </div>
             </div>
         </div>
 
+        <!-- Transfer Modal (ORIGINAL) -->
+        <div v-if="showTransferModal" class="fixed inset-0 z-50 flex items-center justify-center">
+            <div class="absolute inset-0 bg-black/70" @click="showTransferModal = false"></div>
+            <div
+                class="relative w-full max-w-md rounded-xl border border-amber-400/50 bg-white dark:bg-abyss-900 p-6 shadow-2xl">
+                <h3 class="text-xl font-semibold text-amber-700 dark:text-amber-400 mb-4 flex items-center gap-2">
+                    <Users class="w-5 h-5" /> Transfer Ownership
+                </h3>
+                <p class="text-gray-700 dark:text-platinum-300 text-sm mb-5">
+                    Select a member to transfer admin rights to. They must accept the transfer.
+                </p>
+
+                <div class="mb-4">
+                    <label class="block text-sm text-gray-700 dark:text-platinum-400 mb-2 font-medium">Select
+                        Member</label>
+                    <select v-model="transferData.to_user_id"
+                        class="w-full px-4 py-2.5 rounded-lg bg-gray-50 dark:bg-abyss-900 border border-gray-300 dark:border-abyss-700 text-gray-800 dark:text-platinum-50 focus:outline-none focus:border-amber-600 focus:ring-1 focus:ring-amber-600 shadow-inner">
+                        <option value="">-- Select a member --</option>
+                        <option v-for="member in eligibleMembers" :key="member.id" :value="member.id">
+                            {{ member.name }} ({{ member.email }})
+                        </option>
+                    </select>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-sm text-gray-700 dark:text-platinum-400 mb-2 font-medium">Message
+                        (Optional)</label>
+                    <textarea v-model="transferData.message" rows="3" placeholder="Add a message for the new owner..."
+                        class="w-full px-4 py-2.5 rounded-lg bg-gray-50 dark:bg-abyss-900 border border-gray-300 dark:border-abyss-700 text-gray-800 dark:text-platinum-50 focus:outline-none focus:border-amber-600 focus:ring-1 focus:ring-amber-600 shadow-inner resize-none"></textarea>
+                </div>
+
+                <div class="flex justify-end gap-3">
+                    <button @click="showTransferModal = false"
+                        class="px-4 py-2.5 rounded-xl bg-gray-100 dark:bg-abyss-800 text-gray-700 dark:text-platinum-200 hover:bg-gray-200 dark:hover:bg-abyss-700 font-medium transition-colors shadow-sm">
+                        Cancel
+                    </button>
+                    <button @click="initiateTransfer" :disabled="!transferData.to_user_id || isTransferring"
+                        class="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium shadow-md flex items-center gap-2">
+                        <Send class="w-4 h-4" /> {{ isTransferring ? 'Sending...' : 'Send Transfer Request' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Modal (ORIGINAL) -->
+        <div v-if="showDeleteModal" class="fixed inset-0 z-50 flex items-center justify-center">
+            <div class="absolute inset-0 bg-black/70" @click="showDeleteModal = false"></div>
+            <div
+                class="relative w-full max-w-md rounded-xl border border-rose-400 dark:border-rose-700/50 bg-white dark:bg-abyss-900 p-6 shadow-2xl">
+                <h3 class="text-xl font-semibold text-rose-700 dark:text-rose-400 mb-2 flex items-center gap-2">
+                    <AlertTriangle class="w-5 h-5" /> Delete Organization?
+                </h3>
+                <p class="text-gray-700 dark:text-platinum-300 text-sm mb-4">
+                    This action <strong class="text-rose-700 dark:text-rose-400">cannot be undone</strong>. This will
+                    permanently delete:
+                </p>
+                <ul
+                    class="text-gray-700 dark:text-platinum-400 text-sm mb-4 space-y-1 list-disc list-inside bg-rose-50 dark:bg-abyss-800 p-4 rounded-lg border border-rose-300 dark:border-abyss-700">
+                    <li>All members and their roles</li>
+                    <li>All documents and versions</li>
+                    <li>All announcements</li>
+                    <li>All activity logs</li>
+                </ul>
+                <div class="mb-4">
+                    <label class="block text-sm text-gray-700 dark:text-platinum-400 mb-2 font-medium">
+                        Type <strong class="text-rose-700 dark:text-platinum-50">{{ organization?.name }}</strong> to
+                        confirm:
+                    </label>
+                    <input v-model="deleteConfirmText" type="text"
+                        class="w-full px-4 py-2.5 rounded-lg bg-gray-50 dark:bg-abyss-900 border border-gray-300 dark:border-abyss-700 text-gray-800 dark:text-platinum-50 focus:outline-none focus:border-rose-600 focus:ring-1 focus:ring-rose-600 shadow-inner" />
+                </div>
+                <div class="flex justify-end gap-3">
+                    <button @click="showDeleteModal = false"
+                        class="px-4 py-2.5 rounded-xl bg-gray-100 dark:bg-abyss-800 text-gray-700 dark:text-platinum-200 hover:bg-gray-200 dark:hover:bg-abyss-700 font-medium transition-colors shadow-sm">
+                        Cancel
+                    </button>
+                    <button @click="deleteOrganization" :disabled="deleteConfirmText !== organization?.name"
+                        class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold shadow-md flex items-center gap-2">
+                        <Trash2 class="w-4 h-4" /> Delete Permanently
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notification -->
         <transition name="fade">
             <div v-if="toast"
                 class="fixed bottom-6 right-6 px-5 py-3 bg-kaitoke-green-600 text-white font-medium rounded-xl shadow-2xl flex items-center gap-2 z-50">
@@ -272,18 +398,18 @@
 </template>
 
 <script setup>
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/utils/api'
 import {
     Camera, Image, Upload, Trash2, CheckCircle, AlertTriangle,
     Cog, Pencil, X, Save, ExternalLink, MapPin,
-    Zap, Shield, Download, Archive
+    Zap, Shield, Download, Users, Archive, Send
 } from 'lucide-vue-next'
+import MapDisplay from '@/components/ui/map.vue'
 
 const props = defineProps({
-    organization: { type: Object, required: true },
-    organizationId: { type: [String, Number], required: true }
+    organization: { type: Object, required: true }
 })
 
 const emit = defineEmits(['updated', 'logo-updated'])
@@ -311,7 +437,9 @@ const detailsForm = ref({
     mission: '',
     vision: '',
     website: '',
-    location_address: ''
+    location_address: '',
+    location_lat: null,
+    location_lng: null
 })
 
 // Settings state
@@ -322,8 +450,19 @@ const settings = ref({
     log_retention_days: 365
 })
 
+// Other state
 const isExporting = ref(false)
+const showDeleteModal = ref(false)
+const showTransferModal = ref(false)
+const deleteConfirmText = ref('')
+const isTransferring = ref(false)
 const toast = ref('')
+const eligibleMembers = ref([])
+
+const transferData = ref({
+    to_user_id: '',
+    message: ''
+})
 
 // Watch for organization changes
 watch(() => props.organization, (newOrg) => {
@@ -335,7 +474,9 @@ watch(() => props.organization, (newOrg) => {
             mission: newOrg.mission || '',
             vision: newOrg.vision || '',
             website: newOrg.website || '',
-            location_address: newOrg.location_address || newOrg.location?.address || ''
+            location_address: newOrg.location_address || newOrg.location?.address || '',
+            location_lat: newOrg.location_lat || newOrg.location?.lat || null,
+            location_lng: newOrg.location_lng || newOrg.location?.lng || null
         }
         settings.value = {
             auto_accept_invites: newOrg.auto_accept_invites || false,
@@ -345,6 +486,10 @@ watch(() => props.organization, (newOrg) => {
         }
     }
 }, { immediate: true })
+
+onMounted(async () => {
+    await loadEligibleMembers()
+})
 
 const currentLogoUrl = computed(() => {
     if (previewLogo.value) return previewLogo.value
@@ -362,6 +507,15 @@ const currentLogoUrl = computed(() => {
 
     return path
 })
+
+async function loadEligibleMembers() {
+    try {
+        const { data } = await api.get(`/api/org/${props.organization.id}/members`)
+        eligibleMembers.value = data.filter(m => m.id !== props.organization.current_user_id)
+    } catch (error) {
+        console.error('Failed to load members:', error)
+    }
+}
 
 function handleFileSelect(e) {
     const file = e.target.files?.[0]
@@ -407,7 +561,7 @@ async function uploadLogo(file) {
 
     try {
         const { data } = await api.post(
-            `/api/org/${props.organizationId}/logo`,
+            `/api/org/${props.organization.id}/logo`,
             formData,
             {
                 headers: { 'Content-Type': 'multipart/form-data' },
@@ -441,7 +595,7 @@ async function confirmDeleteLogo() {
 
     isDeleting.value = true
     try {
-        await api.delete(`/api/org/${props.organizationId}/logo`)
+        await api.delete(`/api/org/${props.organization.id}/logo`)
         currentLogo.value = null
         logoSuccess.value = 'Logo removed successfully'
         emit('logo-updated')
@@ -470,7 +624,9 @@ function cancelEditingDetails() {
         mission: props.organization.mission || '',
         vision: props.organization.vision || '',
         website: props.organization.website || '',
-        location_address: props.organization.location_address || props.organization.location?.address || ''
+        location_address: props.organization.location_address || props.organization.location?.address || '',
+        location_lat: props.organization.location_lat || props.organization.location?.lat || null,
+        location_lng: props.organization.location_lng || props.organization.location?.lng || null
     }
 }
 
@@ -479,7 +635,7 @@ async function saveDetails() {
     detailsError.value = ''
 
     try {
-        await api.patch(`/api/org/${props.organizationId}/overview`, detailsForm.value)
+        await api.patch(`/api/org/${props.organization.id}/overview`, detailsForm.value)
         isEditingDetails.value = false
         emit('updated')
         showToast('Details saved successfully')
@@ -491,15 +647,18 @@ async function saveDetails() {
     }
 }
 
+function handleLocationChange(locationData) {
+    console.log('Location changed:', locationData)
+}
+
 async function updateSetting(key, value) {
     try {
-        await api.patch(`/api/org/${props.organizationId}/settings`, { [key]: value })
+        await api.patch(`/api/org/${props.organization.id}/settings`, { [key]: value })
         showToast(`${key.replace(/_/g, ' ')} updated`)
         emit('updated')
     } catch (error) {
         console.error(`Failed to update ${key}:`, error)
         showToast(`Failed to update ${key.replace(/_/g, ' ')}`)
-        // Revert the change
         settings.value[key] = !value
     }
 }
@@ -507,7 +666,7 @@ async function updateSetting(key, value) {
 async function exportData() {
     isExporting.value = true
     try {
-        const { data } = await api.get(`/api/org/${props.organizationId}/export-data`)
+        const { data } = await api.get(`/api/org/${props.organization.id}/export-data`)
 
         const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: 'application/json' })
         const url = URL.createObjectURL(blob)
@@ -526,11 +685,26 @@ async function exportData() {
     }
 }
 
+async function initiateTransfer() {
+    isTransferring.value = true
+    try {
+        await api.post(`/api/org/${props.organization.id}/transfer-ownership`, transferData.value)
+        showTransferModal.value = false
+        transferData.value = { to_user_id: '', message: '' }
+        showToast('Transfer request sent successfully')
+    } catch (error) {
+        console.error('Failed to initiate transfer:', error)
+        showToast(error.response?.data?.message || 'Failed to send transfer request')
+    } finally {
+        isTransferring.value = false
+    }
+}
+
 async function archiveOrganization() {
     if (!confirm('Archive this organization? Members will no longer be able to access it until restored.')) return
 
     try {
-        await api.post(`/api/org/${props.organizationId}/archive`)
+        await api.post(`/api/org/${props.organization.id}/archive`)
         showToast('Organization archived successfully')
         setTimeout(() => {
             router.push({ name: 'home' })
@@ -538,6 +712,28 @@ async function archiveOrganization() {
     } catch (error) {
         console.error('Failed to archive organization:', error)
         showToast('Failed to archive organization')
+    }
+}
+
+function confirmDelete() {
+    showDeleteModal.value = true
+    deleteConfirmText.value = ''
+}
+
+async function deleteOrganization() {
+    if (deleteConfirmText.value !== props.organization.name) return
+
+    try {
+        await api.delete(`/api/organizations/${props.organization.id}`)
+        showToast('Organization deleted')
+        setTimeout(() => {
+            router.push({ name: 'home' })
+        }, 1500)
+    } catch (error) {
+        console.error('Failed to delete organization:', error)
+        showToast('Failed to delete organization')
+    } finally {
+        showDeleteModal.value = false
     }
 }
 
