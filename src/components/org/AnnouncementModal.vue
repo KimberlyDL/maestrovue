@@ -1,35 +1,39 @@
 <template>
     <div class="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50" @click.self="$emit('close')">
-        <div class="bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+        <div
+            class="bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
             <div class="flex items-center justify-between p-5 border-b border-gray-200 dark:border-abyss-700">
                 <h3 class="text-xl font-semibold text-gray-800 dark:text-platinum-50 flex items-center gap-2">
                     <Megaphone class="w-5 h-5 text-kaitoke-green-600 dark:text-kaitoke-green-400" />
                     {{ isEditing ? 'Edit Announcement' : 'Create New Announcement' }}
                 </h3>
-                <button @click="$emit('close')" class="text-gray-500 dark:text-platinum-400 hover:text-gray-800 dark:hover:text-platinum-50 transition-colors p-1 rounded-full hover:bg-gray-100 dark:hover:bg-abyss-700">
+                <button @click="$emit('close')"
+                    class="text-gray-500 dark:text-platinum-400 hover:text-gray-800 dark:hover:text-platinum-50 transition-colors p-1 rounded-full hover:bg-gray-100 dark:hover:bg-abyss-700">
                     <X class="w-5 h-5" />
                 </button>
             </div>
 
-            <form @submit.prevent="saveAnnouncement" class="p-6 space-y-6">
+            <div class="p-6 space-y-6">
                 <div>
                     <label class="block text-sm font-medium text-gray-600 dark:text-platinum-300 mb-2">
                         Title <span class="text-rose-400">*</span>
                     </label>
-                    <input v-model="form.title" type="text" required maxlength="255"
+                    <input v-model="form.title" type="text" maxlength="255"
                         placeholder="e.g., Important Update About..."
                         class="w-full px-4 py-2.5 rounded-lg bg-gray-50 dark:bg-abyss-900 border border-gray-300 dark:border-abyss-700 text-gray-800 dark:text-platinum-50 placeholder-gray-400 dark:placeholder-platinum-500 focus:border-kaitoke-green-600 focus:ring-1 focus:ring-kaitoke-green-600 focus:outline-none shadow-inner" />
-                    <p class="text-xs text-gray-500 dark:text-platinum-500 mt-1 text-right">{{ form.title.length }}/255 characters</p>
+                    <p class="text-xs text-gray-500 dark:text-platinum-500 mt-1 text-right">{{ form.title.length }}/255
+                        characters</p>
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-600 dark:text-platinum-300 mb-2">
                         Content <span class="text-rose-400">*</span>
                     </label>
-                    <textarea v-model="form.content" rows="8" required maxlength="5000"
+                    <textarea v-model="form.content" rows="8" maxlength="5000"
                         placeholder="Write your announcement here..."
                         class="w-full px-4 py-2.5 rounded-lg bg-gray-50 dark:bg-abyss-900 border border-gray-300 dark:border-abyss-700 text-gray-800 dark:text-platinum-50 placeholder-gray-400 dark:placeholder-platinum-500 focus:border-kaitoke-green-600 focus:ring-1 focus:ring-kaitoke-green-600 focus:outline-none shadow-inner resize-none"></textarea>
-                    <p class="text-xs text-gray-500 dark:text-platinum-500 mt-1 text-right">{{ form.content.length }}/5000 characters</p>
+                    <p class="text-xs text-gray-500 dark:text-platinum-500 mt-1 text-right">{{ form.content.length
+                        }}/5000 characters</p>
                 </div>
 
                 <div>
@@ -55,14 +59,18 @@
                             class="px-4 py-2 rounded-xl border border-gray-300 dark:border-platinum-700 text-gray-700 dark:text-platinum-200 hover:bg-gray-100 dark:hover:bg-abyss-700 transition-colors flex items-center gap-2 shadow-sm">
                             <Upload class="w-4 h-4" /> Upload Image
                         </button>
-                        <p class="text-xs text-gray-500 dark:text-platinum-500 mt-2">Max size: 5MB. Supported: JPG, PNG, GIF</p>
+                        <p class="text-xs text-gray-500 dark:text-platinum-500 mt-2">Max size: 5MB. Supported: JPG, PNG,
+                            GIF</p>
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-600 dark:text-platinum-300 mb-2"><Hash class="w-4 h-4 inline mr-1" /> Tags (Optional)</label>
+                    <label class="block text-sm font-medium text-gray-600 dark:text-platinum-300 mb-2">
+                        <Hash class="w-4 h-4 inline mr-1" /> Tags (Optional)
+                    </label>
                     <div class="flex gap-3 mb-3">
-                        <input v-model="tagInput" type="text" placeholder="Add a tag (e.g., #urgent)" @keydown.enter.prevent="addTag"
+                        <input v-model="tagInput" type="text" placeholder="Add a tag (e.g., urgent)"
+                            @keydown.enter.prevent="addTag"
                             class="flex-1 px-4 py-2.5 rounded-lg bg-gray-50 dark:bg-abyss-900 border border-gray-300 dark:border-abyss-700 text-gray-800 dark:text-platinum-50 placeholder-gray-400 dark:placeholder-platinum-500 focus:border-kaitoke-green-600 focus:ring-1 focus:ring-kaitoke-green-600 focus:outline-none shadow-inner" />
                         <button type="button" @click="addTag"
                             class="px-4 py-2.5 rounded-xl border border-gray-300 dark:border-platinum-700 text-gray-700 dark:text-platinum-200 hover:bg-gray-100 dark:hover:bg-abyss-700 transition-colors shadow-sm flex items-center gap-2">
@@ -86,7 +94,7 @@
                         <input v-model="form.is_public" type="checkbox"
                             class="h-5 w-5 rounded border-gray-300 text-kaitoke-green-600 focus:ring-kaitoke-green-500 bg-gray-100 dark:bg-abyss-700" />
                         <span class="text-sm text-gray-700 dark:text-platinum-300 flex items-center gap-1">
-                            <Globe class="w-4 h-4" /> Make Public (Visible to all members)
+                            <Globe class="w-4 h-4" /> Make Public
                         </span>
                     </label>
 
@@ -94,7 +102,7 @@
                         <input v-model="form.priority" type="checkbox"
                             class="h-5 w-5 rounded border-gray-300 text-rose-600 focus:ring-rose-500 bg-gray-100 dark:bg-abyss-700" />
                         <span class="text-sm text-gray-700 dark:text-platinum-300 flex items-center gap-1">
-                            <MapPin class="w-4 h-4" /> Pin this announcement (High Priority)
+                            <MapPin class="w-4 h-4" /> Pin Announcement
                         </span>
                     </label>
                 </div>
@@ -109,12 +117,12 @@
                         class="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 dark:border-platinum-700 text-gray-700 dark:text-platinum-200 hover:bg-gray-100 dark:hover:bg-abyss-700 transition-colors font-medium">
                         Cancel
                     </button>
-                    <button type="submit" :disabled="isSaving"
-                        class="flex-1 px-4 py-2.5 rounded-xl bg-kaitoke-green-600 hover:bg-kaitoke-green-500 disabled:bg-gray-400 disabled:text-gray-700 text-white font-semibold transition-colors shadow-md hover:shadow-lg flex items-center justify-center gap-2">
-                        <Save class="w-4 h-4" /> {{ isSaving ? 'Saving...' : (isEditing ? 'Update Announcement' : 'Create Announcement') }}
+                    <button type="button" @click="saveAnnouncement" :disabled="isSaving || !form.title || !form.content"
+                        class="flex-1 px-4 py-2.5 rounded-xl bg-kaitoke-green-600 hover:bg-kaitoke-green-500 disabled:bg-gray-400 disabled:text-gray-700 disabled:cursor-not-allowed text-white font-semibold transition-colors shadow-md hover:shadow-lg flex items-center justify-center gap-2">
+                        <Save class="w-4 h-4" /> {{ isSaving ? 'Saving...' : (isEditing ? 'Update' : 'Create') }}
                     </button>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 </template>
@@ -130,6 +138,8 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['close', 'saved'])
+
+const R2_WORKER_ENDPOINT = import.meta.env.VITE_R2_WORKER_ENDPOINT
 
 const isEditing = computed(() => !!props.announcement)
 const isSaving = ref(false)
@@ -156,26 +166,37 @@ onMounted(() => {
             content: props.announcement.content || '',
             is_public: props.announcement.is_public ?? true,
             priority: props.announcement.priority ?? false,
-            tags: props.announcement.tags || []
+            tags: Array.isArray(props.announcement.tags) ? props.announcement.tags : []
         }
 
-        if (props.announcement.image_url) {
-            existingImageUrl.value = props.announcement.image_url
+        if (props.announcement.image_path) {
+            existingImageUrl.value = getImageUrl(props.announcement.image_path)
         }
     }
 })
+
+function getImageUrl(path) {
+    if (!path) return ''
+    if (path.startsWith('http')) return path
+
+    if (R2_WORKER_ENDPOINT) {
+        const cleanEndpoint = R2_WORKER_ENDPOINT.replace(/\/$/, '')
+        const cleanPath = path.startsWith('/') ? path.substring(1) : path
+        return `${cleanEndpoint}/${cleanPath}`
+    }
+
+    return path
+}
 
 function handleImageSelect(event) {
     const file = event.target.files[0]
     if (!file) return
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
         errorMessage.value = 'Please select an image file'
         return
     }
 
-    // Validate file size (5MB)
     if (file.size > 5 * 1024 * 1024) {
         errorMessage.value = 'Image size must be less than 5MB'
         return
@@ -184,7 +205,6 @@ function handleImageSelect(event) {
     imageFile.value = file
     errorMessage.value = ''
 
-    // Create preview
     const reader = new FileReader()
     reader.onload = (e) => {
         imagePreview.value = e.target.result
@@ -207,7 +227,7 @@ function removeImage() {
 }
 
 function addTag() {
-    const tag = tagInput.value.trim()
+    const tag = tagInput.value.trim().replace(/^#/, '')
     if (tag && !form.value.tags.includes(tag)) {
         form.value.tags.push(tag)
         tagInput.value = ''
@@ -219,6 +239,11 @@ function removeTag(index) {
 }
 
 async function saveAnnouncement() {
+    if (!form.value.title || !form.value.content) {
+        errorMessage.value = 'Title and content are required'
+        return
+    }
+
     isSaving.value = true
     errorMessage.value = ''
 
@@ -229,19 +254,16 @@ async function saveAnnouncement() {
         formData.append('is_public', form.value.is_public ? '1' : '0')
         formData.append('priority', form.value.priority ? '1' : '0')
 
-        // Add tags as JSON array
         if (form.value.tags.length > 0) {
             form.value.tags.forEach((tag, index) => {
                 formData.append(`tags[${index}]`, tag)
             })
         }
 
-        // Add image if selected
         if (imageFile.value) {
             formData.append('image', imageFile.value)
         }
 
-        // Add flag to remove existing image
         if (removeExistingImage.value) {
             formData.append('remove_image', '1')
         }
@@ -250,26 +272,19 @@ async function saveAnnouncement() {
             await axios.post(
                 `/api/org/${props.organizationId}/announcements/${props.announcement.id}?_method=PATCH`,
                 formData,
-                {
-                    headers: {
-                        'Content-Type': 'multipart/form-data'
-                    }
-                }
+                { headers: { 'Content-Type': 'multipart/form-data' } }
             )
         } else {
             await axios.post(
                 `/api/org/${props.organizationId}/announcements`,
                 formData,
-                {
-                    headers: {
-                        'Content-Type': 'multipart/form-data'
-                    }
-                }
+                { headers: { 'Content-Type': 'multipart/form-data' } }
             )
         }
 
         emit('saved')
     } catch (error) {
+        console.error('Save failed:', error)
         errorMessage.value = error.response?.data?.message || 'Failed to save announcement'
     } finally {
         isSaving.value = false

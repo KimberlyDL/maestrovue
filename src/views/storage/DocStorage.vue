@@ -2,11 +2,12 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from '@/utils/api'
+import ShareDocumentModal from '@/components/doc/doc_share_modal.vue'
 import {
     Folder, File, FolderPlus, Upload, Search, Grid, List,
     MoreVertical, Download, Trash2, Copy, Move, Eye, EyeOff,
     Globe, Lock, Users, ChevronRight, Home, ArrowLeft,
-    RefreshCw, Filter, SortAsc, X, Plus, Loader2, Check, Edit2
+    RefreshCw, Filter, SortAsc, X, Plus, Loader2, Check, Edit2, Share2
 } from 'lucide-vue-next'
 
 const route = useRoute()
@@ -43,8 +44,10 @@ const newFolderName = ref('')
 const newFolderDescription = ref('')
 const creatingFolder = ref(false)
 
+// const showShareModal = ref(false)
+// const shareDocument = ref(null)
 const showShareModal = ref(false)
-const shareDocument = ref(null)
+const selectedDocument = ref(null)
 
 const stats = ref({
     total_files: 0,
@@ -235,6 +238,16 @@ async function changeVisibility(doc, visibility) {
     }
 }
 
+function selectForShare(doc) {
+    selectedDocument.value = doc
+    showShareModal.value = true
+}
+
+function onShareUpdated(shareData) {
+    // Optional: Refresh stats or show notification
+    console.log('Share updated:', shareData)
+}
+
 function navigateToFolder(folderId) {
     currentFolderId.value = folderId
     selectedItems.value.clear()
@@ -398,7 +411,8 @@ onMounted(() => {
                 </template>
             </div>
 
-            <div class="flex items-center gap-4 p-3 bg-gray-50 dark:bg-abyss-700 rounded-xl shadow-inner border border-gray-200 dark:border-abyss-600">
+            <div
+                class="flex items-center gap-4 p-3 bg-gray-50 dark:bg-abyss-700 rounded-xl shadow-inner border border-gray-200 dark:border-abyss-600">
                 <div class="relative flex-1 max-w-md">
                     <Search class="absolute left-3 top-2.5 h-5 w-5 text-gray-400 dark:text-platinum-600" />
                     <input v-model="searchQuery" type="text" placeholder="Search files and folders..."
@@ -419,7 +433,8 @@ onMounted(() => {
                     <option value="size">Size</option>
                 </select>
 
-                <div class="flex items-center gap-1 border border-gray-300 dark:border-abyss-600 rounded-xl p-1 bg-white dark:bg-abyss-800 shadow-sm">
+                <div
+                    class="flex items-center gap-1 border border-gray-300 dark:border-abyss-600 rounded-xl p-1 bg-white dark:bg-abyss-800 shadow-sm">
                     <button @click="viewMode = 'grid'"
                         :class="viewMode === 'grid' ? 'bg-gray-200 dark:bg-abyss-700 text-gray-800 dark:text-platinum-100' : 'text-gray-500 dark:text-platinum-400'"
                         class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-abyss-700 transition">
@@ -450,7 +465,8 @@ onMounted(() => {
                     <span>{{ stats.total_files }} files</span>
                 </div>
                 <div class="flex items-center gap-2 font-semibold">
-                    <span class="text-gray-800 dark:text-platinum-100">Total Size: {{ stats.total_size_formatted }}</span>
+                    <span class="text-gray-800 dark:text-platinum-100">Total Size: {{ stats.total_size_formatted
+                        }}</span>
                 </div>
             </div>
         </div>
@@ -520,7 +536,12 @@ onMounted(() => {
                         </div>
                     </div>
 
-                    <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition">
+                    <div
+                        class="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+                        <button @click.stop="selectForShare(doc)"
+                            class="p-1 bg-white dark:bg-abyss-700 rounded-xl hover:bg-gray-100 dark:hover:bg-abyss-600 shadow-sm">
+                            <Share2 class="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        </button>
                         <button @click.stop="openContextMenu($event, doc)"
                             class="p-1 bg-white dark:bg-abyss-700 rounded-xl hover:bg-gray-100 dark:hover:bg-abyss-600 shadow-sm">
                             <MoreVertical class="h-4 w-4 text-gray-600 dark:text-platinum-400" />
@@ -533,7 +554,8 @@ onMounted(() => {
                 class="bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 overflow-hidden shadow-xl">
                 <table class="w-full">
                     <thead class="bg-gray-50 dark:bg-abyss-700 border-b border-gray-200 dark:border-abyss-600">
-                        <tr class="text-left text-xs font-medium text-gray-700 dark:text-platinum-300 uppercase tracking-wider">
+                        <tr
+                            class="text-left text-xs font-medium text-gray-700 dark:text-platinum-300 uppercase tracking-wider">
                             <th class="px-6 py-3">Name</th>
                             <th class="px-4 py-3">Visibility</th>
                             <th class="px-4 py-3">Size</th>
@@ -562,7 +584,9 @@ onMounted(() => {
                                             'text-blue-600 dark:text-blue-400': doc.visibility === 'org',
                                             'text-gray-600 dark:text-platinum-600': doc.visibility === 'private'
                                         }" />
-                                    <span class="text-xs text-gray-700 dark:text-platinum-300 capitalize">{{ doc.visibility }}</span>
+                                    <span class="text-xs text-gray-700 dark:text-platinum-300 capitalize">{{
+                                        doc.visibility
+                                        }}</span>
                                 </div>
                                 <span v-else class="text-xs text-gray-500 dark:text-platinum-500">—</span>
                             </td>
@@ -577,10 +601,16 @@ onMounted(() => {
                                 </span>
                             </td>
                             <td class="px-4 py-4 text-right">
-                                <button @click.stop="openContextMenu($event, doc)"
-                                    class="p-2 rounded-xl text-gray-600 dark:text-platinum-400 hover:bg-gray-100 dark:hover:bg-abyss-600 opacity-0 group-hover:opacity-100 transition">
-                                    <MoreVertical class="h-5 w-5" />
-                                </button>
+                                <div class="flex items-center justify-end gap-1.5">
+                                    <button @click.stop="selectForShare(doc)"
+                                        class="p-2 rounded-xl text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 opacity-0 group-hover:opacity-100 transition">
+                                        <Share2 class="h-4 w-4" />
+                                    </button>
+                                    <button @click.stop="openContextMenu($event, doc)"
+                                        class="p-2 rounded-xl text-gray-600 dark:text-platinum-400 hover:bg-gray-100 dark:hover:bg-abyss-600 opacity-0 group-hover:opacity-100 transition">
+                                        <MoreVertical class="h-5 w-5" />
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     </tbody>
@@ -596,6 +626,12 @@ onMounted(() => {
                 class="w-full px-4 py-2 text-left text-sm text-gray-800 dark:text-platinum-100 hover:bg-gray-100 dark:hover:bg-abyss-700 flex items-center gap-2">
                 <Download class="h-4 w-4" />
                 Download
+            </button>
+
+            <button @click="selectForShare(contextMenuItem); closeContextMenu()"
+                class="w-full px-4 py-2 text-left text-sm text-gray-800 dark:text-platinum-100 hover:bg-gray-100 dark:hover:bg-abyss-700 flex items-center gap-2">
+                <Share2 class="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                Share Document
             </button>
 
             <button v-if="!contextMenuItem.is_folder && contextMenuItem.visibility !== 'public'"
@@ -623,7 +659,8 @@ onMounted(() => {
 
         <div v-if="showUploadModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
             @click.self="showUploadModal = false">
-            <div class="bg-white dark:bg-abyss-800 rounded-xl p-6 max-w-md w-full shadow-2xl border border-gray-200 dark:border-abyss-700">
+            <div
+                class="bg-white dark:bg-abyss-800 rounded-xl p-6 max-w-md w-full shadow-2xl border border-gray-200 dark:border-abyss-700">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-xl font-semibold text-gray-800 dark:text-platinum-100 flex items-center gap-2">
                         <Upload class="h-5 w-5 text-kaitoke-green-600 dark:text-kaitoke-green-400" /> Upload File
@@ -671,7 +708,8 @@ onMounted(() => {
 
         <div v-if="showCreateFolderModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
             @click.self="showCreateFolderModal = false">
-            <div class="bg-white dark:bg-abyss-800 rounded-xl p-6 max-w-md w-full shadow-2xl border border-gray-200 dark:border-abyss-700">
+            <div
+                class="bg-white dark:bg-abyss-800 rounded-xl p-6 max-w-md w-full shadow-2xl border border-gray-200 dark:border-abyss-700">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-xl font-semibold text-gray-800 dark:text-platinum-100 flex items-center gap-2">
                         <FolderPlus class="h-5 w-5 text-amber-600 dark:text-amber-400" /> Create Folder
@@ -712,5 +750,8 @@ onMounted(() => {
                 </div>
             </div>
         </div>
+
+        <ShareDocumentModal v-if="showShareModal && selectedDocument" :document="selectedDocument"
+            :organization-id="orgId" @close="showShareModal = false" @updated="onShareUpdated" />
     </div>
 </template>
