@@ -111,7 +111,8 @@ async function loadDocuments() {
             organization_id: orgId.value,
             folder_id: currentFolderId.value || undefined
         }
-        const { data } = await axios.get('/api/storage', { params })
+        // FIX: Change endpoint to include organization ID as a route parameter.
+        const { data } = await axios.get(`/api/org/${orgId.value}/storage`, { params })
         documents.value = data.data || []
         breadcrumbs.value = data.breadcrumbs || []
     } catch (e) {
@@ -124,7 +125,8 @@ async function loadDocuments() {
 async function loadStats() {
     if (!orgId.value) return
     try {
-        const { data } = await axios.get('/api/storage/statistics', {
+        // FIX: Change endpoint to include organization ID as a route parameter.
+        const { data } = await axios.get(`/api/org/${orgId.value}/storage/statistics`, {
             params: { organization_id: orgId.value }
         })
         stats.value = data
@@ -138,7 +140,8 @@ async function createFolder() {
     creatingFolder.value = true
     error.value = ''
     try {
-        await axios.post('/api/storage/folders', {
+        // FIX: Change endpoint to include organization ID as a route parameter.
+        await axios.post(`/api/org/${orgId.value}/storage/folders`, {
             organization_id: orgId.value,
             parent_id: currentFolderId.value || null,
             title: newFolderName.value.trim(),
@@ -169,7 +172,8 @@ async function uploadDocument() {
         fd.append('parent_id', currentFolderId.value || '')
         fd.append('visibility', 'org')
 
-        await axios.post('/api/storage/upload', fd, {
+        // FIX: Change endpoint to include organization ID as a route parameter.
+        await axios.post(`/api/org/${orgId.value}/storage/upload`, fd, {
             headers: { 'Content-Type': 'multipart/form-data' },
             onUploadProgress: (e) => {
                 uploadProgress.value = Math.round((e.loaded * 100) / e.total)
@@ -192,7 +196,8 @@ async function uploadDocument() {
 async function deleteDocument(doc) {
     if (!confirm(`Are you sure you want to delete "${doc.title}"?`)) return
     try {
-        await axios.delete(`/api/storage/documents/${doc.id}`)
+        // FIX: Change endpoint to include organization ID as a route parameter.
+        await axios.delete(`/api/org/${orgId.value}/storage/documents/${doc.id}`)
         successMsg.value = `"${doc.title}" deleted successfully`
         setTimeout(() => successMsg.value = '', 3000)
         await Promise.all([loadDocuments(), loadStats()])
@@ -205,8 +210,9 @@ async function downloadDocument(doc) {
     if (doc.is_folder) return
     try {
         const versionId = doc.latest_version?.id || doc.latest_version_id
+        // FIX: Change endpoint to include organization ID as a route parameter.
         const { data, headers } = await axios.get(
-            `/api/storage/documents/${doc.id}/versions/${versionId}/download`,
+            `/api/org/${orgId.value}/storage/documents/${doc.id}/versions/${versionId}/download`,
             { responseType: 'blob' }
         )
 
@@ -229,7 +235,8 @@ async function downloadDocument(doc) {
 
 async function changeVisibility(doc, visibility) {
     try {
-        await axios.patch(`/api/storage/documents/${doc.id}`, { visibility })
+        // FIX: Change endpoint to include organization ID as a route parameter.
+        await axios.patch(`/api/org/${orgId.value}/storage/documents/${doc.id}`, { visibility })
         doc.visibility = visibility
         successMsg.value = `Visibility changed to ${visibility}`
         setTimeout(() => successMsg.value = '', 3000)

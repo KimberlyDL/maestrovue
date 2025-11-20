@@ -1,4 +1,3 @@
-<!-- src/layouts/AdminLayout.vue -->
 <script setup>
 import { watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
@@ -30,10 +29,11 @@ onMounted(() => {
 <template>
     <div class="min-h-screen flex bg-platinum-400 dark:bg-abyss-900">
         <AdminSidebar />
-        <div class="flex-1 flex overflow-y-hidden h-screen py-2">
-            <div class="flex-1 flex flex-col overflow-y-auto rounded-l-3xl bg-platinum-400 dark:bg-abyss-800">
+        <div class="flex-1 flex overflow-y-hidden h-screen">
+            <div
+                class="flex-1 flex flex-col overflow-y-auto bg-platinum-400 dark:bg-abyss-800 dark:border-sun-700">
                 <HeaderComponent />
-                <main class="flex-1 p-6">
+                <main class="flex-1">
                     <router-view />
                 </main>
             </div>

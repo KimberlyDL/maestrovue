@@ -76,19 +76,19 @@ onUnmounted(() => {
 
 <template>
     <header id="main-header"
-        class="sticky top-0 z-40 border-b border-platinum-300/60 bg-white/80 dark:bg-abyss-900/80 backdrop-blur-sm">
+        class="sticky top-0 z-40 border-b border-sun-200 dark:border-abyss-700 bg-white dark:bg-abyss-900">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="h-16 flex items-center justify-between">
                 <div class="flex items-center gap-3">
                     <slot name="brand">
-                        <span class="text-lg font-bold text-abyss-900 dark:text-white">Maestro</span>
+                        <span class="text-lg font-bold text-abyss-900 dark:platinum-50">Maestro</span>
                     </slot>
                 </div>
 
                 <!-- Add organization selector -->
-                <div v-if="userOrganizations.length > 1" class="relative">
+                <div v-if="userOrganizations.length > 0" class="relative">
                     <select :value="orgStore.currentOrgId" @change="switchOrganization($event.target.value)"
-                        class="px-3 py-2 rounded-md bg-abyss-900 border border-abyss-700 text-platinum-50">
+                        class="px-3 py-2 rounded-md bg-platinum-50 dark:bg-abyss-900 border-b border-sun-200 dark:border-abyss-700 text-abyss-900 dark:text-platinum-50">
                         <option disabled :value="null">Select Organization</option>
                         <option v-for="org in userOrganizations" :key="org.id" :value="org.id">
                             {{ org.name }}

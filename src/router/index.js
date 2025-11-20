@@ -34,7 +34,7 @@ const router = createRouter({
 // Helper function to check permissions
 async function checkRoutePermissions(to, auth) {
     const orgId = to.params.id
-    
+
     // Routes that don't need permission checks (like home feed)
     if (!to.meta.requiresPermission && !to.meta.requiresAdmin && !to.meta.requiresMember) {
         return true
@@ -47,7 +47,7 @@ async function checkRoutePermissions(to, auth) {
     }
 
     const { loadPermissions, isAdmin, isMember, hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions(orgId)
-    
+
     try {
         await loadPermissions(orgId)
 
@@ -66,7 +66,7 @@ async function checkRoutePermissions(to, auth) {
         // Check specific permissions
         if (to.meta.requiresPermission) {
             const permission = to.meta.requiresPermission
-            
+
             if (typeof permission === 'string') {
                 if (!hasPermission(permission)) {
                     console.warn('User lacks permission:', permission)
@@ -74,10 +74,10 @@ async function checkRoutePermissions(to, auth) {
                 }
             } else if (Array.isArray(permission)) {
                 const requireAll = to.meta.requiresAllPermissions === true
-                const hasAccess = requireAll 
+                const hasAccess = requireAll
                     ? hasAllPermissions(permission)
                     : hasAnyPermission(permission)
-                
+
                 if (!hasAccess) {
                     console.warn('User lacks required permissions:', permission)
                     return { name: 'org.manage', params: { id: orgId }, query: { error: 'insufficient_permissions' } }
@@ -127,7 +127,7 @@ router.beforeEach(async (to, from, next) => {
     if (isAuthenticated && to.params.id && (to.meta.requiresPermission || to.meta.requiresAdmin || to.meta.requiresMember)) {
         console.log('Checking permissions for route:', to.name)
         const permissionCheck = await checkRoutePermissions(to, auth)
-        
+
         if (permissionCheck !== true) {
             console.log('Permission check failed, redirecting')
             return next(permissionCheck)

@@ -78,7 +78,8 @@ async function loadShareConfig() {
     loading.value = true
     error.value = ''
     try {
-        const { data } = await api.get(`/storage/documents/${props.document.id}/share`)
+        // FIX: Prepend with /org/{organizationId}/ to satisfy backend middleware
+        const { data } = await api.get(`/org/${props.organizationId}/storage/documents/${props.document.id}/share`)
         shareData.value = data
         accessLevel.value = data.access_level || 'org_only'
         expiresAt.value = data.expires_at ? formatDateForInput(data.expires_at) : ''
@@ -109,8 +110,9 @@ async function updateShare() {
             allowed_ips: allowedIps.value.length > 0 ? allowedIps.value : null
         }
 
+        // FIX: Prepend with /org/{organizationId}/ to satisfy backend middleware
         const { data } = await api.patch(
-            `/storage/documents/${props.document.id}/share`,
+            `/org/${props.organizationId}/storage/documents/${props.document.id}/share`,
             payload
         )
 
@@ -138,7 +140,8 @@ async function revokeShare() {
     error.value = ''
 
     try {
-        await api.post(`/storage/documents/${props.document.id}/share/revoke`)
+        // FIX: Prepend with /org/{organizationId}/ to satisfy backend middleware
+        await api.post(`/org/${props.organizationId}/storage/documents/${props.document.id}/share/revoke`)
 
         accessLevel.value = 'org_only'
         password.value = ''
@@ -161,8 +164,9 @@ async function loadStats() {
     if (!shareData.value) return
 
     try {
+        // FIX: Prepend with /org/{organizationId}/ to satisfy backend middleware
         const { data } = await api.get(
-            `/storage/documents/${props.document.id}/share/stats`
+            `/org/${props.organizationId}/storage/documents/${props.document.id}/share/stats`
         )
         stats.value = data
     } catch (e) {
@@ -175,8 +179,9 @@ async function loadLogs() {
 
     logsLoading.value = true
     try {
+        // FIX: Prepend with /org/{organizationId}/ to satisfy backend middleware
         const { data } = await api.get(
-            `/storage/documents/${props.document.id}/share/logs`,
+            `/org/${props.organizationId}/storage/documents/${props.document.id}/share/logs`,
             { params: { limit: 20 } }
         )
         logs.value = data.data || []
@@ -264,7 +269,6 @@ watch(showLogs, (show) => {
         <div
             class="bg-white dark:bg-abyss-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-abyss-700 max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
 
-            <!-- Header -->
             <div class="px-6 py-4 border-b border-gray-200 dark:border-abyss-700 bg-gray-50 dark:bg-abyss-900">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-3">
@@ -274,7 +278,7 @@ watch(showLogs, (show) => {
                         <div>
                             <h3 class="text-xl font-bold text-gray-800 dark:text-platinum-100">Share Document</h3>
                             <p class="text-sm text-gray-600 dark:text-platinum-400 truncate max-w-md">{{ document.title
-                                }}</p>
+                            }}</p>
                         </div>
                     </div>
                     <button @click="emit('close')"
@@ -284,16 +288,13 @@ watch(showLogs, (show) => {
                 </div>
             </div>
 
-            <!-- Content -->
             <div class="flex-1 overflow-y-auto px-6 py-4 space-y-6">
 
-                <!-- Loading State -->
                 <div v-if="loading" class="flex items-center justify-center py-12">
                     <Loader2 class="h-8 w-8 animate-spin text-kaitoke-green-600 dark:text-kaitoke-green-400" />
                 </div>
 
                 <template v-else>
-                    <!-- Messages -->
                     <div v-if="successMsg"
                         class="bg-green-50 dark:bg-green-900/20 border border-green-300 dark:border-green-900/50 rounded-xl p-3 flex items-center gap-2 text-sm text-green-700 dark:text-green-400">
                         <Check class="h-4 w-4" />
@@ -306,7 +307,6 @@ watch(showLogs, (show) => {
                         {{ error }}
                     </div>
 
-                    <!-- Access Level -->
                     <div>
                         <label class="block text-sm font-semibold text-gray-800 dark:text-platinum-100 mb-3">Access
                             Level</label>
@@ -355,7 +355,6 @@ watch(showLogs, (show) => {
                         </div>
                     </div>
 
-                    <!-- Share Link -->
                     <div v-if="isPublicAccess && shareUrl"
                         class="bg-gray-50 dark:bg-abyss-900 rounded-xl p-4 border border-gray-200 dark:border-abyss-700">
                         <label class="block text-sm font-semibold text-gray-800 dark:text-platinum-100 mb-2">Share
@@ -371,14 +370,12 @@ watch(showLogs, (show) => {
                         </div>
                     </div>
 
-                    <!-- Security Settings -->
                     <div v-if="isPublicAccess" class="space-y-4">
                         <h4 class="text-sm font-semibold text-gray-800 dark:text-platinum-100 flex items-center gap-2">
                             <Shield class="h-4 w-4" />
                             Security Settings
                         </h4>
 
-                        <!-- Password Protection -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-platinum-300 mb-2">Password
                                 Protection (Optional)</label>
@@ -395,7 +392,6 @@ watch(showLogs, (show) => {
                                 this password to access</p>
                         </div>
 
-                        <!-- Expiry Date -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-platinum-300 mb-2">Link
                                 Expiry (Optional)</label>
@@ -405,7 +401,6 @@ watch(showLogs, (show) => {
                                 date</p>
                         </div>
 
-                        <!-- Download Limit -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-platinum-300 mb-2">Download
                                 Limit (Optional)</label>
@@ -415,7 +410,6 @@ watch(showLogs, (show) => {
                                 file can be downloaded</p>
                         </div>
 
-                        <!-- IP Whitelist -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-platinum-300 mb-2">IP
                                 Whitelist (Optional)</label>
@@ -442,7 +436,6 @@ watch(showLogs, (show) => {
                         </div>
                     </div>
 
-                    <!-- Statistics -->
                     <div v-if="shareData && canShare" class="border-t border-gray-200 dark:border-abyss-700 pt-4">
                         <button @click="showStats = !showStats"
                             class="flex items-center justify-between w-full text-left">
@@ -504,7 +497,6 @@ watch(showLogs, (show) => {
                         </div>
                     </div>
 
-                    <!-- Access Logs -->
                     <div v-if="shareData && canShare" class="border-t border-gray-200 dark:border-abyss-700 pt-4">
                         <button @click="showLogs = !showLogs; if (!showLogs) loadLogs()"
                             class="flex items-center justify-between w-full text-left">
@@ -549,7 +541,6 @@ watch(showLogs, (show) => {
                 </template>
             </div>
 
-            <!-- Footer -->
             <div
                 class="px-6 py-4 border-t border-gray-200 dark:border-abyss-700 bg-gray-50 dark:bg-abyss-900 flex items-center justify-between gap-3">
                 <button v-if="canShare && shareData" @click="revokeShare" :disabled="saving"

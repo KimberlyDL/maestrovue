@@ -186,12 +186,27 @@ const isAdmin = computed(() => {
     return authStore.user?.role === 'admin' || props.organization?.user_role === 'admin'
 })
 
+// const canViewMembers = computed(() => {
+//     return isAdmin.value // Only admins can view members tab by default
+// })
+
+// const canViewAnnouncements = computed(() => {
+//     return isAdmin.value // Only admins can view announcements tab by default
+// })
+
+const isMember = computed(() => {
+    // If organization data is loaded and user is not just a guest
+    return !!props.organization?.user_role
+})
+
 const canViewMembers = computed(() => {
-    return isAdmin.value // Only admins can view members tab by default
+    // Any member (including admin) can view overview members section
+    return isMember.value || isAdmin.value
 })
 
 const canViewAnnouncements = computed(() => {
-    return isAdmin.value // Only admins can view announcements tab by default
+    // Any member can view announcements in overview
+    return isMember.value || isAdmin.value
 })
 
 const getLogoUrl = (logoPath) => {
@@ -219,7 +234,7 @@ const formatDate = (dateString) => {
 }
 
 const goToMemberProfile = (memberId) => {
-    if (!canViewMembers.value) return
+    if (!isMember.value || !isAdmin.value) return
     router.push({
         name: 'member.profile',
         params: {
@@ -230,7 +245,7 @@ const goToMemberProfile = (memberId) => {
 }
 
 const fetchMembers = async () => {
-    if (!canViewMembers.value) return
+    if (!isMember.value || !isAdmin.value) return
 
     loadingMembers.value = true
     try {

@@ -96,7 +96,15 @@ export const usePermissions = (organizationId) => {
 
             // Load user's permissions
             const { data } = await axios.get(`/api/organizations/${orgId}/permissions/users/${userId.value}`)
-            permissions.value = data.granted_permissions || []
+
+            // 🛑 DEBUGGING: Print the raw response to check the field name
+            console.log("Permission API Response:", data);
+
+            // 🟢 MAPPING FIX: Use granted_permissions, but fall back to 'permissions' if necessary.
+            permissions.value = data.granted_permissions || data.permissions || []
+
+            // 🛑 DEBUGGING: Print the resulting array
+            console.log("Loaded Permissions Array:", permissions.value);
 
             // Cache the result
             setCachedPermissions(orgId, {

@@ -7,6 +7,7 @@ export const usePermissionStore = defineStore('permission', () => {
     const memberPermissions = ref([])
     const loading = ref(false)
 
+    
     // Computed
     const permissionsByCategory = computed(() => allPermissions.value)
 
@@ -46,6 +47,11 @@ export const usePermissionStore = defineStore('permission', () => {
             const { data } = await api.get(
                 `/api/organizations/${organizationId}/permissions/users/${userId}`
             )
+
+            console.log("Permissions fetched for user:", userId, " in org:", organizationId);
+        console.log("Raw Permissions Data:", data);
+        console.log("Granted Permissions Array:", data.granted_permissions);
+        
             return data
         } catch (error) {
             console.error('Failed to fetch user permissions:', error)

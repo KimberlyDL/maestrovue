@@ -87,8 +87,8 @@ const authenticatedRoutes = [
   {
     path: "/org/:id",
     component: () => import("@/layouts/AdminLayout.vue"),
-    meta: { 
-      requiresAuth: true, 
+    meta: {
+      requiresAuth: true,
       requiresMember: true // User must be a member of the organization
     },
     children: [
@@ -97,10 +97,26 @@ const authenticatedRoutes = [
         path: "manage",
         name: "org.manage",
         component: () => import("@views/org/OrgManagement.vue"),
-        meta: { 
+        meta: {
           title: "Manage Organization",
-          requiresPermission: PERMISSIONS.VIEW_ORG_SETTINGS
+          requiresAuth: true,
+          requiresMember: true
         },
+      },
+
+      {
+        path: 'permissions',
+        name: 'org.admin.permissions', // The route name missing from the error
+        component: () => import('@views/org/PermissionManagement.vue'), // Assuming this is the component
+        meta: { title: 'Manage Permissions' },
+        props: true,
+      },
+      {
+        path: 'members/:memberId',
+        name: 'member.profile', // Used in MembersTab.vue
+        component: () => import('@views/org/MemberProfile.vue'),
+        meta: { title: 'Member Profile' },
+        props: true,
       },
 
       // Document Storage
@@ -108,7 +124,7 @@ const authenticatedRoutes = [
         path: "storage",
         name: "org.doc-storage",
         component: () => import("@views/storage/DocStorage.vue"),
-        meta: { 
+        meta: {
           title: "Document Storage",
           requiresPermission: PERMISSIONS.VIEW_STORAGE
         },
@@ -119,7 +135,7 @@ const authenticatedRoutes = [
         path: "documents",
         name: "org.doc-review",
         component: () => import("@views/doc/DocReview.vue"),
-        meta: { 
+        meta: {
           title: "Document Review",
           requiresPermission: PERMISSIONS.VIEW_REVIEWS
         },
@@ -128,7 +144,7 @@ const authenticatedRoutes = [
         path: "documents/submit",
         name: "org.doc-submit",
         component: () => import("@views/doc/DocFileUpload.vue"),
-        meta: { 
+        meta: {
           title: "Upload Document",
           requiresPermission: PERMISSIONS.CREATE_REVIEWS
         },
@@ -137,7 +153,7 @@ const authenticatedRoutes = [
         path: "documents/reviews",
         name: "reviewer.mailbox",
         component: () => import("@views/reviewer/ReviewMailBox.vue"),
-        meta: { 
+        meta: {
           title: "Review Mailbox",
           requiresPermission: PERMISSIONS.COMMENT_ON_REVIEWS
         },
@@ -146,7 +162,7 @@ const authenticatedRoutes = [
         path: "documents/submissions",
         name: "org.doc-submission",
         component: () => import("@views/doc/PublisherReviewbox.vue"),
-        meta: { 
+        meta: {
           title: "Submissions",
           requiresPermission: PERMISSIONS.MANAGE_REVIEWS
         },
@@ -157,7 +173,7 @@ const authenticatedRoutes = [
         path: "permission",
         name: "permission",
         component: () => import("@views/org/PermissionManagement.vue"),
-        meta: { 
+        meta: {
           title: "Permission Management",
           requiresAdmin: true // Only admins can manage permissions
         },
