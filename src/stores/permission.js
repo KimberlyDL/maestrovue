@@ -1,6 +1,7 @@
 // stores/permission.js - Optimized permission caching (uses your existing auth)
 import { defineStore } from 'pinia'
 import axios from '@/utils/api' // Your existing API utils
+import { useAuthStore } from './auth'
 
 // Cache validity: 5 minutes (adjust based on your needs)
 const CACHE_VALIDITY = 5 * 60 * 1000
@@ -22,6 +23,7 @@ export const usePermissionStore = defineStore('permission', {
         // Cache structure: { [orgId]: { permissions, userRole, userId, lastLoaded, loading } }
         cache: {},
         loadingOrgs: new Set(),
+        lastInvalidated: {},
     }),
 
     getters: {
@@ -49,7 +51,7 @@ export const usePermissionStore = defineStore('permission', {
         isAdmin: (state) => (orgId) => {
             const org = state.cache[orgId]
             if (!org) return false
-            return ['admin', 'owner'].includes(org.userRole)
+            return ['admin'].includes(org.userRole)
         },
 
         /**
@@ -69,19 +71,17 @@ export const usePermissionStore = defineStore('permission', {
             const org = state.cache[orgId]
             if (!org) return false
 
-            // Admins have all permissions
             if (['admin', 'owner'].includes(org.userRole)) {
                 return true
             }
 
-            // Check implicit member permissions
             if (IMPLICIT_MEMBER_PERMISSIONS.includes(permission)) {
                 return true
             }
 
-            // Check explicit permissions
             return org.permissions.includes(permission)
         },
+
 
         /**
          * Check if user has any of the given permissions
@@ -92,15 +92,12 @@ export const usePermissionStore = defineStore('permission', {
             const org = state.cache[orgId]
             if (!org) return false
 
-            // Admins have all permissions
             if (['admin', 'owner'].includes(org.userRole)) {
                 return true
             }
 
             return permissionList.some(perm => {
-                // Check implicit
                 if (IMPLICIT_MEMBER_PERMISSIONS.includes(perm)) return true
-                // Check explicit
                 return org.permissions.includes(perm)
             })
         },
@@ -114,15 +111,12 @@ export const usePermissionStore = defineStore('permission', {
             const org = state.cache[orgId]
             if (!org) return false
 
-            // Admins have all permissions
             if (['admin', 'owner'].includes(org.userRole)) {
                 return true
             }
 
             return permissionList.every(perm => {
-                // Check implicit
                 if (IMPLICIT_MEMBER_PERMISSIONS.includes(perm)) return true
-                // Check explicit
                 return org.permissions.includes(perm)
             })
         },
@@ -134,12 +128,10 @@ export const usePermissionStore = defineStore('permission', {
             const org = state.cache[orgId]
             if (!org) return []
 
-            // Admins get all available permissions (you might want to define this list)
             if (['admin', 'owner'].includes(org.userRole)) {
-                return ['*'] // Special marker for "all permissions"
+                return ['*']
             }
 
-            // Combine explicit and implicit
             return [...new Set([...org.permissions, ...IMPLICIT_MEMBER_PERMISSIONS])]
         },
 

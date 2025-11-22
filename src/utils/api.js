@@ -1,5 +1,6 @@
 // src/utils/api.js
 import axios from "axios";
+import { usePermissionStore } from '@/stores/permission';
 
 // ====== Config ======
 const API_ORIGIN =
@@ -82,21 +83,49 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
+// 🔥 NEW: Updated response interceptor with cache invalidation logic
 api.interceptors.response.use(
-    (res) => res,
+    (response) => {
+        // --- Cache Invalidation Logic ---
+        // 🔥 NEW: Check if backend signals cache invalidation
+        if (response.data?.invalidate_cache) {
+            // NOTE: Pinia stores need to be accessed inside a function execution context
+            const permissionStore = usePermissionStore();
+
+            // Extract org ID from URL (e.g., /api/organizations/123/...)
+            // This regex will match the first group of digits after 'organizations/'
+            const orgIdMatch = response.config.url?.match(/organizations\/(\d+)/);
+            const orgId = orgIdMatch?.[1];
+
+            if (orgId) {
+                console.log('🔄 Backend signaled cache invalidation for org', orgId);
+
+                // Clear cache for this org
+                permissionStore.clearOrg(orgId);
+
+                // If a specific user was affected, log it
+                if (response.data.affected_user_id) {
+                    console.log('👤 Affected user:', response.data.affected_user_id);
+                }
+            }
+        }
+
+        return response;
+    },
     async (error) => {
         const { config, response } = error;
         if (!response) return Promise.reject(error);
 
         const status = response.status;
 
+        // The 401 handling logic remains here, ensuring refresh attempts happen first
         // ====== OPTIONAL: automatic refresh on 401 if you implement refresh tokens ======
-        // Backend contract assumed:
-        // POST /api/auth/refresh  { refresh_token }  -> { token, refresh_token? }
+        // ... (Your existing 401 refresh/clear logic)
         if (status === 401 && config && !config[RETRY_FLAG]) {
             const refresh = getRefreshToken();
             if (refresh) {
                 try {
+                    // ... (Your existing refresh token request)
                     const { data } = await axios.post(
                         `${API_ORIGIN}/api/auth/refresh`,
                         { refresh_token: refresh },
