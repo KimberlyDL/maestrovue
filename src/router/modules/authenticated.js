@@ -1,5 +1,5 @@
 // src/router/modules/authenticated.js
-import { PERMISSIONS } from '@/utils/usePermissions'
+import { PERMISSIONS } from '@/utils/permissions'
 
 const authenticatedRoutes = [
   // ========================================
@@ -8,7 +8,7 @@ const authenticatedRoutes = [
   {
     path: "/home",
     component: () => import("@/layouts/HomeLayout.vue"),
-    meta: { requiresAuth: true }, // Only requires authentication, no org permissions
+    meta: { requiresAuth: true },
     children: [
       {
         path: "",
@@ -82,44 +82,94 @@ const authenticatedRoutes = [
   },
 
   // ========================================
-  // Organization Dashboard - Member access required
+  // Organization Dashboard - SEPARATED ROUTES
   // ========================================
   {
     path: "/org/:id",
     component: () => import("@/layouts/AdminLayout.vue"),
     meta: {
       requiresAuth: true,
-      requiresMember: true // User must be a member of the organization
+      requiresMember: true
     },
     children: [
-      // Organization Management
+      // ===== OVERVIEW (All members can access) =====
       {
-        path: "manage",
-        name: "org.manage",
-        component: () => import("@views/org/OrgManagement.vue"),
+        path: "overview",
+        name: "org.overview",
+        component: () => import("@views/org/OverviewTab.vue"),
         meta: {
-          title: "Manage Organization",
-          requiresAuth: true,
+          title: "Organization Overview",
+          requiresMember: true // Only membership required
+        },
+      },
+
+      // ===== ANNOUNCEMENTS (All members can view) =====
+      {
+        path: "announcements",
+        name: "org.announcements",
+        component: () => import("@views/org/AnnouncementsTab.vue"),
+        meta: {
+          title: "Announcements",
+          requiresMember: true // All members can view
+        },
+      },
+
+      // ===== MEMBERS (All members can view) =====
+      {
+        path: "members",
+        name: "org.members",
+        component: () => import("@views/org/MembersTab.vue"),
+        meta: {
+          title: "Members",
+          requiresMember: true // All members can view
+        },
+      },
+
+      // ===== MEMBER PROFILE (All members can view) =====
+      {
+        path: "members/:memberId",
+        name: "member.profile",
+        component: () => import("@views/org/MemberProfile.vue"),
+        meta: {
+          title: "Member Profile",
           requiresMember: true
         },
       },
 
+      // ===== REQUESTS & INVITES (Admin/Permission only) =====
       {
-        path: 'permissions',
-        name: 'org.admin.permissions', // The route name missing from the error
-        component: () => import('@views/org/PermissionManagement.vue'), // Assuming this is the component
-        meta: { title: 'Manage Permissions' },
-        props: true,
-      },
-      {
-        path: 'members/:memberId',
-        name: 'member.profile', // Used in MembersTab.vue
-        component: () => import('@views/org/MemberProfile.vue'),
-        meta: { title: 'Member Profile' },
-        props: true,
+        path: "requests",
+        name: "org.requests",
+        component: () => import("@views/org/RequestsInvitesTab.vue"),
+        meta: {
+          title: "Requests & Invites",
+          requiresPermission: PERMISSIONS.APPROVE_JOIN_REQUESTS
+        },
       },
 
-      // Document Storage
+      // ===== SETTINGS (Admin/Permission only) =====
+      {
+        path: "settings",
+        name: "org.settings",
+        component: () => import("@views/org/SettingsTab.vue"),
+        meta: {
+          title: "Settings",
+          requiresPermission: PERMISSIONS.MANAGE_ORG_SETTINGS
+        },
+      },
+
+      // ===== PERMISSIONS MANAGEMENT (Admins only) =====
+      {
+        path: "permissions",
+        name: "org.permissions",
+        component: () => import("@views/org/PermissionManagement.vue"),
+        meta: {
+          title: "Manage Permissions",
+          requiresPermission: PERMISSIONS.MANAGE_PERMISSIONS
+        },
+      },
+
+      // ===== DOCUMENT STORAGE =====
       {
         path: "storage",
         name: "org.doc-storage",
@@ -130,7 +180,7 @@ const authenticatedRoutes = [
         },
       },
 
-      // Document Review System
+      // ===== DOCUMENT REVIEW SYSTEM =====
       {
         path: "documents",
         name: "org.doc-review",
@@ -165,17 +215,6 @@ const authenticatedRoutes = [
         meta: {
           title: "Submissions",
           requiresPermission: PERMISSIONS.MANAGE_REVIEWS
-        },
-      },
-
-      // Permissions Management
-      {
-        path: "permission",
-        name: "permission",
-        component: () => import("@views/org/PermissionManagement.vue"),
-        meta: {
-          title: "Permission Management",
-          requiresAdmin: true // Only admins can manage permissions
         },
       },
     ],

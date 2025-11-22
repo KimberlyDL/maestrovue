@@ -200,7 +200,7 @@ export const usePermissionStore = defineStore('permission', {
                 if (!['admin', 'owner'].includes(userRole)) {
                     try {
                         const { data: permData } = await axios.get(
-                            `/api/organizations/${orgId}/permissions/users/${userId}`
+                            `/api/org/${orgId}/permissions/users/${userId}`
                         )
 
                         // Handle different response formats

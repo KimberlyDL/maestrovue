@@ -2,47 +2,24 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useOrganizationStore } from '@/stores/organization'
-import { usePermissions } from '@/utils/usePermissions'
+// REMOVED: import { usePermissions } from '@/utils/usePermissions'
+import { usePermissionStore } from '@/stores/permission' // NEW: Import Pinia store
+import { PERMISSIONS } from '@/utils/permissions' // NEW: Import constants from the new location
 import axios from '@/utils/api'
 import SidebarNavItem from './sidebar_nav_item.vue'
 import SidebarNavDropdown from './sidebar_nav_dropdown.vue'
 import SidebarGroupLabel from './sidebar_group_label.vue'
 
 import {
-    House,
-    Megaphone,
-    Calendar,
-    CalendarClock,
-    ClipboardCheck,
-    TicketCheck,
-    MessageSquare,
-    FileStack,
-    FileCheck,
-    FolderKanban,
-    QrCode,
-    ShieldCheck,
-    BarChart3,
-    Building2,
-    PlusCircle,
-    Users,
-    MailPlus,
-    UserCheck,
-    Layers,
-    History,
-    Compass,
-    ClipboardList,
-    Settings,
-    ArrowRightLeft,
-    User,
-    CheckCircle,
-    Upload,
-    Inbox,
-    Eye,
-    Cog
+    House, Megaphone, Calendar, CalendarClock, ClipboardCheck,
+    FileStack, FileCheck, FolderKanban, ShieldCheck, BarChart3,
+    Building2, Users, MailPlus, Settings, ArrowRightLeft,
+    User, CheckCircle, Upload, Inbox, Cog, Eye, Info
 } from 'lucide-vue-next'
 
 const route = useRoute()
 const orgStore = useOrganizationStore()
+const permissionStore = usePermissionStore() // NEW: Initialize permission store
 
 // State
 const organization = ref(null)
@@ -56,10 +33,35 @@ const currentOrgId = computed(() => {
 })
 const hasCurrentOrg = computed(() => !!currentOrgId.value)
 
-// Permissions
-const { userRole, isAdmin, loadPermissions } = usePermissions(currentOrgId.value)
+// Permissions - NEW implementation using the store
 
-// Role badge display
+// Use store getters to create reactive references
+const userRole = computed(() => {
+    const org = permissionStore.getOrg(currentOrgId.value)
+    // The store's cache holds the userRole
+    return org ? org.userRole : null
+})
+
+const isAdmin = computed(() => {
+    return permissionStore.isAdmin(currentOrgId.value)
+})
+
+const isMember = computed(() => {
+    return permissionStore.isMember(currentOrgId.value)
+})
+
+function hasPermission(permissionKey) {
+    return permissionStore.hasPermission(currentOrgId.value, permissionKey)
+}
+
+// REMOVED: Incomplete local PERMISSIONS definition
+/*
+const PERMISSIONS = {
+    ...
+}
+*/
+
+// Role badge display (Uses the new userRole computed property)
 const userRoleBadge = computed(() => {
     const roleMap = {
         admin: '🛡️ Admin',
@@ -70,7 +72,23 @@ const userRoleBadge = computed(() => {
     return roleMap[userRole.value] || '👤 Member'
 })
 
-// Load organization data
+// Computed permissions (Uses the new hasPermission function and isAdmin computed)
+const canManageRequests = computed(() =>
+    hasPermission(PERMISSIONS.APPROVE_JOIN_REQUESTS) ||
+    hasPermission(PERMISSIONS.MANAGE_INVITE_CODES) ||
+    isAdmin.value
+)
+
+const canManageSettings = computed(() =>
+    hasPermission(PERMISSIONS.MANAGE_ORG_SETTINGS) || isAdmin.value
+)
+
+const canManagePermissions = computed(() =>
+    // NOTE: MANAGE_PERMISSIONS is now correctly imported from the centralized PERMISSIONS object
+    hasPermission(PERMISSIONS.MANAGE_PERMISSIONS) || isAdmin.value
+)
+
+// Load organization data (Updated to use store.load)
 async function loadOrganizationData() {
     if (!currentOrgId.value) {
         loading.value = false
@@ -79,15 +97,22 @@ async function loadOrganizationData() {
 
     loading.value = true
     try {
-        const [orgResponse, permissionsLoaded] = await Promise.all([
-            axios.get(`/api/organizations/${currentOrgId.value}`),
-            loadPermissions(currentOrgId.value)
+        // Run both API calls in parallel:
+        // 1. Get organization overview (for name/info display)
+        const orgResponsePromise = axios.get(`/api/organizations/${currentOrgId.value}`)
+
+        // 2. Load/Refresh permissions via the store (this handles authentication checks and caching)
+        const permissionsLoadedPromise = permissionStore.load(currentOrgId.value)
+
+        const [orgResponse] = await Promise.all([
+            orgResponsePromise,
+            permissionsLoadedPromise
         ])
 
         organization.value = orgResponse.data
 
-        // Load pending requests count for admins
-        if (isAdmin.value) {
+        // Load pending requests count for those with permission
+        if (canManageRequests.value) {
             try {
                 const { data } = await axios.get(`/api/org/${currentOrgId.value}/join-requests`, {
                     params: { status: 'pending' }
@@ -123,7 +148,6 @@ onMounted(() => {
 <template>
     <aside class="w-64 shrink-0 bg-platinum-50 dark:bg-abyss-900 h-screen sticky top-0 overflow-y-auto">
         <div class="p-3">
-            <!-- Organization Header -->
             <div class="mb-4 px-3 pt-6">
                 <div v-if="loading && hasCurrentOrg" class="animate-pulse">
                     <div class="h-5 bg-gray-200 dark:bg-abyss-700 rounded w-3/4 mb-2"></div>
@@ -142,16 +166,13 @@ onMounted(() => {
                 </div>
             </div>
 
-            <!-- Skeleton Loading -->
             <template v-if="loading && hasCurrentOrg">
                 <div v-for="i in 8" :key="i" class="animate-pulse mb-2">
                     <div class="h-9 bg-gray-200 dark:bg-abyss-700 rounded-lg"></div>
                 </div>
             </template>
 
-            <!-- Actual Navigation -->
             <template v-else>
-                <!-- ===== HOME ===== -->
                 <SidebarGroupLabel text="Home" />
 
                 <SidebarNavItem :to="{ name: 'home' }" title="Feed">
@@ -160,167 +181,139 @@ onMounted(() => {
                     </template>
                 </SidebarNavItem>
 
-                <SidebarNavItem v-if="hasCurrentOrg" :to="{ name: 'org.manage', params: { id: currentOrgId } }"
-                    title="Organzation Management">
-                    <template #icon>
-                        <Building2 :size="16" :stroke-width="1.25" />
-                    </template>
-                </SidebarNavItem>
+                <template v-if="hasCurrentOrg && isMember">
+                    <SidebarGroupLabel text="Organization" />
 
-                <!-- Overview (All members can view - read-only for non-admins) -->
-                <!-- <SidebarNavItem v-if="hasCurrentOrg"
-                    :to="{ name: 'org.manage', params: { id: currentOrgId }, query: { tab: 'overview' } }"
-                    title="Overview">
-                    <template #icon>
-                        <Building2 :size="16" :stroke-width="1.25" />
-                    </template>
-                    <template v-if="!isAdmin" #badge>
-                        <span class="text-[10px] opacity-70">View</span>
-                    </template>
-                </SidebarNavItem> -->
-
-                <!-- Announcements (All members - full CRUD) -->
-                <!-- <SidebarNavItem v-if="hasCurrentOrg"
-                    :to="{ name: 'org.manage', params: { id: currentOrgId }, query: { tab: 'announcements' } }"
-                    title="Announcements">
-                    <template #icon>
-                        <Megaphone :size="16" :stroke-width="1.25" />
-                    </template>
-                </SidebarNavItem> -->
-
-                <!-- Members (All members can view) -->
-                <!-- <SidebarNavItem v-if="hasCurrentOrg"
-                    :to="{ name: 'org.manage', params: { id: currentOrgId }, query: { tab: 'members' } }"
-                    title="Members">
-                    <template #icon>
-                        <Users :size="16" :stroke-width="1.25" />
-                    </template>
-                    <template v-if="!isAdmin" #badge>
-                        <span class="text-[10px] opacity-70">View</span>
-                    </template>
-                </SidebarNavItem> -->
-
-                <!-- ===== DOCUMENT STORAGE ===== -->
-                <SidebarGroupLabel text="Document Storage" />
-
-                <!-- Storage (All members - full access) -->
-                <SidebarNavItem :to="{ name: 'org.doc-storage', params: { id: currentOrgId } }"
-                    title="Document Vault">
-                    <template #icon>
-                        <FileStack :size="16" :stroke-width="1.25" />
-                    </template>
-                </SidebarNavItem>
-
-                <!-- ===== REPOSITORY ===== -->
-                <SidebarGroupLabel text="Repository" />
-
-                <!-- Document Review Overview -->
-                <SidebarNavItem :to="{ name: 'org.doc-review', params: { id: currentOrgId } }"
-                    title="Document Review" :badge="pendingReviews || undefined">
-                    <template #icon>
-                        <FileCheck :size="16" :stroke-width="1.25" />
-                    </template>
-                </SidebarNavItem>
-
-                <!-- Repository Dropdown -->
-                <SidebarNavDropdown v-if="hasCurrentOrg" label="My Submissions" :matchPaths="[
-                    `/org/${currentOrgId}/documents/submit`,
-                    `/org/${currentOrgId}/documents/reviews`
-                ]">
-                    <template #icon>
-                        <FolderKanban :size="16" :stroke-width="1.25" />
-                    </template>
-
-                    <!-- Submit Document (All members) -->
-                    <SidebarNavItem :to="{ name: 'org.doc-submit', params: { id: currentOrgId } }"
-                        title="Submit Document">
+                    <SidebarNavItem :to="{ name: 'org.overview', params: { id: currentOrgId } }" title="Overview">
                         <template #icon>
-                            <Upload :size="16" :stroke-width="1.25" />
+                            <Info :size="16" :stroke-width="1.25" />
                         </template>
                     </SidebarNavItem>
 
-                    <!-- My Reviews (All members) -->
-                    <SidebarNavItem :to="{ name: 'reviewer.mailbox', params: { id: currentOrgId } }" title="My Reviews"
-                        :badge="pendingReviews || undefined">
+                    <SidebarNavItem :to="{ name: 'org.announcements', params: { id: currentOrgId } }"
+                        title="Announcements">
                         <template #icon>
-                            <Inbox :size="16" :stroke-width="1.25" />
-                        </template>
-                    </SidebarNavItem>
-                </SidebarNavDropdown>
-
-                <!-- All Submissions (Admin only) -->
-                <SidebarNavItem v-if="hasCurrentOrg && isAdmin"
-                    :to="{ name: 'org.doc-submission', params: { id: currentOrgId } }" title="All Submissions">
-                    <template #icon>
-                        <FileStack :size="16" :stroke-width="1.25" />
-                    </template>
-                </SidebarNavItem>
-
-                <!-- ===== DUTY CALENDAR ===== -->
-                <SidebarGroupLabel text="Duty Schedule" />
-
-                <!-- Calendar (All members can view) -->
-                <SidebarNavItem v-if="hasCurrentOrg" :to="{ name: 'duty.calendar', params: { id: currentOrgId } }"
-                    title="Calendar">
-                    <template #icon>
-                        <Calendar :size="16" :stroke-width="1.25" />
-                    </template>
-                    <template v-if="!isAdmin" #badge>
-                        <span class="text-[10px] opacity-70">View</span>
-                    </template>
-                </SidebarNavItem>
-
-                <!-- My Duty Items (All members) -->
-                <SidebarNavDropdown v-if="hasCurrentOrg" label="My Duties" :matchPaths="[
-                    `/org/${currentOrgId}/duty/my/assignments`,
-                    `/org/${currentOrgId}/duty/my/availability`,
-                    `/org/${currentOrgId}/duty/my/my-requests`,
-                    `/org/${currentOrgId}/duty/swaps/available`,
-                    `/org/${currentOrgId}/duty/my/performance`
-                ]">
-                    <template #icon>
-                        <User :size="16" :stroke-width="1.25" />
-                    </template>
-
-                    <SidebarNavItem :to="{ name: 'duty.assignments', params: { id: currentOrgId } }"
-                        title="My Assignments">
-                        <template #icon>
-                            <ClipboardCheck :size="16" :stroke-width="1.25" />
+                            <Megaphone :size="16" :stroke-width="1.25" />
                         </template>
                     </SidebarNavItem>
 
-                    <SidebarNavItem :to="{ name: 'duty.availability', params: { id: currentOrgId } }"
-                        title="My Availability">
+                    <SidebarNavItem :to="{ name: 'org.members', params: { id: currentOrgId } }" title="Members">
                         <template #icon>
-                            <CalendarClock :size="16" :stroke-width="1.25" />
+                            <Users :size="16" :stroke-width="1.25" />
+                        </template>
+                    </SidebarNavItem>
+                </template>
+
+                <template v-if="hasCurrentOrg && hasPermission(PERMISSIONS.VIEW_STORAGE)">
+                    <SidebarGroupLabel text="Document Storage" />
+
+                    <SidebarNavItem :to="{ name: 'org.doc-storage', params: { id: currentOrgId } }"
+                        title="Document Vault">
+                        <template #icon>
+                            <FileStack :size="16" :stroke-width="1.25" />
+                        </template>
+                    </SidebarNavItem>
+                </template>
+
+                <template v-if="hasCurrentOrg && hasPermission(PERMISSIONS.CREATE_REVIEWS)">
+                    <SidebarGroupLabel text="Repository" />
+
+                    <SidebarNavItem :to="{ name: 'org.doc-review', params: { id: currentOrgId } }"
+                        title="Document Review" :badge="pendingReviews || undefined">
+                        <template #icon>
+                            <FileCheck :size="16" :stroke-width="1.25" />
                         </template>
                     </SidebarNavItem>
 
-                    <SidebarNavItem :to="{ name: 'duty.my_swap', params: { id: currentOrgId } }"
-                        title="My Swap Requests">
+                    <SidebarNavDropdown label="My Submissions" :matchPaths="[
+                        `/org/${currentOrgId}/documents/submit`,
+                        `/org/${currentOrgId}/documents/reviews`
+                    ]">
                         <template #icon>
-                            <ArrowRightLeft :size="16" :stroke-width="1.25" />
+                            <FolderKanban :size="16" :stroke-width="1.25" />
+                        </template>
+
+                        <SidebarNavItem :to="{ name: 'org.doc-submit', params: { id: currentOrgId } }"
+                            title="Submit Document">
+                            <template #icon>
+                                <Upload :size="16" :stroke-width="1.25" />
+                            </template>
+                        </SidebarNavItem>
+
+                        <SidebarNavItem :to="{ name: 'reviewer.mailbox', params: { id: currentOrgId } }"
+                            title="My Reviews" :badge="pendingReviews || undefined">
+                            <template #icon>
+                                <Inbox :size="16" :stroke-width="1.25" />
+                            </template>
+                        </SidebarNavItem>
+                    </SidebarNavDropdown>
+
+                    <SidebarNavItem v-if="hasPermission(PERMISSIONS.MANAGE_REVIEWS)"
+                        :to="{ name: 'org.doc-submission', params: { id: currentOrgId } }" title="All Submissions">
+                        <template #icon>
+                            <FileStack :size="16" :stroke-width="1.25" />
+                        </template>
+                    </SidebarNavItem>
+                </template>
+
+                <template v-if="hasCurrentOrg && hasPermission(PERMISSIONS.VIEW_DUTY_SCHEDULES)">
+                    <SidebarGroupLabel text="Duty Schedule" />
+
+                    <SidebarNavItem :to="{ name: 'duty.calendar', params: { id: currentOrgId } }" title="Calendar">
+                        <template #icon>
+                            <Calendar :size="16" :stroke-width="1.25" />
                         </template>
                     </SidebarNavItem>
 
-                    <SidebarNavItem :to="{ name: 'duty.available-swaps', params: { id: currentOrgId } }"
-                        title="Available Swaps">
+                    <SidebarNavDropdown label="My Duties" :matchPaths="[
+                        `/org/${currentOrgId}/duty/my/assignments`,
+                        `/org/${currentOrgId}/duty/my/availability`,
+                        `/org/${currentOrgId}/duty/my/my-requests`,
+                        `/org/${currentOrgId}/duty/swaps/available`,
+                        `/org/${currentOrgId}/duty/my/performance`
+                    ]">
                         <template #icon>
-                            <ArrowRightLeft :size="16" :stroke-width="1.25" />
+                            <User :size="16" :stroke-width="1.25" />
                         </template>
-                    </SidebarNavItem>
 
-                    <SidebarNavItem :to="{ name: 'duty.my_performance', params: { id: currentOrgId } }"
-                        title="My Performance">
-                        <template #icon>
-                            <BarChart3 :size="16" :stroke-width="1.25" />
-                        </template>
-                    </SidebarNavItem>
-                </SidebarNavDropdown>
+                        <SidebarNavItem :to="{ name: 'duty.assignments', params: { id: currentOrgId } }"
+                            title="My Assignments">
+                            <template #icon>
+                                <ClipboardCheck :size="16" :stroke-width="1.25" />
+                            </template>
+                        </SidebarNavItem>
 
-                <!-- ===== ADMIN SECTION ===== -->
-                <template v-if="isAdmin">
-                    <!-- Admin Divider -->
+                        <SidebarNavItem :to="{ name: 'duty.availability', params: { id: currentOrgId } }"
+                            title="My Availability">
+                            <template #icon>
+                                <CalendarClock :size="16" :stroke-width="1.25" />
+                            </template>
+                        </SidebarNavItem>
+
+                        <SidebarNavItem :to="{ name: 'duty.my_swap', params: { id: currentOrgId } }"
+                            title="My Swap Requests">
+                            <template #icon>
+                                <ArrowRightLeft :size="16" :stroke-width="1.25" />
+                            </template>
+                        </SidebarNavItem>
+
+                        <SidebarNavItem :to="{ name: 'duty.available-swaps', params: { id: currentOrgId } }"
+                            title="Available Swaps">
+                            <template #icon>
+                                <ArrowRightLeft :size="16" :stroke-width="1.25" />
+                            </template>
+                        </SidebarNavItem>
+
+                        <SidebarNavItem :to="{ name: 'duty.my_performance', params: { id: currentOrgId } }"
+                            title="My Performance">
+                            <template #icon>
+                                <BarChart3 :size="16" :stroke-width="1.25" />
+                            </template>
+                        </SidebarNavItem>
+                    </SidebarNavDropdown>
+                </template>
+
+                <template v-if="isAdmin || canManageRequests || canManageSettings || canManagePermissions">
                     <div class="px-3 pt-5 pb-2">
                         <div class="flex items-center gap-2">
                             <div class="flex-1 h-px bg-gray-300 dark:bg-abyss-700"></div>
@@ -332,62 +325,60 @@ onMounted(() => {
                         </div>
                     </div>
 
-                    <!-- Duty Admin -->
-                    <SidebarNavDropdown label="Duty Admin" :matchPaths="[
-                        `/org/${currentOrgId}/duty/schedules`,
-                        `/org/${currentOrgId}/duty/swaps`,
-                        `/org/${currentOrgId}/duty/reports`
-                    ]">
-                        <template #icon>
-                            <CheckCircle :size="16" :stroke-width="1.25" />
-                        </template>
-
-                        <SidebarNavItem :to="{ name: 'duty.schedules', params: { id: currentOrgId } }"
-                            title="Manage Schedules">
+                    <template v-if="hasPermission(PERMISSIONS.CREATE_DUTY_SCHEDULES)">
+                        <SidebarNavDropdown label="Duty Admin" :matchPaths="[
+                            `/org/${currentOrgId}/duty/schedules`,
+                            `/org/${currentOrgId}/duty/swaps`,
+                            `/org/${currentOrgId}/duty/reports`
+                        ]">
                             <template #icon>
-                                <CalendarClock :size="16" :stroke-width="1.25" />
+                                <CheckCircle :size="16" :stroke-width="1.25" />
                             </template>
-                        </SidebarNavItem>
 
-                        <SidebarNavItem :to="{ name: 'duty.swaps', params: { id: currentOrgId } }"
-                            title="Approve Swaps">
-                            <template #icon>
-                                <ArrowRightLeft :size="16" :stroke-width="1.25" />
-                            </template>
-                        </SidebarNavItem>
+                            <SidebarNavItem :to="{ name: 'duty.schedules', params: { id: currentOrgId } }"
+                                title="Manage Schedules">
+                                <template #icon>
+                                    <CalendarClock :size="16" :stroke-width="1.25" />
+                                </template>
+                            </SidebarNavItem>
 
-                        <SidebarNavItem :to="{ name: 'duty.reports', params: { id: currentOrgId } }"
-                            title="Org Reports">
-                            <template #icon>
-                                <BarChart3 :size="16" :stroke-width="1.25" />
-                            </template>
-                        </SidebarNavItem>
-                    </SidebarNavDropdown>
+                            <SidebarNavItem v-if="hasPermission(PERMISSIONS.APPROVE_DUTY_SWAPS)"
+                                :to="{ name: 'duty.swaps', params: { id: currentOrgId } }" title="Approve Swaps">
+                                <template #icon>
+                                    <ArrowRightLeft :size="16" :stroke-width="1.25" />
+                                </template>
+                            </SidebarNavItem>
 
-                    <!-- Requests & Invites -->
-                    <!-- <SidebarNavItem
-                        :to="{ name: 'org.manage', params: { id: currentOrgId }, query: { tab: 'requests' } }"
-                        title="Requests & Invites" :badge="pendingRequests || undefined">
+                            <SidebarNavItem v-if="hasPermission(PERMISSIONS.VIEW_STATISTICS)"
+                                :to="{ name: 'duty.reports', params: { id: currentOrgId } }" title="Org Reports">
+                                <template #icon>
+                                    <BarChart3 :size="16" :stroke-width="1.25" />
+                                </template>
+                            </SidebarNavItem>
+                        </SidebarNavDropdown>
+                    </template>
+
+                    <SidebarNavItem v-if="canManageRequests"
+                        :to="{ name: 'org.requests', params: { id: currentOrgId } }" title="Requests & Invites"
+                        :badge="pendingRequests || undefined">
                         <template #icon>
                             <MailPlus :size="16" :stroke-width="1.25" />
                         </template>
-                    </SidebarNavItem> -->
+                    </SidebarNavItem>
 
-                    <!-- Permissions -->
-                    <SidebarNavItem :to="{ name: 'permission', params: { id: currentOrgId } }" title="Permissions">
+                    <SidebarNavItem v-if="canManagePermissions"
+                        :to="{ name: 'org.permissions', params: { id: currentOrgId } }" title="Permissions">
                         <template #icon>
                             <ShieldCheck :size="16" :stroke-width="1.25" />
                         </template>
                     </SidebarNavItem>
 
-                    <!-- Organization Settings -->
-                    <!-- <SidebarNavItem
-                        :to="{ name: 'org.manage', params: { id: currentOrgId }, query: { tab: 'settings' } }"
-                        title="Settings">
+                    <SidebarNavItem v-if="canManageSettings"
+                        :to="{ name: 'org.settings', params: { id: currentOrgId } }" title="Settings">
                         <template #icon>
                             <Cog :size="16" :stroke-width="1.25" />
                         </template>
-                    </SidebarNavItem> -->
+                    </SidebarNavItem>
                 </template>
             </template>
         </div>

@@ -186,14 +186,6 @@ const isAdmin = computed(() => {
     return authStore.user?.role === 'admin' || props.organization?.user_role === 'admin'
 })
 
-// const canViewMembers = computed(() => {
-//     return isAdmin.value // Only admins can view members tab by default
-// })
-
-// const canViewAnnouncements = computed(() => {
-//     return isAdmin.value // Only admins can view announcements tab by default
-// })
-
 const isMember = computed(() => {
     // If organization data is loaded and user is not just a guest
     return !!props.organization?.user_role

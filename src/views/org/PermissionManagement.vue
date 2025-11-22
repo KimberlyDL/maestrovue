@@ -569,7 +569,7 @@ const loadData = async () => {
     try {
         const [membersRes, permsRes] = await Promise.all([
             axios.get(`/api/org/${organizationId.value}/permissions/members`),
-            axios.get(`/api/organizations/${organizationId.value}/permissions`)
+            axios.get(`/api/org/${organizationId.value}/permissions`)
         ])
 
         members.value = membersRes.data || []
@@ -597,7 +597,7 @@ const openPermissionModal = async (member) => {
 
         const { data } = await axios.get(
 
-            `/api/organizations/${organizationId.value}/permissions/users/${member.id}`
+            `/api/org/${organizationId.value}/permissions/users/${member.id}`
 
         )
 
@@ -675,7 +675,7 @@ const savePermissions = async () => {
 
         await axios.post(
 
-            `/api/organizations/${organizationId.value}/permissions/users/${selectedMember.value.id}/bulk`,
+            `/api/org/${organizationId.value}/permissions/users/${selectedMember.value.id}/bulk`,
 
             { permissions: selectedPermissions.value }
 

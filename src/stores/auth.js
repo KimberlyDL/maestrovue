@@ -258,7 +258,6 @@ export const useAuthStore = defineStore("auth", () => {
         // actions
         requestPasswordReset,
         performPasswordReset,
-        testApi,
         signup,
         login,
         exchangeOAuthCode,

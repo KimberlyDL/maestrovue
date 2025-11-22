@@ -143,7 +143,7 @@ function goOrg(id) {
 }
 
 function goManage(id) {
-    router.push({ name: 'org.manage', params: { id } })
+    router.push({ name: 'org.overview', params: { id } })
 }
 
 
