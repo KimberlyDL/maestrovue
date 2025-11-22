@@ -185,14 +185,29 @@ export const useAuthStore = defineStore("auth", () => {
         }
     }
 
+    // async function logout() {
+    //     try {
+    //         await api.post("/api/logout"); // optional: backend can blacklist refresh / mark token used
+    //     } catch { }
+    //     clearAuthToken();
+    //     clearRefreshToken();
+    //     user.value = null;
+    //     return { ok: true };
+    // }
+
     async function logout() {
         try {
-            await api.post("/api/logout"); // optional: backend can blacklist refresh / mark token used
+            await api.post("/api/logout")
         } catch { }
-        clearAuthToken();
-        clearRefreshToken();
-        user.value = null;
-        return { ok: true };
+        clearAuthToken()
+        clearRefreshToken()
+        user.value = null
+
+        // Clear all permission caches on logout
+        const permissionStore = usePermissionStore()
+        permissionStore.clearAll()
+
+        return { ok: true }
     }
 
     async function requestPasswordReset(email) {

@@ -2,7 +2,7 @@
 import { createRouter, createWebHistory } from "vue-router"
 import adminRoutes from '@router/modules/admin'
 import { useAuthStore } from "@stores/auth"
-import { usePermissions, PERMISSIONS } from "@/utils/usePermissions"
+import { usePermissionStore } from "@stores/permission"
 import meRoutes from "@router/modules/me"
 import authenticatedRoutes from "@router/modules/authenticated"
 import dutyRoutes from "@router/modules/duty"
@@ -46,19 +46,20 @@ async function checkRoutePermissions(to, auth) {
         return { name: 'home', query: { error: 'no_org_id' } }
     }
 
-    const { loadPermissions, isAdmin, isMember, hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions(orgId)
+    const permissionStore = usePermissionStore()
 
     try {
-        await loadPermissions(orgId)
+        // Load permissions for this organization (will use cache if valid)
+        await permissionStore.load(orgId)
 
         // Check member requirement first
-        if (to.meta.requiresMember && !isMember.value) {
+        if (to.meta.requiresMember && !permissionStore.isMember(orgId)) {
             console.warn('User is not a member of organization:', orgId)
             return { name: 'home', query: { error: 'not_member' } }
         }
 
         // Check admin requirement
-        if (to.meta.requiresAdmin && !isAdmin.value) {
+        if (to.meta.requiresAdmin && !permissionStore.isAdmin(orgId)) {
             console.warn('User is not an admin of organization:', orgId)
             return { name: 'org.manage', params: { id: orgId }, query: { error: 'admin_required' } }
         }
@@ -68,15 +69,15 @@ async function checkRoutePermissions(to, auth) {
             const permission = to.meta.requiresPermission
 
             if (typeof permission === 'string') {
-                if (!hasPermission(permission)) {
+                if (!permissionStore.hasPermission(orgId, permission)) {
                     console.warn('User lacks permission:', permission)
                     return { name: 'org.manage', params: { id: orgId }, query: { error: 'insufficient_permissions' } }
                 }
             } else if (Array.isArray(permission)) {
                 const requireAll = to.meta.requiresAllPermissions === true
                 const hasAccess = requireAll
-                    ? hasAllPermissions(permission)
-                    : hasAnyPermission(permission)
+                    ? permissionStore.hasAllPermissions(orgId, permission)
+                    : permissionStore.hasAnyPermission(orgId, permission)
 
                 if (!hasAccess) {
                     console.warn('User lacks required permissions:', permission)
@@ -88,6 +89,8 @@ async function checkRoutePermissions(to, auth) {
         return true
     } catch (error) {
         console.error('Permission check failed:', error)
+        // Clear cache on error
+        permissionStore.clearOrg(orgId)
         return { name: 'home', query: { error: 'permission_check_failed' } }
     }
 }
@@ -141,6 +144,12 @@ router.beforeEach(async (to, from, next) => {
 // Optional: Add error handling for navigation errors
 router.onError((error) => {
     console.error('Router error:', error)
+})
+
+// Optional: Clear permission cache on logout
+router.afterEach((to, from) => {
+    // If navigating away from an org, you might want to do cleanup
+    // But generally the cache will handle itself with the 5-minute validity
 })
 
 export default router
