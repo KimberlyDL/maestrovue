@@ -1,156 +1,330 @@
+// stores/permission.js - Optimized permission caching (uses your existing auth)
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
-import api from '@/utils/api'
+import axios from '@/utils/api' // Your existing API utils
 
-export const usePermissionStore = defineStore('permission', () => {
-    const allPermissions = ref({})
-    const memberPermissions = ref([])
-    const loading = ref(false)
+// Cache validity: 5 minutes (adjust based on your needs)
+const CACHE_VALIDITY = 5 * 60 * 1000
 
-    
-    // Computed
-    const permissionsByCategory = computed(() => allPermissions.value)
+// Implicit permissions that ALL members have (no DB check needed)
+const IMPLICIT_MEMBER_PERMISSIONS = [
+    'view_own_assignments',
+    'manage_own_availability',
+    'request_duty_swap',
+    'check_in_duty',
+    'check_out_duty',
+    'respond_to_assignment',
+    'leave_organization',
+    'view_own_statistics',
+]
 
-    // Fetch all available permissions
-    async function fetchAllPermissions() {
-        loading.value = true
-        try {
-            const { data } = await api.get('/api/permissions')
-            allPermissions.value = data
-            return data
-        } catch (error) {
-            console.error('Failed to fetch permissions:', error)
-            throw error
-        } finally {
-            loading.value = false
-        }
-    }
+export const usePermissionStore = defineStore('permission', {
+    state: () => ({
+        // Cache structure: { [orgId]: { permissions, userRole, userId, lastLoaded, loading } }
+        cache: {},
+        loadingOrgs: new Set(),
+    }),
 
-    // Fetch members with their permissions
-    async function fetchMemberPermissions(organizationId) {
-        loading.value = true
-        try {
-            const { data } = await api.get(`/api/organizations/${organizationId}/permissions/members`)
-            memberPermissions.value = data
-            return data
-        } catch (error) {
-            console.error('Failed to fetch member permissions:', error)
-            throw error
-        } finally {
-            loading.value = false
-        }
-    }
+    getters: {
+        /**
+         * Get cached org data
+         */
+        getOrg: (state) => (orgId) => {
+            return state.cache[orgId] || null
+        },
 
-    // Get specific user's permissions
-    async function getUserPermissions(organizationId, userId) {
-        try {
-            const { data } = await api.get(
-                `/api/organizations/${organizationId}/permissions/users/${userId}`
-            )
+        /**
+         * Check if org cache is valid
+         */
+        isCacheValid: (state) => (orgId) => {
+            const cached = state.cache[orgId]
+            if (!cached) return false
 
-            console.log("Permissions fetched for user:", userId, " in org:", organizationId);
-        console.log("Raw Permissions Data:", data);
-        console.log("Granted Permissions Array:", data.granted_permissions);
-        
-            return data
-        } catch (error) {
-            console.error('Failed to fetch user permissions:', error)
-            throw error
-        }
-    }
+            const age = Date.now() - cached.lastLoaded
+            return age < CACHE_VALIDITY
+        },
 
-    // Grant single permission
-    async function grantPermission(organizationId, userId, permission) {
-        try {
-            const { data } = await api.post(
-                `/api/organizations/${organizationId}/permissions/users/${userId}/grant`,
-                { permission }
-            )
-            // Update local state
-            const member = memberPermissions.value.find(m => m.id === userId)
-            if (member) {
-                member.permissions = data.permissions
-                member.permissions_count = data.permissions.length
+        /**
+         * Check if user is admin in org
+         */
+        isAdmin: (state) => (orgId) => {
+            const org = state.cache[orgId]
+            if (!org) return false
+            return ['admin', 'owner'].includes(org.userRole)
+        },
+
+        /**
+         * Check if user is member of org
+         */
+        isMember: (state) => (orgId) => {
+            const org = state.cache[orgId]
+            return !!org?.userRole
+        },
+
+        /**
+         * Check if user has specific permission
+         */
+        hasPermission: (state) => (orgId, permission) => {
+            if (!permission) return true
+
+            const org = state.cache[orgId]
+            if (!org) return false
+
+            // Admins have all permissions
+            if (['admin', 'owner'].includes(org.userRole)) {
+                return true
             }
-            return data
-        } catch (error) {
-            console.error('Failed to grant permission:', error)
-            throw error
-        }
-    }
 
-    // Revoke single permission
-    async function revokePermission(organizationId, userId, permission) {
-        try {
-            const { data } = await api.post(
-                `/api/organizations/${organizationId}/permissions/users/${userId}/revoke`,
-                { permission }
-            )
-            // Update local state
-            const member = memberPermissions.value.find(m => m.id === userId)
-            if (member) {
-                member.permissions = data.permissions
-                member.permissions_count = data.permissions.length
+            // Check implicit member permissions
+            if (IMPLICIT_MEMBER_PERMISSIONS.includes(permission)) {
+                return true
             }
-            return data
-        } catch (error) {
-            console.error('Failed to revoke permission:', error)
-            throw error
-        }
-    }
 
-    // Bulk update permissions
-    async function bulkUpdatePermissions(organizationId, userId, permissions) {
-        try {
-            const { data } = await api.post(
-                `/api/organizations/${organizationId}/permissions/users/${userId}/bulk`,
-                { permissions }
-            )
-            // Update local state
-            const member = memberPermissions.value.find(m => m.id === userId)
-            if (member) {
-                member.permissions = data.permissions
-                member.permissions_count = data.permissions.length
+            // Check explicit permissions
+            return org.permissions.includes(permission)
+        },
+
+        /**
+         * Check if user has any of the given permissions
+         */
+        hasAnyPermission: (state) => (orgId, permissionList) => {
+            if (!permissionList || permissionList.length === 0) return true
+
+            const org = state.cache[orgId]
+            if (!org) return false
+
+            // Admins have all permissions
+            if (['admin', 'owner'].includes(org.userRole)) {
+                return true
             }
-            return data
-        } catch (error) {
-            console.error('Failed to update permissions:', error)
-            throw error
-        }
-    }
 
-    // Check if user has permission (client-side check)
-    function hasPermission(userId, permission) {
-        const member = memberPermissions.value.find(m => m.id === userId)
-        if (!member) return false
-        if (member.is_admin) return true
-        return member.permissions.includes(permission)
-    }
+            return permissionList.some(perm => {
+                // Check implicit
+                if (IMPLICIT_MEMBER_PERMISSIONS.includes(perm)) return true
+                // Check explicit
+                return org.permissions.includes(perm)
+            })
+        },
 
-    // Reset store
-    function $reset() {
-        allPermissions.value = {}
-        memberPermissions.value = []
-        loading.value = false
-    }
+        /**
+         * Check if user has all of the given permissions
+         */
+        hasAllPermissions: (state) => (orgId, permissionList) => {
+            if (!permissionList || permissionList.length === 0) return true
 
-    return {
-        // State
-        allPermissions,
-        memberPermissions,
-        loading,
+            const org = state.cache[orgId]
+            if (!org) return false
 
-        // Computed
-        permissionsByCategory,
+            // Admins have all permissions
+            if (['admin', 'owner'].includes(org.userRole)) {
+                return true
+            }
 
-        // Actions
-        fetchAllPermissions,
-        fetchMemberPermissions,
-        getUserPermissions,
-        grantPermission,
-        revokePermission,
-        bulkUpdatePermissions,
-        hasPermission,
-        $reset,
-    }
+            return permissionList.every(perm => {
+                // Check implicit
+                if (IMPLICIT_MEMBER_PERMISSIONS.includes(perm)) return true
+                // Check explicit
+                return org.permissions.includes(perm)
+            })
+        },
+
+        /**
+         * Get all permissions for org (including implicit)
+         */
+        getAllPermissions: (state) => (orgId) => {
+            const org = state.cache[orgId]
+            if (!org) return []
+
+            // Admins get all available permissions (you might want to define this list)
+            if (['admin', 'owner'].includes(org.userRole)) {
+                return ['*'] // Special marker for "all permissions"
+            }
+
+            // Combine explicit and implicit
+            return [...new Set([...org.permissions, ...IMPLICIT_MEMBER_PERMISSIONS])]
+        },
+
+        /**
+         * Check if currently loading an org
+         */
+        isLoading: (state) => (orgId) => {
+            return state.loadingOrgs.has(orgId)
+        },
+    },
+
+    actions: {
+        /**
+         * Load permissions for an organization
+         * @param {string|number} orgId - Organization ID
+         * @param {boolean} force - Force reload even if cached
+         */
+        async load(orgId, force = false) {
+            if (!orgId) {
+                console.warn('Permission load: orgId is required')
+                return false
+            }
+
+            // Normalize orgId to string
+            orgId = String(orgId)
+
+            // Check if already loading
+            if (this.loadingOrgs.has(orgId)) {
+                console.debug('Permission load: already loading', orgId)
+                // Wait for existing load to complete
+                return this.waitForLoad(orgId)
+            }
+
+            // Check cache validity
+            if (!force && this.isCacheValid(orgId)) {
+                console.debug('Permission cache hit for org', orgId)
+                return true
+            }
+
+            // Mark as loading
+            this.loadingOrgs.add(orgId)
+
+            try {
+                console.debug('Permission load: fetching for org', orgId)
+
+                // Get user's role in organization
+                const { data: orgData } = await axios.get(`/api/organizations/${orgId}`)
+                const userRole = orgData.user_role
+                const userId = orgData.user_id
+
+                if (!userRole) {
+                    // User is not a member
+                    console.warn('User is not a member of organization', orgId)
+                    this.cache[orgId] = {
+                        permissions: [],
+                        userRole: null,
+                        userId: null,
+                        lastLoaded: Date.now(),
+                    }
+                    return false
+                }
+
+                let permissions = []
+
+                // Only fetch permissions if not admin (admins have all permissions)
+                if (!['admin', 'owner'].includes(userRole)) {
+                    try {
+                        const { data: permData } = await axios.get(
+                            `/api/organizations/${orgId}/permissions/users/${userId}`
+                        )
+
+                        // Handle different response formats
+                        permissions = permData.granted_permissions || permData.permissions || []
+
+                        console.debug('Loaded permissions for org', orgId, permissions)
+                    } catch (permError) {
+                        console.error('Failed to load user permissions:', permError)
+                        // Continue with empty permissions rather than failing completely
+                        permissions = []
+                    }
+                }
+
+                // Update cache
+                this.cache[orgId] = {
+                    permissions,
+                    userRole,
+                    userId,
+                    lastLoaded: Date.now(),
+                }
+
+                return true
+            } catch (error) {
+                console.error('Failed to load permissions for org', orgId, error)
+
+                // Clear cache entry on error
+                delete this.cache[orgId]
+
+                throw error
+            } finally {
+                // Remove from loading set
+                this.loadingOrgs.delete(orgId)
+            }
+        },
+
+        /**
+         * Wait for an org that's currently loading
+         */
+        async waitForLoad(orgId, timeout = 5000) {
+            const startTime = Date.now()
+
+            while (this.loadingOrgs.has(orgId)) {
+                if (Date.now() - startTime > timeout) {
+                    throw new Error('Timeout waiting for permission load')
+                }
+                await new Promise(resolve => setTimeout(resolve, 100))
+            }
+
+            return !!this.cache[orgId]
+        },
+
+        /**
+         * Refresh permissions for an organization
+         */
+        async refresh(orgId) {
+            return this.load(orgId, true)
+        },
+
+        /**
+         * Clear cache for specific organization
+         */
+        clearOrg(orgId) {
+            if (orgId) {
+                orgId = String(orgId)
+                delete this.cache[orgId]
+                console.debug('Cleared permission cache for org', orgId)
+            }
+        },
+
+        /**
+         * Clear all cached permissions
+         */
+        clearAll() {
+            this.cache = {}
+            this.loadingOrgs.clear()
+            console.debug('Cleared all permission caches')
+        },
+
+        /**
+         * Prefetch permissions for multiple orgs
+         */
+        async prefetchOrgs(orgIds) {
+            const promises = orgIds.map(id => this.load(id))
+            await Promise.allSettled(promises)
+        },
+
+        /**
+         * Check cache age for debugging
+         */
+        getCacheAge(orgId) {
+            const cached = this.cache[orgId]
+            if (!cached) return null
+
+            const ageMs = Date.now() - cached.lastLoaded
+            return {
+                ageMs,
+                ageSeconds: Math.floor(ageMs / 1000),
+                isValid: ageMs < CACHE_VALIDITY,
+            }
+        },
+
+        /**
+         * Get cache stats for debugging
+         */
+        getCacheStats() {
+            const orgs = Object.keys(this.cache)
+            return {
+                totalOrgs: orgs.length,
+                loadingOrgs: Array.from(this.loadingOrgs),
+                cacheDetails: orgs.map(orgId => ({
+                    orgId,
+                    age: this.getCacheAge(orgId),
+                    role: this.cache[orgId].userRole,
+                    permissionCount: this.cache[orgId].permissions.length,
+                })),
+            }
+        },
+    },
 })

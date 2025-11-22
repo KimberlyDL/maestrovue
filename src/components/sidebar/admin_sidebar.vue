@@ -160,8 +160,15 @@ onMounted(() => {
                     </template>
                 </SidebarNavItem>
 
+                <SidebarNavItem v-if="hasCurrentOrg" :to="{ name: 'org.manage', params: { id: currentOrgId } }"
+                    title="Organzation Management">
+                    <template #icon>
+                        <Building2 :size="16" :stroke-width="1.25" />
+                    </template>
+                </SidebarNavItem>
+
                 <!-- Overview (All members can view - read-only for non-admins) -->
-                <SidebarNavItem v-if="hasCurrentOrg"
+                <!-- <SidebarNavItem v-if="hasCurrentOrg"
                     :to="{ name: 'org.manage', params: { id: currentOrgId }, query: { tab: 'overview' } }"
                     title="Overview">
                     <template #icon>
@@ -170,19 +177,19 @@ onMounted(() => {
                     <template v-if="!isAdmin" #badge>
                         <span class="text-[10px] opacity-70">View</span>
                     </template>
-                </SidebarNavItem>
+                </SidebarNavItem> -->
 
                 <!-- Announcements (All members - full CRUD) -->
-                <SidebarNavItem v-if="hasCurrentOrg"
+                <!-- <SidebarNavItem v-if="hasCurrentOrg"
                     :to="{ name: 'org.manage', params: { id: currentOrgId }, query: { tab: 'announcements' } }"
                     title="Announcements">
                     <template #icon>
                         <Megaphone :size="16" :stroke-width="1.25" />
                     </template>
-                </SidebarNavItem>
+                </SidebarNavItem> -->
 
                 <!-- Members (All members can view) -->
-                <SidebarNavItem v-if="hasCurrentOrg"
+                <!-- <SidebarNavItem v-if="hasCurrentOrg"
                     :to="{ name: 'org.manage', params: { id: currentOrgId }, query: { tab: 'members' } }"
                     title="Members">
                     <template #icon>
@@ -191,13 +198,13 @@ onMounted(() => {
                     <template v-if="!isAdmin" #badge>
                         <span class="text-[10px] opacity-70">View</span>
                     </template>
-                </SidebarNavItem>
+                </SidebarNavItem> -->
 
                 <!-- ===== DOCUMENT STORAGE ===== -->
                 <SidebarGroupLabel text="Document Storage" />
 
                 <!-- Storage (All members - full access) -->
-                <SidebarNavItem v-if="hasCurrentOrg" :to="{ name: 'org.doc-storage', params: { id: currentOrgId } }"
+                <SidebarNavItem :to="{ name: 'org.doc-storage', params: { id: currentOrgId } }"
                     title="Document Vault">
                     <template #icon>
                         <FileStack :size="16" :stroke-width="1.25" />
@@ -208,7 +215,7 @@ onMounted(() => {
                 <SidebarGroupLabel text="Repository" />
 
                 <!-- Document Review Overview -->
-                <SidebarNavItem v-if="hasCurrentOrg" :to="{ name: 'org.doc-review', params: { id: currentOrgId } }"
+                <SidebarNavItem :to="{ name: 'org.doc-review', params: { id: currentOrgId } }"
                     title="Document Review" :badge="pendingReviews || undefined">
                     <template #icon>
                         <FileCheck :size="16" :stroke-width="1.25" />
@@ -358,13 +365,13 @@ onMounted(() => {
                     </SidebarNavDropdown>
 
                     <!-- Requests & Invites -->
-                    <SidebarNavItem
+                    <!-- <SidebarNavItem
                         :to="{ name: 'org.manage', params: { id: currentOrgId }, query: { tab: 'requests' } }"
                         title="Requests & Invites" :badge="pendingRequests || undefined">
                         <template #icon>
                             <MailPlus :size="16" :stroke-width="1.25" />
                         </template>
-                    </SidebarNavItem>
+                    </SidebarNavItem> -->
 
                     <!-- Permissions -->
                     <SidebarNavItem :to="{ name: 'permission', params: { id: currentOrgId } }" title="Permissions">
@@ -374,13 +381,13 @@ onMounted(() => {
                     </SidebarNavItem>
 
                     <!-- Organization Settings -->
-                    <SidebarNavItem
+                    <!-- <SidebarNavItem
                         :to="{ name: 'org.manage', params: { id: currentOrgId }, query: { tab: 'settings' } }"
                         title="Settings">
                         <template #icon>
                             <Cog :size="16" :stroke-width="1.25" />
                         </template>
-                    </SidebarNavItem>
+                    </SidebarNavItem> -->
                 </template>
             </template>
         </div>

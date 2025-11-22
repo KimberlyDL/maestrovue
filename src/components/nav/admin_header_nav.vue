@@ -81,10 +81,25 @@ onUnmounted(() => {
             <div class="h-16 flex items-center justify-between">
                 <div class="flex items-center gap-3">
                     <slot name="brand">
-                        <span class="text-lg font-bold text-abyss-900 dark:platinum-50">Maestro</span>
+                        <router-link :to="{ name: 'home' }"
+                            class="flex items-center gap-2 text-xl font-extrabold tracking-wider text-kaitoke-green-600 dark:text-kaitoke-green-400">
+                            <svg class="w-6 h-6" viewBox="0 0 500 416" xmlns="http://www.w3.org/2000/svg">
+                                <g>
+                                    <path
+                                        d="m0,0h159.81l91.66,295.44L340.78,0h159.22l-115.77,415.98h-14.08l35.15-337.61-99.19,337.61h-111.63L91.8,74.3l38.63,341.68h-12.33L0,0Z"
+                                        fill="currentColor" />
+                                    <polygon
+                                        points="470.72 328.42 456.73 328.42 431.91 415.98 459.89 415.98 470.72 328.42"
+                                        fill="currentColor" />
+                                    <polygon points="27.73 328.42 41.72 328.42 66.54 415.98 38.56 415.98 27.73 328.42"
+                                        fill="currentColor" />
+                                    <polygon points="250 102.76 218.21 0 281.79 0 250 102.76" fill="currentColor" />
+                                </g>
+                            </svg>
+                            Maestro
+                        </router-link>
                     </slot>
                 </div>
-
                 <!-- Add organization selector -->
                 <div v-if="userOrganizations.length > 0" class="relative">
                     <select :value="orgStore.currentOrgId" @change="switchOrganization($event.target.value)"
@@ -126,7 +141,7 @@ onUnmounted(() => {
                                         <p class="text-sm font-medium text-abyss-900 dark:text-platinum-50">{{ n.text }}
                                         </p>
                                         <p class="text-xs text-kaitoke-green-700 dark:text-platinum-300 mt-1">{{ n.time
-                                        }}</p>
+                                            }}</p>
                                     </a>
                                     <div v-if="!notifications.length"
                                         class="px-5 py-3 text-sm text-abyss-500 dark:text-platinum-300">No new
@@ -168,9 +183,9 @@ onUnmounted(() => {
                                         <p class="text-sm font-bold text-abyss-900 dark:text-platinum-50">{{ m.sender }}
                                         </p>
                                         <p class="text-sm text-abyss-700 dark:text-platinum-200 truncate">{{ m.subject
-                                        }}</p>
+                                            }}</p>
                                         <p class="text-xs text-kaitoke-green-700 dark:text-platinum-300 mt-1">{{ m.time
-                                        }}</p>
+                                            }}</p>
                                     </a>
                                     <div v-if="!messages.length"
                                         class="px-5 py-3 text-sm text-abyss-500 dark:text-platinum-300">No

@@ -13,6 +13,8 @@ import MembersTab from '@/components/org/MembersTab.vue'
 import RequestsInvitesTab from '@/components/org/RequestsInvitesTab.vue'
 import SettingsTab from '@/components/org/SettingsTab.vue'
 
+const R2_WORKER_ENDPOINT = import.meta.env.VITE_R2_WORKER_ENDPOINT
+
 const route = useRoute()
 const router = useRouter()
 
@@ -127,10 +129,24 @@ async function loadOrganization() {
     }
 }
 
+// function getLogoUrl(path) {
+//     if (!path) return ''
+//     if (path.startsWith('http')) return path
+//     return path // S3/R2 URLs are already full URLs from backend
+// }
+
 function getLogoUrl(path) {
     if (!path) return ''
     if (path.startsWith('http')) return path
-    return path // S3/R2 URLs are already full URLs from backend
+
+    if (R2_WORKER_ENDPOINT) {
+        const cleanEndpoint = R2_WORKER_ENDPOINT.replace(/\/$/, '')
+        const cleanPath = path.startsWith('/') ? path.substring(1) : path
+        return `${cleanEndpoint}/${cleanPath}`
+    }
+
+    // Fallback if R2_WORKER_ENDPOINT is not set
+    return path 
 }
 
 function setActiveTab(key) {

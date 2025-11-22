@@ -93,9 +93,11 @@
 
                     <!-- Image if exists -->
                     <div v-if="announcement.image_path" class="mb-4 rounded-lg overflow-hidden">
-                        <img :src="announcement.image_path" :alt="announcement.title"
+                        <img :src="getImagePath(announcement.image_path)" :alt="announcement.title"
                             class="w-full h-auto object-cover" />
                     </div>
+
+
 
                     <!-- Tags -->
                     <div v-if="announcement.tags && announcement.tags.length" class="flex flex-wrap gap-2 mb-4">
@@ -137,6 +139,7 @@ import { formatDistanceToNow } from '@/utils/dateUtils'
 
 const authStore = useAuthStore()
 const announcementStore = useAnnouncementStore()
+const R2_WORKER_ENDPOINT = import.meta.env.VITE_R2_WORKER_ENDPOINT
 
 const loading = ref(false)
 const error = ref(null)
@@ -151,6 +154,21 @@ const formatDate = (dateString) => {
     } catch {
         return new Date(dateString).toLocaleDateString()
     }
+}
+
+// [ADD THIS FUNCTION] Image URL calculation logic from AnnouncementsTab.vue
+const getImagePath = (path) => {
+    if (!path) return ''
+    if (path.startsWith('http')) return path
+
+    if (R2_WORKER_ENDPOINT) {
+        const cleanEndpoint = R2_WORKER_ENDPOINT.replace(/\/$/, '')
+        const cleanPath = path.startsWith('/') ? path.substring(1) : path
+        return `${cleanEndpoint}/${cleanPath}`
+    }
+
+    // Fallback: This might be necessary if some images are in local storage/public
+    return path
 }
 
 const fetchAnnouncements = async () => {

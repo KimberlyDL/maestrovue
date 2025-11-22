@@ -233,18 +233,8 @@ async function submit(status = 'sent') {
         fd.append('file', form.file)
         if (form.version_note) fd.append('note', form.version_note)
 
-        const { data: createdDoc } = await axios.post('/api/documents', fd, {
+        const { data: createdDoc } = await axios.post(`/api/org/${form.organization_id}/documents`, fd, {
             headers: { 'Content-Type': 'multipart/form-data' }
-        })
-
-        // 2) open review thread (cross-org recipients)
-        const recipients = form.reviewerIds.map(uid => {
-            const u = reviewers.value.find(r => r.id === uid)
-            return {
-                user_id: uid,
-                org_id: u?.org_id ?? null,                     // reviewer’s own org (external)
-                due_at: toDateTime(form.perDue[uid]) || null,
-            }
         })
 
         const payload = {
@@ -253,18 +243,19 @@ async function submit(status = 'sent') {
             publisher_org_id: form.organization_id,
             subject: form.subject,
             body: form.body || null,
-            status,                                          // 'draft' or 'sent'
-            due_at: toDateTime(form.due_at) || null,         // global due (optional)
+            status,
+            due_at: toDateTime(form.due_at) || null,
             recipients,
-            // optional: target org ids if your backend records it (safe to omit if unused)
-            // target_org_ids: form.selectedTargetOrgIds,
+            // ...
         }
 
-        // const { data: thread } = await axios.post('/api/reviews', payload)
+        // FIX: Uncomment, define 'thread', and use the organization-scoped API path for review creation
+        const { data: thread } = await axios.post(`/api/org/${form.organization_id}/reviews`, payload)
 
 
-        //NEED AYUSIN
+        // This line now works because 'thread' is defined
         router.push({ name: 'org.doc-submission', params: { id: thread.id } })
+
     } catch (err) {
         const msg = err?.response?.data?.message
             || err?.response?.data?.error

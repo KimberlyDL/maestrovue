@@ -3,6 +3,8 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from '@/utils/api'
 import ShareDocumentModal from '@/components/doc/doc_share_modal.vue'
+import { useDocumentDownload } from '@/utils/useDocumentDownload'
+
 import {
     Folder, File, FolderPlus, Upload, Search, Grid, List,
     MoreVertical, Download, Trash2, Copy, Move, Eye, EyeOff,
@@ -48,6 +50,13 @@ const creatingFolder = ref(false)
 // const shareDocument = ref(null)
 const showShareModal = ref(false)
 const selectedDocument = ref(null)
+
+const {
+    downloadWithProgress,
+    downloading: isDownloading,
+    downloadProgress,
+    error: downloadError
+} = useDocumentDownload()
 
 const stats = ref({
     total_files: 0,
@@ -206,32 +215,29 @@ async function deleteDocument(doc) {
     }
 }
 
+
+
+
 async function downloadDocument(doc) {
     if (doc.is_folder) return
-    try {
-        const versionId = doc.latest_version?.id || doc.latest_version_id
-        // FIX: Change endpoint to include organization ID as a route parameter.
-        const { data, headers } = await axios.get(
-            `/api/org/${orgId.value}/storage/documents/${doc.id}/versions/${versionId}/download`,
-            { responseType: 'blob' }
-        )
 
-        const contentDisposition = headers['content-disposition'] || ''
-        const match = contentDisposition.match(/filename\*?=(?:UTF-8'')?["']?([^"';]+)["']?/)
-        const filename = match?.[1] ? decodeURIComponent(match[1]) : `${doc.title}.bin`
+    const versionId = doc.latest_version?.id || doc.latest_version_id
 
-        const url = window.URL.createObjectURL(new Blob([data]))
-        const a = document.createElement('a')
-        a.href = url
-        a.download = filename
-        document.body.appendChild(a)
-        a.click()
-        a.remove()
-        window.URL.revokeObjectURL(url)
-    } catch (e) {
-        error.value = 'Download failed'
+    if (!versionId) {
+        error.value = 'No file version found'
+        return
+    }
+
+    const result = await downloadWithProgress(doc.id, versionId, orgId.value)
+
+    if (result.success) {
+        successMsg.value = `Downloaded: ${result.filename}`
+        setTimeout(() => successMsg.value = '', 3000)
+    } else {
+        error.value = result.error
     }
 }
+
 
 async function changeVisibility(doc, visibility) {
     try {

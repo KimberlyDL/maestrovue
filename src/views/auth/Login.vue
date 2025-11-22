@@ -79,7 +79,7 @@
                     <path fill="#1976D2"
                         d="M43.6 20.5H42V20H24v8h11.3c-1.2 3.5-4.7 6-8.3 6-3.7 0-6.8-2.4-8-5.7l-6.6 5C14.4 38.9 19 42 24 42c8 0 14.7-5.4 16.6-13.5.4-1.2.6-2.5.6-4s-.2-2.8-.6-4z" />
                 </svg>
-                Login with Google
+                Continue with Google
             </button>
 
             <p class="mt-6 text-center text-sm text-woodsmoke-500 dark:text-platinum-300/80">

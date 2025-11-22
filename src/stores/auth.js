@@ -51,17 +51,6 @@ export const useAuthStore = defineStore("auth", () => {
     }
 
     // ===== actions =====
-    async function testApi() {
-        isLoading.value = true;
-        try {
-            const { data } = await api.get("/api/test-api");
-            success.value = !!data?.success;
-            return data;
-        } finally {
-            isLoading.value = false;
-        }
-    }
-
     async function signup({ email, password, password_confirmation = null }) {
         isLoading.value = true;
         try {
