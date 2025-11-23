@@ -19,6 +19,7 @@ const auth = useAuthStore()
 =========================== */
 const loading = ref(true)
 const errorMsg = ref('')
+const successMsg = ref('')
 const threads = ref([])
 const selectedId = ref(null)
 const me = ref(null)
@@ -175,6 +176,10 @@ async function postComment() {
         const { data: saved } = await axios.post(`/api/reviews/${thread.value.id}/comments`, payload)
         comments.value.push(saved)
         replyText.value = ''
+        successMsg.value = 'Message sent successfully'
+        setTimeout(() => successMsg.value = '', 3000)
+    } catch (e) {
+        errorMsg.value = e?.response?.data?.message || 'Failed to post comment'
     } finally {
         postBusy.value = false
     }
@@ -186,6 +191,10 @@ async function markViewed() {
     try {
         await axios.patch(`/api/reviews/${thread.value.id}/recipients/${myRecipient.value.id}/view`)
         myRecipient.value.viewed_at = new Date().toISOString()
+        successMsg.value = 'Marked as viewed'
+        setTimeout(() => successMsg.value = '', 2000)
+    } catch (e) {
+        errorMsg.value = e?.response?.data?.message || 'Failed to mark as viewed'
     } finally {
         actionBusy.view = false
     }
@@ -197,6 +206,10 @@ async function approve() {
     try {
         await axios.post(`/api/reviews/${thread.value.id}/recipients/${myRecipient.value.id}/approve`)
         myRecipient.value.status = 'approved'
+        successMsg.value = 'Review approved'
+        setTimeout(() => successMsg.value = '', 3000)
+    } catch (e) {
+        errorMsg.value = e?.response?.data?.message || 'Failed to approve'
     } finally {
         actionBusy.approve = false
     }
@@ -208,54 +221,44 @@ async function decline() {
     try {
         await axios.post(`/api/reviews/${thread.value.id}/recipients/${myRecipient.value.id}/decline`)
         myRecipient.value.status = 'declined'
+        successMsg.value = 'Review declined'
+        setTimeout(() => successMsg.value = '', 3000)
+    } catch (e) {
+        errorMsg.value = e?.response?.data?.message || 'Failed to decline'
     } finally {
         actionBusy.decline = false
     }
 }
 
-/* ===========================
-   Download handlers
-=========================== */
+/**
+ * NEW: Use temporary URL method for downloads
+ */
 async function downloadVersion(docId, versionId, versionNumber) {
     try {
-        const url = `/api/documents/${docId}/versions/${versionId}/download`
+        errorMsg.value = ''
 
-        // Create a temporary anchor element and trigger download
-        const response = await axios.get(url, {
-            responseType: 'blob',
-        })
+        // Step 1: Get temporary download URL
+        const { data } = await axios.get(`/api/documents/${docId}/versions/${versionId}/download-url`)
 
-        // Get the actual content type from response
-        const contentType = response.headers['content-type'] || 'application/octet-stream'
-
-        // Create blob with correct content type
-        const blob = new Blob([response.data], { type: contentType })
-        const blobUrl = window.URL.createObjectURL(blob)
-
-        // Get filename from Content-Disposition header or generate one
-        const contentDisposition = response.headers['content-disposition']
-        let filename = `document_v${versionNumber}`
-
-        if (contentDisposition) {
-            const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
-            if (filenameMatch && filenameMatch[1]) {
-                filename = filenameMatch[1].replace(/['"]/g, '')
-            }
+        if (!data.url) {
+            throw new Error('Download URL not available')
         }
 
-        // Create link and trigger download
+        // Step 2: Download using the temporary URL
         const link = document.createElement('a')
-        link.href = blobUrl
-        link.download = filename
+        link.href = data.url
+        link.download = data.filename || `document_v${versionNumber}`
+        link.target = '_blank'
         document.body.appendChild(link)
         link.click()
-
-        // Cleanup
         document.body.removeChild(link)
-        window.URL.revokeObjectURL(blobUrl)
+
+        successMsg.value = 'Download started'
+        setTimeout(() => successMsg.value = '', 2000)
     } catch (error) {
         console.error('Download failed:', error)
-        alert('Failed to download file. Please try again.')
+        errorMsg.value = error?.response?.data?.message || 'Failed to download file'
+        setTimeout(() => errorMsg.value = '', 5000)
     }
 }
 
@@ -344,7 +347,7 @@ function initials(name) {
             <div class="flex-1 overflow-y-auto">
                 <div v-if="loading"
                     class="p-4 text-sm text-platinum-800 dark:text-platinum-300 flex items-center gap-2">
-                    <Loader2 class="h-4 w-4 animate-spin" /> Loading…
+                    <Loader2 class="h-4 w-4 animate-spin" /> Loadingâ€¦
                 </div>
                 <div v-else-if="filteredThreads.length === 0" class="p-4 text-sm text-platinum-700">No assigned reviews.
                 </div>
@@ -356,12 +359,12 @@ function initials(name) {
                         @click="openThread(t.id)">
                         <div class="flex items-center justify-between gap-2">
                             <div class="font-medium text-sm truncate text-abyss-900 dark:text-platinum-100">{{ t.subject
-                            }}</div>
+                                }}</div>
                             <div class="text-[11px] text-platinum-700">{{ shortDateTime(t.updated_at) }}</div>
                         </div>
                         <div class="text-xs text-platinum-700 truncate flex items-center gap-2 mt-0.5">
                             <Building2 class="h-3.5 w-3.5" />
-                            <span>{{ t.publisher?.name || '—' }}</span>
+                            <span>{{ t.publisher?.name || 'â€”' }}</span>
                         </div>
                         <div class="text-[11px] mt-1 flex items-center gap-2">
                             <span
@@ -396,12 +399,23 @@ function initials(name) {
                 <div class="min-w-0">
                     <div class="text-xs text-platinum-700">Subject</div>
                     <h2 class="text-lg font-semibold truncate text-abyss-900 dark:text-platinum-100">{{ thread?.subject
-                        || '—' }}</h2>
+                        || 'â€”' }}</h2>
                 </div>
                 <div class="text-xs text-platinum-700">
                     <span>Status: </span>
-                    <span class="font-medium text-abyss-900 dark:text-platinum-100">{{ thread?.status || '—' }}</span>
+                    <span class="font-medium text-abyss-900 dark:text-platinum-100">{{ thread?.status || 'â€”' }}</span>
                 </div>
+            </div>
+
+            <!-- Success/Error Messages -->
+            <div v-if="successMsg"
+                class="mx-4 mt-3 rounded-lg border border-green-300 dark:border-green-900/50 bg-green-50 dark:bg-green-900/20 p-2">
+                <div class="text-sm text-green-700 dark:text-green-400">{{ successMsg }}</div>
+            </div>
+
+            <div v-if="errorMsg"
+                class="mx-4 mt-3 rounded-lg border border-red-300 dark:border-red-900/50 bg-red-50 dark:bg-red-900/20 p-2">
+                <div class="text-sm text-red-700 dark:text-red-400">{{ errorMsg }}</div>
             </div>
 
             <div class="flex-1 overflow-y-auto px-4 py-3">
@@ -417,7 +431,7 @@ function initials(name) {
                         </div>
 
                         <div v-if="commentsLoading" class="text-sm text-platinum-700 flex items-center gap-2">
-                            <Loader2 class="h-4 w-4 animate-spin" /> Loading messages…
+                            <Loader2 class="h-4 w-4 animate-spin" /> Loading messagesâ€¦
                         </div>
 
                         <div v-else-if="visibleComments.length === 0" class="text-sm text-platinum-700">No messages yet.
@@ -436,7 +450,7 @@ function initials(name) {
                                             <span v-if="c.author_user_id === me?.id"
                                                 class="text-kaitoke-green-600">(You)</span>
                                         </span>
-                                        <span>•</span>
+                                        <span>â€¢</span>
                                         <span>{{ shortDateTime(c.created_at) }}</span>
                                     </div>
                                     <div class="text-sm whitespace-pre-wrap text-abyss-900 dark:text-platinum-100 mt-1">
@@ -452,7 +466,7 @@ function initials(name) {
                         <label class="block text-xs text-platinum-700 mb-1">Write a reply</label>
                         <textarea v-model="replyText" rows="3"
                             class="w-full border border-platinum-300 dark:border-abyss-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-kaitoke-green-500 bg-white dark:bg-abyss-800 text-abyss-900 dark:text-platinum-100"
-                            placeholder="Type your message…" />
+                            placeholder="Type your messageâ€¦" />
                         <div class="flex justify-end mt-2">
                             <button :disabled="!replyText.trim() || postBusy"
                                 class="inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg text-white"
@@ -487,7 +501,7 @@ function initials(name) {
                         <div v-if="rightPanelMeta?.versionNumber">Current: v{{ rightPanelMeta.versionNumber }}</div>
                     </div>
                     <button @click="downloadCurrentVersion"
-                        class="mt-2 inline-flex items-center gap-2 text-xs text-kaitoke-green-700 hover:text-kaitoke-green-800 cursor-pointer">
+                        class="mt-2 w-full inline-flex items-center justify-center gap-2 text-xs px-3 py-2 rounded-lg border border-kaitoke-green-600 text-kaitoke-green-700 hover:bg-kaitoke-green-50 dark:hover:bg-kaitoke-green-900/20 font-medium transition">
                         <Download class="h-3.5 w-3.5" /> Download current version
                     </button>
                 </div>
@@ -532,7 +546,7 @@ function initials(name) {
                         <span class="font-medium">Publisher</span>
                     </div>
                     <div class="text-xs text-platinum-700 mt-1">
-                        {{ rightPanelMeta?.publisherOrgName || '—' }}
+                        {{ rightPanelMeta?.publisherOrgName || 'â€”' }}
                     </div>
                 </div>
 
@@ -545,7 +559,7 @@ function initials(name) {
                     <ul class="mt-1 space-y-1">
                         <li v-for="r in rightPanelMeta?.recipients || []" :key="r.id"
                             class="text-xs text-abyss-900 dark:text-platinum-100">
-                            • {{ r.reviewer?.name || r.user?.name || 'Unknown' }}
+                            â€¢ {{ r.reviewer?.name || r.user?.name || 'Unknown' }}
                         </li>
                     </ul>
                 </div>
@@ -557,7 +571,7 @@ function initials(name) {
                         <span class="font-medium">Deadline</span>
                     </div>
                     <div class="text-xs text-platinum-700 mt-1">
-                        {{ rightPanelMeta?.effectiveDue ? shortDateTime(rightPanelMeta.effectiveDue) : '—' }}
+                        {{ rightPanelMeta?.effectiveDue ? shortDateTime(rightPanelMeta.effectiveDue) : 'â€”' }}
                     </div>
                 </div>
 
@@ -601,8 +615,6 @@ function initials(name) {
                         Refresh
                     </button>
                 </div>
-
-                <div v-if="errorMsg" class="text-sm text-rose-600">{{ errorMsg }}</div>
             </div>
         </aside>
     </div>

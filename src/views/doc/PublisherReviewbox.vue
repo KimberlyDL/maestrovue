@@ -21,7 +21,6 @@ const successMsg = ref('')
 const threads = ref([])
 const selectedId = ref(null)
 const me = ref(null)
-const myOrganizations = ref([])
 
 const pageMeta = ref(null)
 const pageLinks = ref(null)
@@ -45,24 +44,6 @@ const uploadFile = ref(null)
 const uploadNote = ref('')
 const uploadBusy = ref(false)
 
-const showEditDetails = ref(false)
-const editingSubject = ref('')
-const editingBody = ref('')
-const editingGlobalDueAt = ref('')
-const editBusy = ref(false)
-
-const showManageReviewers = ref(false)
-const organizationMembers = ref([])
-const selectedMemberId = ref(null)
-const newReviewerDueAt = ref('')
-const addReviewerBusy = ref(false)
-const removeReviewerBusy = ref({})
-const applyGlobalDueBusy = ref(false)
-
-const showActivityLog = ref(false)
-const activityLog = ref([])
-const activityLoading = ref(false)
-
 const actionBusy = reactive({
     close: false,
     reopen: false,
@@ -71,8 +52,10 @@ const actionBusy = reactive({
 })
 
 /* ===========================
-   Helpers / Mapping
+   Computed
 =========================== */
+const orgId = computed(() => route.params.id)
+
 const rightPanelMeta = computed(() => {
     if (!thread.value) return null
     const d = thread.value.document || {}
@@ -124,27 +107,9 @@ const filteredThreads = computed(() => {
     })
 })
 
-const availableMembers = computed(() => {
-    if (!organizationMembers.value.length) return []
-    const existingIds = new Set((thread.value?.recipients || []).map(r => r.reviewer_user_id))
-    return organizationMembers.value.filter(m => !existingIds.has(m.id))
-})
-
 /* ===========================
-   Date Formatting
+   Utilities
 =========================== */
-function formatDateTimeLocal(dateString) {
-    if (!dateString) return ''
-    const d = new Date(dateString)
-    if (isNaN(d)) return ''
-    const year = d.getFullYear()
-    const month = String(d.getMonth() + 1).padStart(2, '0')
-    const day = String(d.getDate()).padStart(2, '0')
-    const hours = String(d.getHours()).padStart(2, '0')
-    const minutes = String(d.getMinutes()).padStart(2, '0')
-    return `${year}-${month}-${day}T${hours}:${minutes}`
-}
-
 function shortDateTime(s) {
     if (!s) return ''
     const d = new Date(s)
@@ -167,21 +132,31 @@ async function fetchMe() {
     me.value = data
 }
 
-async function fetchMyOrganizations() {
-    const { data } = await axios.get('/api/organizations')
-    myOrganizations.value = Array.isArray(data) ? data : (data?.data || [])
-}
-
 async function fetchPublishedThreads(page = 1) {
-    const params = { filter: 'as_publisher', page }
+    if (!orgId.value) {
+        errorMsg.value = 'Organization ID missing'
+        return
+    }
+
+    const params = {
+        filter: 'as_publisher',
+        page
+    }
+
     if (statusFilter.value !== 'all') params.status = statusFilter.value
     if (q.value.trim()) params.q = q.value.trim()
 
-    const { data } = await axios.get('/api/reviews', { params })
-    const rows = Array.isArray(data) ? data : (data?.data || [])
-    threads.value = normalizeThreads(rows)
-    pageMeta.value = data?.meta || null
-    pageLinks.value = data?.links || null
+    try {
+        // âœ… Use organization-scoped endpoint
+        const { data } = await axios.get(`/api/org/${orgId.value}/reviews`, { params })
+        const rows = Array.isArray(data) ? data : (data?.data || [])
+        threads.value = normalizeThreads(rows)
+        pageMeta.value = data?.meta || null
+        pageLinks.value = data?.links || null
+    } catch (e) {
+        console.error('Failed to fetch reviews:', e)
+        errorMsg.value = e?.response?.data?.message || 'Failed to load reviews'
+    }
 }
 
 function normalizeThreads(list) {
@@ -200,41 +175,31 @@ function normalizeThreads(list) {
 }
 
 async function openThread(id) {
-    const { data } = await axios.get(`/api/reviews/${id}`)
-    thread.value = data
-    selectedId.value = id
-    recipientComments.value = {}
-    selectedRecipientId.value = null
+    if (!orgId.value) return
 
-    editingSubject.value = data.subject || ''
-    editingBody.value = data.body || ''
-    editingGlobalDueAt.value = formatDateTimeLocal(data.due_at)
-
-    const orgId = data.publisher_org_id || data.publisher?.id
-    if (orgId) {
-        await fetchOrganizationMembers(orgId)
-    }
-
-    await Promise.all([
-        fetchVersionHistory(data.document_id || data.document?.id),
-        fetchActivityLog(id)
-    ])
-}
-
-async function fetchOrganizationMembers(orgId) {
     try {
-        const { data } = await axios.get(`/api/organizations/${orgId}/members`)
-        organizationMembers.value = Array.isArray(data) ? data : (data?.data || [])
+        const { data } = await axios.get(`/api/org/${orgId.value}/reviews/${id}`)
+        thread.value = data
+        selectedId.value = id
+        recipientComments.value = {}
+        selectedRecipientId.value = null
+
+        await Promise.all([
+            fetchVersionHistory(data.document_id || data.document?.id),
+            fetchActivityLog(id)
+        ])
     } catch (e) {
-        console.error('Failed to fetch org members:', e)
-        organizationMembers.value = []
+        console.error('Failed to open thread:', e)
+        errorMsg.value = e?.response?.data?.message || 'Failed to load review'
     }
 }
 
 async function fetchRecipientComments(reviewId, recipientId) {
+    if (!orgId.value) return
+
     commentsLoading.value = true
     try {
-        const { data } = await axios.get(`/api/reviews/${reviewId}/recipients/${recipientId}/comments`)
+        const { data } = await axios.get(`/api/org/${orgId.value}/reviews/${reviewId}/recipients/${recipientId}/comments`)
         const comments = Array.isArray(data) ? data : (data?.data || [])
         recipientComments.value[recipientId] = comments
     } catch (e) {
@@ -260,26 +225,25 @@ async function fetchVersionHistory(documentId) {
 }
 
 async function fetchActivityLog(reviewId) {
-    activityLoading.value = true
+    if (!orgId.value) return
+
     try {
-        const { data } = await axios.get(`/api/reviews/${reviewId}/actions`)
-        activityLog.value = Array.isArray(data) ? data : []
+        const { data } = await axios.get(`/api/org/${orgId.value}/reviews/${reviewId}/actions`)
+        // Activity log loaded successfully
     } catch (e) {
         console.error('Failed to load activity log:', e)
-        activityLog.value = []
-    } finally {
-        activityLoading.value = false
     }
 }
 
 async function postCommentToRecipient() {
-    if (!replyText.value.trim() || !thread.value || !selectedRecipientId.value) return
+    if (!replyText.value.trim() || !thread.value || !selectedRecipientId.value || !orgId.value) return
+
     postBusy.value = true
     errorMsg.value = ''
     try {
         const payload = { body: replyText.value.trim() }
         const { data: saved } = await axios.post(
-            `/api/reviews/${thread.value.id}/recipients/${selectedRecipientId.value}/comments`,
+            `/api/org/${orgId.value}/reviews/${thread.value.id}/recipients/${selectedRecipientId.value}/comments`,
             payload
         )
         if (!recipientComments.value[selectedRecipientId.value]) {
@@ -297,7 +261,7 @@ async function postCommentToRecipient() {
 }
 
 async function uploadNewVersion() {
-    if (!uploadFile.value || !thread.value) {
+    if (!uploadFile.value || !thread.value || !orgId.value) {
         errorMsg.value = 'Please select a file'
         return
     }
@@ -310,7 +274,7 @@ async function uploadNewVersion() {
         if (uploadNote.value) fd.append('note', uploadNote.value)
 
         const { data } = await axios.post(
-            `/api/reviews/${thread.value.id}/versions`,
+            `/api/org/${orgId.value}/reviews/${thread.value.id}/versions`,
             fd,
             { headers: { 'Content-Type': 'multipart/form-data' } }
         )
@@ -319,7 +283,6 @@ async function uploadNewVersion() {
         thread.value.document_version_id = data.version_id || data.id
 
         await fetchVersionHistory(thread.value.document_id || thread.value.document?.id)
-        await fetchActivityLog(thread.value.id)
 
         showUploadVersion.value = false
         uploadFile.value = null
@@ -333,146 +296,45 @@ async function uploadNewVersion() {
     }
 }
 
-async function saveEditDetails() {
-    if (!thread.value) return
-    editBusy.value = true
-    errorMsg.value = ''
-    try {
-        const payload = {
-            subject: editingSubject.value || undefined,
-            body: editingBody.value || undefined,
-            due_at: editingGlobalDueAt.value || undefined,
-        }
-
-        const { data } = await axios.patch(`/api/reviews/${thread.value.id}`, payload)
-        thread.value = data
-        editingSubject.value = data.subject || ''
-        editingBody.value = data.body || ''
-        editingGlobalDueAt.value = formatDateTimeLocal(data.due_at)
-        showEditDetails.value = false
-        successMsg.value = 'Details updated successfully'
-        setTimeout(() => successMsg.value = '', 3000)
-        await fetchActivityLog(thread.value.id)
-    } catch (err) {
-        errorMsg.value = err?.response?.data?.message || 'Failed to update details'
-    } finally {
-        editBusy.value = false
-    }
-}
-
-async function addReviewer() {
-    if (!selectedMemberId.value || !thread.value) return
-    addReviewerBusy.value = true
-    errorMsg.value = ''
-    try {
-        const payload = {
-            add_recipients: [{
-                user_id: selectedMemberId.value,
-                org_id: rightPanelMeta.value.publisherOrgId,
-                due_at: newReviewerDueAt.value || null
-            }]
-        }
-        const { data } = await axios.patch(`/api/reviews/${thread.value.id}`, payload)
-        thread.value.recipients = data.recipients || data
-        selectedMemberId.value = null
-        newReviewerDueAt.value = ''
-        successMsg.value = 'Reviewer added successfully'
-        setTimeout(() => successMsg.value = '', 3000)
-        await fetchActivityLog(thread.value.id)
-    } catch (err) {
-        errorMsg.value = err?.response?.data?.message || 'Failed to add reviewer'
-    } finally {
-        addReviewerBusy.value = false
-    }
-}
-
-async function removeReviewer(recipientId) {
-    if (!thread.value || !confirm('Are you sure you want to remove this reviewer?')) return
-    removeReviewerBusy.value[recipientId] = true
-    errorMsg.value = ''
-    try {
-        await axios.delete(`/api/reviews/${thread.value.id}/recipients/${recipientId}`)
-        thread.value.recipients = thread.value.recipients.filter(r => r.id !== recipientId)
-        successMsg.value = 'Reviewer removed successfully'
-        setTimeout(() => successMsg.value = '', 3000)
-        await fetchActivityLog(thread.value.id)
-    } catch (err) {
-        errorMsg.value = err?.response?.data?.message || 'Failed to remove reviewer'
-    } finally {
-        removeReviewerBusy.value[recipientId] = false
-    }
-}
-
-async function updateRecipientDueDate(recipientId, newDueAt) {
-    if (!thread.value) return
-    try {
-        const { data } = await axios.patch(`/api/reviews/${thread.value.id}/recipients/${recipientId}`, {
-            due_at: newDueAt || null
-        })
-        const recipient = thread.value.recipients.find(r => r.id === recipientId)
-        if (recipient) {
-            recipient.due_at = data.due_at || newDueAt || null
-        }
-        await fetchActivityLog(thread.value.id)
-    } catch (err) {
-        errorMsg.value = err?.response?.data?.message || 'Failed to update due date'
-    }
-}
-
-async function applyGlobalDueDate() {
-    if (!thread.value || !editingGlobalDueAt.value) return
-    applyGlobalDueBusy.value = true
-    errorMsg.value = ''
-    try {
-        const promises = thread.value.recipients.map(r =>
-            updateRecipientDueDate(r.id, editingGlobalDueAt.value)
-        )
-        await Promise.all(promises)
-        successMsg.value = 'Due date applied to all reviewers'
-        setTimeout(() => successMsg.value = '', 3000)
-    } catch (err) {
-        errorMsg.value = 'Failed to apply due date to all reviewers'
-    } finally {
-        applyGlobalDueBusy.value = false
-    }
-}
-
 async function closeReview() {
-    if (!thread.value) return
+    if (!thread.value || !orgId.value) return
     actionBusy.close = true
     try {
-        await axios.post(`/api/reviews/${thread.value.id}/close`)
+        await axios.post(`/api/org/${orgId.value}/reviews/${thread.value.id}/close`)
         thread.value.status = 'closed'
-        await fetchActivityLog(thread.value.id)
         successMsg.value = 'Review closed'
         setTimeout(() => successMsg.value = '', 3000)
+    } catch (e) {
+        errorMsg.value = e?.response?.data?.message || 'Failed to close review'
     } finally {
         actionBusy.close = false
     }
 }
 
 async function reopenReview() {
-    if (!thread.value) return
+    if (!thread.value || !orgId.value) return
     actionBusy.reopen = true
     try {
-        await axios.post(`/api/reviews/${thread.value.id}/reopen`)
+        await axios.post(`/api/org/${orgId.value}/reviews/${thread.value.id}/reopen`)
         thread.value.status = 'in_review'
-        await fetchActivityLog(thread.value.id)
         successMsg.value = 'Review reopened'
         setTimeout(() => successMsg.value = '', 3000)
+    } catch (e) {
+        errorMsg.value = e?.response?.data?.message || 'Failed to reopen review'
     } finally {
         actionBusy.reopen = false
     }
 }
 
 async function remindRecipient(recipientId) {
-    if (!thread.value) return
+    if (!thread.value || !orgId.value) return
     actionBusy.remind[recipientId] = true
     try {
-        await axios.post(`/api/reviews/${thread.value.id}/recipients/${recipientId}/remind`)
-        await fetchActivityLog(thread.value.id)
+        await axios.post(`/api/org/${orgId.value}/reviews/${thread.value.id}/recipients/${recipientId}/remind`)
         successMsg.value = 'Reminder sent successfully'
         setTimeout(() => successMsg.value = '', 3000)
+    } catch (e) {
+        errorMsg.value = e?.response?.data?.message || 'Failed to send reminder'
     } finally {
         actionBusy.remind[recipientId] = false
     }
@@ -480,34 +342,27 @@ async function remindRecipient(recipientId) {
 
 async function downloadVersion(docId, versionId, versionNumber) {
     try {
-        const url = `/api/documents/${docId}/versions/${versionId}/download`
-        const response = await axios.get(url, { responseType: 'blob' })
+        errorMsg.value = ''
+        const { data } = await axios.get(`/api/documents/${docId}/versions/${versionId}/download-url`)
 
-        const contentType = response.headers['content-type'] || 'application/octet-stream'
-        const blob = new Blob([response.data], { type: contentType })
-        const blobUrl = window.URL.createObjectURL(blob)
-
-        const contentDisposition = response.headers['content-disposition']
-        let filename = `document_v${versionNumber}`
-
-        if (contentDisposition) {
-            const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
-            if (filenameMatch && filenameMatch[1]) {
-                filename = filenameMatch[1].replace(/['"]/g, '')
-            }
+        if (!data.url) {
+            throw new Error('Download URL not available')
         }
 
         const link = document.createElement('a')
-        link.href = blobUrl
-        link.download = filename
+        link.href = data.url
+        link.download = data.filename || `document_v${versionNumber}`
+        link.target = '_blank'
         document.body.appendChild(link)
         link.click()
-
         document.body.removeChild(link)
-        window.URL.revokeObjectURL(blobUrl)
+
+        successMsg.value = 'Download started'
+        setTimeout(() => successMsg.value = '', 2000)
     } catch (error) {
         console.error('Download failed:', error)
-        errorMsg.value = 'Failed to download file'
+        errorMsg.value = error?.response?.data?.message || 'Failed to download file'
+        setTimeout(() => errorMsg.value = '', 5000)
     }
 }
 
@@ -521,74 +376,29 @@ function onFileSelect(e) {
     uploadFile.value = e.target.files?.[0] || null
 }
 
-function getActionIcon(action) {
-    const icons = {
-        sent: Send,
-        viewed: Eye,
-        approved: CheckCircle,
-        declined: XCircle,
-        closed: X,
-        reopened: RefreshCw,
-        reminded: Mail,
-        version_uploaded: Upload,
-        reviewer_removed: Trash2,
-        due_date_updated: Calendar,
-        reassigned: UserPlus
-    }
-    return icons[action] || ArrowRight
-}
-
-function getActionColor(action) {
-    const colors = {
-        sent: 'text-blue-600',
-        viewed: 'text-purple-600',
-        approved: 'text-green-600',
-        declined: 'text-red-600',
-        closed: 'text-gray-600',
-        reopened: 'text-blue-600',
-        reminded: 'text-orange-600',
-        version_uploaded: 'text-indigo-600',
-        reviewer_removed: 'text-red-600',
-        due_date_updated: 'text-amber-600',
-        reassigned: 'text-teal-600'
-    }
-    return colors[action] || 'text-gray-600'
-}
-
-function formatActionText(activity) {
-    const actor = activity.actor?.name || 'Someone'
-    const meta = activity.meta || {}
-
-    const texts = {
-        sent: `${actor} sent the review`,
-        viewed: `${actor} viewed the document`,
-        approved: `${actor} approved the review`,
-        declined: `${actor} declined${meta.reason ? ': ' + meta.reason : ''}`,
-        closed: `${actor} closed the review`,
-        reopened: `${actor} reopened the review`,
-        reminded: `${actor} sent a reminder to ${meta.recipient_name || 'a reviewer'}`,
-        version_uploaded: `${actor} uploaded version ${meta.version || 'new'}`,
-        reviewer_removed: `${actor} removed reviewer ${meta.reviewer_name || 'someone'}`,
-        due_date_updated: `${actor} updated due date for ${meta.reviewer_name || 'a reviewer'}`,
-        reassigned: `${actor} added new reviewers`
-    }
-
-    return texts[activity.action] || `${actor} performed action: ${activity.action}`
-}
-
 /* ===========================
    Lifecycle
 =========================== */
 onMounted(async () => {
     loading.value = true
     errorMsg.value = ''
+
+    if (!orgId.value) {
+        errorMsg.value = 'Organization ID is required'
+        loading.value = false
+        return
+    }
+
     try {
         await fetchMe()
-        await fetchMyOrganizations()
         await fetchPublishedThreads()
-        const fromRoute = Number(route.query.rid || route.params.id || '')
-        const firstId = fromRoute || (threads.value[0]?.id ?? null)
-        if (firstId) await openThread(firstId)
+
+        const fromQuery = Number(route.query.review_id || '')
+        const firstId = fromQuery || (threads.value[0]?.id ?? null)
+
+        if (firstId) {
+            await openThread(firstId)
+        }
     } catch (e) {
         errorMsg.value = e?.response?.data?.message || e.message || 'Failed to load mailbox'
     } finally {
@@ -596,8 +406,8 @@ onMounted(async () => {
     }
 })
 
-watch(() => route.query.rid, (rid) => {
-    const id = Number(rid || '')
+watch(() => route.query.review_id, async (reviewId) => {
+    const id = Number(reviewId || '')
     if (id) openThread(id)
 })
 
@@ -642,8 +452,9 @@ watch(selectedRecipientId, async (recipientId) => {
             <div class="flex-1 overflow-y-auto">
                 <div v-if="loading"
                     class="p-4 text-sm text-platinum-800 dark:text-platinum-300 flex items-center gap-2">
-                    <Loader2 class="h-4 w-4 animate-spin" /> Loading…
+                    <Loader2 class="h-4 w-4 animate-spin" /> Loadingâ€¦
                 </div>
+                <div v-else-if="errorMsg" class="p-4 text-sm text-red-600">{{ errorMsg }}</div>
                 <div v-else-if="filteredThreads.length === 0" class="p-4 text-sm text-platinum-700">No sent reviews.
                 </div>
 
@@ -654,12 +465,12 @@ watch(selectedRecipientId, async (recipientId) => {
                         @click="openThread(t.id)">
                         <div class="flex items-center justify-between gap-2">
                             <div class="font-medium text-sm truncate text-abyss-900 dark:text-platinum-100">{{ t.subject
-                                }}</div>
+                            }}</div>
                             <div class="text-[11px] text-platinum-700">{{ shortDateTime(t.updated_at) }}</div>
                         </div>
                         <div class="text-xs text-platinum-700 truncate flex items-center gap-2 mt-0.5">
                             <FileText class="h-3.5 w-3.5" />
-                            <span>{{ t.document?.title || '—' }}</span>
+                            <span>{{ t.document?.title || 'â€”' }}</span>
                         </div>
                         <div class="text-[11px] mt-1 flex items-center gap-2">
                             <span
@@ -670,24 +481,10 @@ watch(selectedRecipientId, async (recipientId) => {
                     </li>
                 </ul>
             </div>
-
-            <div v-if="pageMeta"
-                class="p-3 flex items-center justify-between text-sm border-t border-platinum-200 dark:border-abyss-700">
-                <div class="text-platinum-700">Page {{ pageMeta.current_page }} / {{ pageMeta.last_page }}</div>
-                <div class="flex gap-2">
-                    <button :disabled="pageMeta.current_page <= 1"
-                        class="px-2 py-1 rounded border border-platinum-300 dark:border-abyss-600 disabled:opacity-50"
-                        @click="fetchPublishedThreads(pageMeta.current_page - 1)">Prev</button>
-                    <button :disabled="pageMeta.current_page >= pageMeta.last_page"
-                        class="px-2 py-1 rounded border border-platinum-300 dark:border-abyss-600 disabled:opacity-50"
-                        @click="fetchPublishedThreads(pageMeta.current_page + 1)">Next</button>
-                </div>
-            </div>
         </aside>
 
         <!-- MIDDLE: Recipient Selection + Private Conversation -->
         <main class="col-span-6 bg-platinum-100 dark:bg-abyss-800 flex flex-col">
-            <!-- Recipient selection tabs -->
             <div class="px-4 py-3 border-b border-platinum-200 dark:border-abyss-700">
                 <div v-if="!thread" class="text-sm text-platinum-700">Select a review to start.</div>
 
@@ -700,7 +497,6 @@ watch(selectedRecipientId, async (recipientId) => {
                                 thread.status }}</span>
                     </div>
 
-                    <!-- Recipient tabs -->
                     <div class="flex gap-1 overflow-x-auto pb-2">
                         <button v-for="recipient in rightPanelMeta?.recipients" :key="recipient.id"
                             @click="selectedRecipientId = recipient.id"
@@ -723,16 +519,13 @@ watch(selectedRecipientId, async (recipientId) => {
                 </div>
             </div>
 
-            <!-- Private Conversation for Selected Recipient -->
             <div class="flex-1 overflow-y-auto px-4 py-3">
                 <div v-if="!thread" class="text-sm text-platinum-700">Select a review to view conversations.</div>
-
                 <div v-else-if="!selectedRecipientId" class="text-sm text-platinum-700 text-center py-6">
                     Select a reviewer above to start a private conversation
                 </div>
 
                 <div v-else class="space-y-6">
-                    <!-- Selected Recipient Info -->
                     <div v-if="selectedRecipient"
                         class="text-xs p-3 bg-platinum-50 dark:bg-abyss-700 rounded-lg border border-platinum-200 dark:border-abyss-600">
                         <div class="flex items-center justify-between mb-2">
@@ -756,13 +549,8 @@ watch(selectedRecipientId, async (recipientId) => {
                                 {{ selectedRecipient.status }}
                             </span>
                         </div>
-                        <div v-if="selectedRecipient.due_at" class="flex items-center gap-1 text-platinum-700">
-                            <Clock class="h-3 w-3" />
-                            <span>Due: {{ shortDateTime(selectedRecipient.due_at) }}</span>
-                        </div>
                     </div>
 
-                    <!-- Private Messages -->
                     <div>
                         <div
                             class="flex items-center gap-2 text-sm font-medium mb-3 text-abyss-900 dark:text-platinum-100">
@@ -772,7 +560,7 @@ watch(selectedRecipientId, async (recipientId) => {
 
                         <div v-if="commentsLoading"
                             class="text-sm text-platinum-700 flex items-center gap-2 justify-center py-8">
-                            <Loader2 class="h-5 w-5 animate-spin" /> Loading messages…
+                            <Loader2 class="h-5 w-5 animate-spin" /> Loading messagesâ€¦
                         </div>
 
                         <div v-else-if="currentRecipientComments.length === 0" class="text-center py-8">
@@ -795,7 +583,7 @@ watch(selectedRecipientId, async (recipientId) => {
                                             <span v-if="c.author_user_id === me?.id"
                                                 class="text-kaitoke-green-600">(You)</span>
                                         </span>
-                                        <span>•</span>
+                                        <span>â€¢</span>
                                         <span>{{ shortDateTime(c.created_at) }}</span>
                                     </div>
                                     <div class="text-sm whitespace-pre-wrap rounded-lg px-3 py-2"
@@ -809,13 +597,12 @@ watch(selectedRecipientId, async (recipientId) => {
                         </div>
                     </div>
 
-                    <!-- Reply box -->
                     <div class="border-t border-platinum-200 dark:border-abyss-700 pt-3">
                         <label class="block text-xs font-medium text-platinum-700 mb-2">Reply to {{
                             selectedRecipient?.reviewer?.name || 'reviewer' }}</label>
                         <textarea v-model="replyText" rows="3"
                             class="w-full border border-platinum-300 dark:border-abyss-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-kaitoke-green-500 focus:border-kaitoke-green-500 bg-white dark:bg-abyss-800 text-abyss-900 dark:text-platinum-100"
-                            placeholder="Type your private message…" />
+                            placeholder="Type your private messageâ€¦" />
                         <div class="flex justify-end mt-2">
                             <button :disabled="!replyText.trim() || postBusy"
                                 class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg text-white transition"
@@ -831,13 +618,12 @@ watch(selectedRecipientId, async (recipientId) => {
             </div>
         </main>
 
-        <!-- RIGHT: Publisher Controls & Details -->
+        <!-- RIGHT: Publisher Controls -->
         <aside
             class="col-span-3 border-l border-platinum-200 dark:border-abyss-700 bg-white dark:bg-abyss-800 overflow-y-auto">
             <div class="p-3 space-y-3">
                 <div class="text-sm font-semibold text-abyss-900 dark:text-platinum-100">Publisher Panel</div>
 
-                <!-- Success/Error Messages -->
                 <div v-if="successMsg"
                     class="rounded-lg border border-green-300 dark:border-green-900/50 bg-green-50 dark:bg-green-900/20 p-2">
                     <div class="text-sm text-green-700 dark:text-green-400 flex gap-2">
@@ -857,129 +643,6 @@ watch(selectedRecipientId, async (recipientId) => {
                 <div v-if="!thread" class="text-sm text-platinum-700">No thread selected.</div>
 
                 <div v-else class="space-y-3">
-                    <!-- Edit Details -->
-                    <div class="rounded-lg border border-platinum-300 dark:border-abyss-600 overflow-hidden">
-                        <button @click="showEditDetails = !showEditDetails"
-                            class="w-full flex items-center justify-between text-sm p-3 hover:bg-platinum-50 dark:hover:bg-abyss-700 transition text-abyss-900 dark:text-platinum-100">
-                            <div class="flex items-center gap-2">
-                                <Edit3 class="h-4 w-4" />
-                                <span class="font-medium">Edit Details</span>
-                            </div>
-                            <ChevronDown v-if="!showEditDetails" class="h-4 w-4" />
-                            <ChevronUp v-else class="h-4 w-4" />
-                        </button>
-
-                        <div v-if="showEditDetails"
-                            class="p-3 pt-0 space-y-3 border-t border-platinum-200 dark:border-abyss-700">
-                            <div>
-                                <label class="block text-xs font-medium text-platinum-700 mb-1">Subject</label>
-                                <input v-model="editingSubject" type="text"
-                                    class="w-full text-sm border border-platinum-300 dark:border-abyss-600 rounded px-2 py-1.5 bg-white dark:bg-abyss-800 text-abyss-900 dark:text-platinum-100 focus:ring-2 focus:ring-kaitoke-green-500" />
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-platinum-700 mb-1">Instructions</label>
-                                <textarea v-model="editingBody" rows="3"
-                                    class="w-full text-sm border border-platinum-300 dark:border-abyss-600 rounded px-2 py-1.5 bg-white dark:bg-abyss-800 text-abyss-900 dark:text-platinum-100 focus:ring-2 focus:ring-kaitoke-green-500" />
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-platinum-700 mb-1">Global Due Date</label>
-                                <input v-model="editingGlobalDueAt" type="datetime-local"
-                                    class="w-full text-sm border border-platinum-300 dark:border-abyss-600 rounded px-2 py-1.5 bg-white dark:bg-abyss-800 text-abyss-900 dark:text-platinum-100 focus:ring-2 focus:ring-kaitoke-green-500" />
-                                <button v-if="editingGlobalDueAt && thread.recipients?.length > 0"
-                                    :disabled="applyGlobalDueBusy" @click="applyGlobalDueDate"
-                                    class="mt-2 w-full text-xs px-2 py-1.5 rounded border border-kaitoke-green-600 text-kaitoke-green-700 hover:bg-kaitoke-green-50 dark:hover:bg-kaitoke-green-900/20 disabled:opacity-50 flex items-center justify-center gap-1">
-                                    <Loader2 v-if="applyGlobalDueBusy" class="h-3 w-3 animate-spin" />
-                                    <Calendar v-else class="h-3 w-3" />
-                                    Apply to All Reviewers
-                                </button>
-                            </div>
-                            <button :disabled="editBusy"
-                                class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-lg text-white bg-kaitoke-green-600 hover:bg-kaitoke-green-700 disabled:opacity-50 transition"
-                                @click="saveEditDetails">
-                                <Loader2 v-if="editBusy" class="h-4 w-4 animate-spin" />
-                                Save Changes
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Manage Reviewers -->
-                    <div class="rounded-lg border border-platinum-300 dark:border-abyss-600 overflow-hidden">
-                        <button @click="showManageReviewers = !showManageReviewers"
-                            class="w-full flex items-center justify-between text-sm p-3 hover:bg-platinum-50 dark:hover:bg-abyss-700 transition text-abyss-900 dark:text-platinum-100">
-                            <div class="flex items-center gap-2">
-                                <Users class="h-4 w-4" />
-                                <span class="font-medium">Manage Reviewers</span>
-                            </div>
-                            <ChevronDown v-if="!showManageReviewers" class="h-4 w-4" />
-                            <ChevronUp v-else class="h-4 w-4" />
-                        </button>
-
-                        <div v-if="showManageReviewers"
-                            class="p-3 pt-0 space-y-3 border-t border-platinum-200 dark:border-abyss-700">
-                            <!-- Add Reviewer -->
-                            <div class="p-3 bg-platinum-50 dark:bg-abyss-700 rounded-lg">
-                                <label class="block text-xs font-medium text-platinum-700 mb-2">Add Reviewer</label>
-                                <select v-model="selectedMemberId"
-                                    class="w-full text-sm border border-platinum-300 dark:border-abyss-600 rounded px-2 py-1.5 mb-2 bg-white dark:bg-abyss-800 text-abyss-900 dark:text-platinum-200">
-                                    <option :value="null">Select member...</option>
-                                    <option v-for="member in availableMembers" :key="member.id" :value="member.id">
-                                        {{ member.name }} ({{ member.email }})
-                                    </option>
-                                </select>
-                                <input v-model="newReviewerDueAt" type="datetime-local"
-                                    placeholder="Due date (optional)"
-                                    class="w-full text-sm border border-platinum-300 dark:border-abyss-600 rounded px-2 py-1.5 mb-2 bg-white dark:bg-abyss-800 text-abyss-900 dark:text-platinum-100" />
-                                <button :disabled="!selectedMemberId || addReviewerBusy"
-                                    class="w-full inline-flex items-center justify-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white bg-kaitoke-green-600 hover:bg-kaitoke-green-700 disabled:opacity-50"
-                                    @click="addReviewer">
-                                    <Loader2 v-if="addReviewerBusy" class="h-3 w-3 animate-spin" />
-                                    <UserPlus v-else class="h-3 w-3" />
-                                    Add Reviewer
-                                </button>
-                            </div>
-
-                            <!-- Current Reviewers List -->
-                            <div class="space-y-2">
-                                <div class="text-xs font-medium text-platinum-700 mb-2">Current Reviewers</div>
-                                <div v-for="r in thread.recipients" :key="r.id"
-                                    class="flex items-start gap-2 p-2 rounded bg-platinum-50 dark:bg-abyss-700 border border-platinum-200 dark:border-abyss-600">
-                                    <div class="flex-1 min-w-0">
-                                        <div class="font-medium text-sm text-abyss-900 dark:text-platinum-100">
-                                            {{ r.reviewer?.name || 'Unknown' }}
-                                        </div>
-                                        <div class="text-xs text-platinum-700 mt-0.5">
-                                            {{ r.reviewer?.email }}
-                                        </div>
-                                        <div class="mt-1.5">
-                                            <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium" :class="{
-                                                'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300': r.status === 'approved',
-                                                'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300': r.status === 'declined',
-                                                'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300': r.status === 'viewed',
-                                                'bg-platinum-200 text-platinum-800 dark:bg-abyss-600 dark:text-platinum-300': r.status === 'pending'
-                                            }">
-                                                {{ r.status }}
-                                            </span>
-                                        </div>
-                                        <!-- Individual Due Date -->
-                                        <div class="mt-2">
-                                            <label class="block text-xs text-platinum-700 mb-1">Due Date</label>
-                                            <input type="datetime-local" :value="formatDateTimeLocal(r.due_at)"
-                                                @change="(e) => updateRecipientDueDate(r.id, e.target.value)"
-                                                class="w-full text-xs border border-platinum-300 dark:border-abyss-600 rounded px-2 py-1 bg-white dark:bg-abyss-800 text-abyss-900 dark:text-platinum-100" />
-                                        </div>
-                                    </div>
-                                    <button v-if="!['approved', 'declined'].includes(r.status)"
-                                        :disabled="removeReviewerBusy[r.id]" @click="removeReviewer(r.id)"
-                                        class="p-1.5 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 disabled:opacity-50 shrink-0"
-                                        title="Remove reviewer">
-                                        <Loader2 v-if="removeReviewerBusy[r.id]" class="h-4 w-4 animate-spin" />
-                                        <Trash2 v-else class="h-4 w-4" />
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- Document Info -->
                     <div class="rounded-lg border border-platinum-300 dark:border-abyss-600 p-3">
                         <div class="flex items-center gap-2 text-sm mb-2 text-abyss-900 dark:text-platinum-100">
@@ -996,40 +659,6 @@ watch(selectedRecipientId, async (recipientId) => {
                             class="mt-3 w-full inline-flex items-center justify-center gap-2 text-xs px-3 py-2 rounded-lg border border-kaitoke-green-600 text-kaitoke-green-700 hover:bg-kaitoke-green-50 dark:hover:bg-kaitoke-green-900/20 font-medium transition">
                             <Download class="h-3.5 w-3.5" /> Download Current Version
                         </button>
-                    </div>
-
-                    <!-- Upload New Version -->
-                    <div class="rounded-lg border border-platinum-300 dark:border-abyss-600 overflow-hidden">
-                        <button @click="showUploadVersion = !showUploadVersion"
-                            class="w-full flex items-center justify-between text-sm p-3 hover:bg-platinum-50 dark:hover:bg-abyss-700 transition text-abyss-900 dark:text-platinum-100">
-                            <div class="flex items-center gap-2">
-                                <Upload class="h-4 w-4" />
-                                <span class="font-medium">Upload New Version</span>
-                            </div>
-                            <ChevronDown v-if="!showUploadVersion" class="h-4 w-4" />
-                            <ChevronUp v-else class="h-4 w-4" />
-                        </button>
-
-                        <div v-if="showUploadVersion"
-                            class="p-3 pt-0 space-y-3 border-t border-platinum-200 dark:border-abyss-700">
-                            <input type="file" @change="onFileSelect"
-                                class="block w-full text-xs file:mr-2 file:py-2 file:px-3 file:rounded file:border-0
-                                      file:bg-kaitoke-green-100 file:text-kaitoke-green-800 hover:file:bg-kaitoke-green-200
-                                      dark:file:bg-kaitoke-green-900/30 dark:file:text-kaitoke-green-300 file:font-medium file:cursor-pointer" />
-                            <p v-if="uploadFile"
-                                class="text-xs text-platinum-700 px-2 py-1 bg-platinum-50 dark:bg-abyss-700 rounded">
-                                <strong>{{ uploadFile.name }}</strong> ({{ (uploadFile.size / 1024).toFixed(1) }} KB)
-                            </p>
-                            <textarea v-model="uploadNote" rows="2" placeholder="Version note (optional)"
-                                class="w-full text-xs border border-platinum-300 dark:border-abyss-600 rounded px-2 py-1.5 bg-white dark:bg-abyss-800 text-abyss-900 dark:text-platinum-100" />
-                            <button :disabled="!uploadFile || uploadBusy"
-                                class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-lg text-white bg-kaitoke-green-600 hover:bg-kaitoke-green-700 disabled:opacity-50"
-                                @click="uploadNewVersion">
-                                <Loader2 v-if="uploadBusy" class="h-4 w-4 animate-spin" />
-                                <Upload v-else class="h-4 w-4" />
-                                Upload Version
-                            </button>
-                        </div>
                     </div>
 
                     <!-- Version History -->
@@ -1072,75 +701,35 @@ watch(selectedRecipientId, async (recipientId) => {
                         </div>
                     </div>
 
-                    <!-- Recipients Overview -->
-                    <div class="rounded-lg border border-platinum-300 dark:border-abyss-600 p-3">
-                        <div class="flex items-center gap-2 text-sm mb-3 text-abyss-900 dark:text-platinum-100">
-                            <Users class="h-4 w-4" />
-                            <span class="font-medium">Reviewers Status</span>
-                        </div>
-                        <div class="grid grid-cols-2 gap-2 text-xs">
-                            <div class="p-2 rounded bg-platinum-50 dark:bg-abyss-700">
-                                <div class="text-platinum-700">Total</div>
-                                <div class="text-lg font-semibold text-abyss-900 dark:text-platinum-100">{{
-                                    recipientStats.total }}</div>
-                            </div>
-                            <div class="p-2 rounded bg-green-50 dark:bg-green-900/20">
-                                <div class="text-green-700 dark:text-green-400">Approved</div>
-                                <div class="text-lg font-semibold text-green-800 dark:text-green-300">{{
-                                    recipientStats.approved }}</div>
-                            </div>
-                            <div class="p-2 rounded bg-orange-50 dark:bg-orange-900/20">
-                                <div class="text-orange-700 dark:text-orange-400">Pending</div>
-                                <div class="text-lg font-semibold text-orange-800 dark:text-orange-300">{{
-                                    recipientStats.pending }}</div>
-                            </div>
-                            <div class="p-2 rounded bg-red-50 dark:bg-red-900/20">
-                                <div class="text-red-700 dark:text-red-400">Declined</div>
-                                <div class="text-lg font-semibold text-red-800 dark:text-red-300">{{
-                                    recipientStats.declined }}</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Activity Log -->
+                    <!-- Upload New Version -->
                     <div class="rounded-lg border border-platinum-300 dark:border-abyss-600 overflow-hidden">
-                        <button @click="showActivityLog = !showActivityLog"
+                        <button @click="showUploadVersion = !showUploadVersion"
                             class="w-full flex items-center justify-between text-sm p-3 hover:bg-platinum-50 dark:hover:bg-abyss-700 transition text-abyss-900 dark:text-platinum-100">
                             <div class="flex items-center gap-2">
-                                <History class="h-4 w-4" />
-                                <span class="font-medium">Activity Log</span>
-                                <span
-                                    class="text-xs text-platinum-700 bg-platinum-200 dark:bg-abyss-600 px-1.5 py-0.5 rounded-full">{{
-                                    activityLog.length }}</span>
+                                <Upload class="h-4 w-4" />
+                                <span class="font-medium">Upload New Version</span>
                             </div>
-                            <ChevronDown v-if="!showActivityLog" class="h-4 w-4" />
+                            <ChevronDown v-if="!showUploadVersion" class="h-4 w-4" />
                             <ChevronUp v-else class="h-4 w-4" />
                         </button>
 
-                        <div v-if="showActivityLog" class="border-t border-platinum-200 dark:border-abyss-700">
-                            <div v-if="activityLoading" class="p-4 text-center">
-                                <Loader2 class="h-5 w-5 animate-spin mx-auto text-platinum-700" />
-                            </div>
-                            <div v-else-if="activityLog.length === 0" class="p-4 text-xs text-platinum-700 text-center">
-                                No activity yet
-                            </div>
-                            <div v-else class="max-h-80 overflow-y-auto">
-                                <div v-for="activity in activityLog" :key="activity.id"
-                                    class="p-3 border-b border-platinum-200 dark:border-abyss-700 last:border-b-0 hover:bg-platinum-50 dark:hover:bg-abyss-700">
-                                    <div class="flex items-start gap-2">
-                                        <component :is="getActionIcon(activity.action)" class="h-4 w-4 mt-0.5 shrink-0"
-                                            :class="getActionColor(activity.action)" />
-                                        <div class="flex-1 min-w-0">
-                                            <div class="text-xs text-abyss-900 dark:text-platinum-100">
-                                                {{ formatActionText(activity) }}
-                                            </div>
-                                            <div class="text-[11px] text-platinum-700 mt-1">
-                                                {{ shortDateTime(activity.created_at) }}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                        <div v-if="showUploadVersion"
+                            class="p-3 pt-0 space-y-3 border-t border-platinum-200 dark:border-abyss-700">
+                            <input type="file" @change="onFileSelect"
+                                class="block w-full text-xs file:mr-2 file:py-2 file:px-3 file:rounded file:border-0 file:bg-kaitoke-green-100 file:text-kaitoke-green-800 hover:file:bg-kaitoke-green-200 dark:file:bg-kaitoke-green-900/30 dark:file:text-kaitoke-green-300 file:font-medium file:cursor-pointer" />
+                            <p v-if="uploadFile"
+                                class="text-xs text-platinum-700 px-2 py-1 bg-platinum-50 dark:bg-abyss-700 rounded">
+                                <strong>{{ uploadFile.name }}</strong> ({{ (uploadFile.size / 1024).toFixed(1) }} KB)
+                            </p>
+                            <textarea v-model="uploadNote" rows="2" placeholder="Version note (optional)"
+                                class="w-full text-xs border border-platinum-300 dark:border-abyss-600 rounded px-2 py-1.5 bg-white dark:bg-abyss-800 text-abyss-900 dark:text-platinum-100" />
+                            <button :disabled="!uploadFile || uploadBusy"
+                                class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-lg text-white bg-kaitoke-green-600 hover:bg-kaitoke-green-700 disabled:opacity-50"
+                                @click="uploadNewVersion">
+                                <Loader2 v-if="uploadBusy" class="h-4 w-4 animate-spin" />
+                                <Upload v-else class="h-4 w-4" />
+                                Upload Version
+                            </button>
                         </div>
                     </div>
 
@@ -1172,33 +761,6 @@ watch(selectedRecipientId, async (recipientId) => {
                             <RefreshCw v-else class="h-4 w-4" />
                             Refresh
                         </button>
-                    </div>
-
-                    <!-- Quick Actions for Reviewers -->
-                    <div class="rounded-lg border border-platinum-300 dark:border-abyss-600 p-3">
-                        <div class="text-sm font-medium text-abyss-900 dark:text-platinum-100 mb-3">Quick Actions</div>
-                        <div class="space-y-2">
-                            <div v-for="r in thread.recipients.filter(rec => rec.status === 'pending' || rec.status === 'viewed')"
-                                :key="r.id"
-                                class="flex items-center justify-between p-2 rounded bg-platinum-50 dark:bg-abyss-700 text-xs">
-                                <div class="flex-1 min-w-0">
-                                    <div class="font-medium text-abyss-900 dark:text-platinum-100 truncate">
-                                        {{ r.reviewer?.name || 'Unknown' }}
-                                    </div>
-                                    <div class="text-platinum-700">{{ r.status }}</div>
-                                </div>
-                                <button :disabled="actionBusy.remind[r.id]" @click="remindRecipient(r.id)"
-                                    class="ml-2 px-2 py-1 rounded text-xs border border-orange-600 text-orange-700 hover:bg-orange-50 dark:hover:bg-orange-900/20 disabled:opacity-50 flex items-center gap-1 shrink-0">
-                                    <Loader2 v-if="actionBusy.remind[r.id]" class="h-3 w-3 animate-spin" />
-                                    <Mail v-else class="h-3 w-3" />
-                                    Remind
-                                </button>
-                            </div>
-                            <div v-if="thread.recipients.filter(rec => rec.status === 'pending' || rec.status === 'viewed').length === 0"
-                                class="text-xs text-platinum-700 text-center py-2">
-                                All reviewers have responded
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>

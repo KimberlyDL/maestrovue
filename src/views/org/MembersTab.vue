@@ -1,6 +1,6 @@
 <!-- src/views/admin/MembersTab.vue - FIXED -->
 <template>
-    <div class="space-y-6">
+    <div class="max-w-5xl mx-auto space-y-6 p-6">
         <!-- Header -->
         <div class="flex items-center justify-between">
             <div>
@@ -8,10 +8,15 @@
                 <p class="text-sm text-platinum-600 dark:text-platinum-400 mt-1">View and manage organization members
                 </p>
             </div>
-            <router-link :to="{ name: 'org.admin.permissions', params: { id: organizationId } }"
-                class="px-4 py-2 rounded-lg bg-kaitoke-green-600 text-white hover:bg-kaitoke-green-500 transition-colors">
-                Manage Permissions
-            </router-link>
+
+
+            <template v-if="hasCurrentOrg && canManagePermissions">
+                <router-link :to="{ name: 'org.permissions', params: { id: organizationId } }"
+                    class="px-4 py-2 rounded-lg bg-kaitoke-green-600 text-white hover:bg-kaitoke-green-500 transition-colors">
+                    Manage Permissions
+                </router-link>
+            </template>
+
         </div>
 
         <!-- Search and Filter Bar -->
@@ -185,8 +190,10 @@
 import { ref, computed, onMounted, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { usePermissionStore } from '@/stores/permission'
 import { Search, Users, Eye, Trash2, AlertTriangle } from 'lucide-vue-next'
 import api from '@/utils/api'
+
 
 const props = defineProps({
     organizationId: { type: [String, Number], required: true }
@@ -195,7 +202,7 @@ const props = defineProps({
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
-
+const permissionStore = usePermissionStore()
 const members = ref([])
 const loading = ref(true)
 const searchQuery = ref('')
@@ -210,6 +217,11 @@ const removeDialog = reactive({
 })
 
 const currentUserId = computed(() => authStore.user?.id)
+
+const canManagePermissions = computed(() => {
+    if (!currentOrgId.value) return false
+    return permissionStore.isAdmin(currentOrgId.value)
+})
 
 const filteredMembers = computed(() => {
     let filtered = members.value

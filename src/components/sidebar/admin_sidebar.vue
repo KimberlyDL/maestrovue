@@ -1,10 +1,10 @@
+// admin_sidebar.vue - FIXED VERSION
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useOrganizationStore } from '@/stores/organization'
-// REMOVED: import { usePermissions } from '@/utils/usePermissions'
-import { usePermissionStore } from '@/stores/permission' // NEW: Import Pinia store
-import { PERMISSIONS } from '@/utils/permissions' // NEW: Import constants from the new location
+import { usePermissionStore } from '@/stores/permission'
+import { PERMISSIONS } from '@/utils/permissions'
 import axios from '@/utils/api'
 import SidebarNavItem from './sidebar_nav_item.vue'
 import SidebarNavDropdown from './sidebar_nav_dropdown.vue'
@@ -19,7 +19,7 @@ import {
 
 const route = useRoute()
 const orgStore = useOrganizationStore()
-const permissionStore = usePermissionStore() // NEW: Initialize permission store
+const permissionStore = usePermissionStore()
 
 // State
 const organization = ref(null)
@@ -27,55 +27,49 @@ const loading = ref(true)
 const pendingRequests = ref(0)
 const pendingReviews = ref(4)
 
-// Get current org ID from store and route
+// Get current org ID from route
 const currentOrgId = computed(() => {
-    return orgStore.currentOrgId || route.params.id
+    return route.params.id ? String(route.params.id) : null
 })
 const hasCurrentOrg = computed(() => !!currentOrgId.value)
 
-// Permissions - NEW implementation using the store
-
-// Use store getters to create reactive references
+// Permissions using the store
 const userRole = computed(() => {
+    if (!currentOrgId.value) return null
     const org = permissionStore.getOrg(currentOrgId.value)
-    // The store's cache holds the userRole
     return org ? org.userRole : null
 })
 
 const isAdmin = computed(() => {
+    if (!currentOrgId.value) return false
     return permissionStore.isAdmin(currentOrgId.value)
 })
 
 const isMember = computed(() => {
+    if (!currentOrgId.value) return false
     return permissionStore.isMember(currentOrgId.value)
 })
 
 function hasPermission(permissionKey) {
+    if (!currentOrgId.value) return false
     return permissionStore.hasPermission(currentOrgId.value, permissionKey)
 }
 
-// REMOVED: Incomplete local PERMISSIONS definition
-/*
-const PERMISSIONS = {
-    ...
-}
-*/
-
-// Role badge display (Uses the new userRole computed property)
+// Role badge display
 const userRoleBadge = computed(() => {
     const roleMap = {
-        admin: '🛡️ Admin',
-        owner: '👑 Owner',
-        member: '👤 Member',
-        viewer: '👁️ Viewer'
+        admin: 'ðŸ›¡ï¸ Admin',
+        owner: 'ðŸ‘‘ Owner',
+        member: 'ðŸ‘¤ Member',
+        viewer: 'ðŸ‘ï¸ Viewer'
     }
-    return roleMap[userRole.value] || '👤 Member'
+    return roleMap[userRole.value] || 'ðŸ‘¤ Member'
 })
 
-// Computed permissions (Uses the new hasPermission function and isAdmin computed)
+// Computed permissions
 const canManageRequests = computed(() =>
-    hasPermission(PERMISSIONS.APPROVE_JOIN_REQUESTS) ||
-    hasPermission(PERMISSIONS.MANAGE_INVITE_CODES) ||
+    (hasPermission(PERMISSIONS.APPROVE_JOIN_REQUESTS) &&
+        hasPermission(PERMISSIONS.MANAGE_INVITE_CODES)) ||
     isAdmin.value
 )
 
@@ -84,11 +78,10 @@ const canManageSettings = computed(() =>
 )
 
 const canManagePermissions = computed(() =>
-    // NOTE: MANAGE_PERMISSIONS is now correctly imported from the centralized PERMISSIONS object
     hasPermission(PERMISSIONS.MANAGE_PERMISSIONS) || isAdmin.value
 )
 
-// Load organization data (Updated to use store.load)
+// Load organization data
 async function loadOrganizationData() {
     if (!currentOrgId.value) {
         loading.value = false
@@ -97,11 +90,12 @@ async function loadOrganizationData() {
 
     loading.value = true
     try {
-        // Run both API calls in parallel:
-        // 1. Get organization overview (for name/info display)
+        console.log('ðŸ“Š Loading organization data for:', currentOrgId.value)
+
+        // 1. Load organization basic info
         const orgResponsePromise = axios.get(`/api/organizations/${currentOrgId.value}`)
 
-        // 2. Load/Refresh permissions via the store (this handles authentication checks and caching)
+        // 2. Load permissions
         const permissionsLoadedPromise = permissionStore.load(currentOrgId.value)
 
         const [orgResponse] = await Promise.all([
@@ -110,6 +104,12 @@ async function loadOrganizationData() {
         ])
 
         organization.value = orgResponse.data
+
+        // âœ… CRITICAL: Store organization data in Pinia store AND set as current
+        orgStore.setCurrentOrg(currentOrgId.value, orgResponse.data)
+
+        console.log('âœ… Organization loaded:', organization.value.name)
+        console.log('âœ… Current org ID set:', currentOrgId.value)
 
         // Load pending requests count for those with permission
         if (canManageRequests.value) {
@@ -123,20 +123,22 @@ async function loadOrganizationData() {
             }
         }
     } catch (error) {
-        console.error('Failed to load organization:', error)
+        console.error('âŒ Failed to load organization:', error)
     } finally {
         loading.value = false
     }
 }
 
 // Watch for org ID changes
-watch(() => currentOrgId.value, (newId) => {
+watch(currentOrgId, (newId) => {
+    console.log('ðŸ”„ Org ID changed to:', newId)
     if (newId) {
         loadOrganizationData()
     }
-})
+}, { immediate: false })
 
 onMounted(() => {
+    console.log('ðŸš€ Sidebar mounted, current org ID:', currentOrgId.value)
     if (currentOrgId.value) {
         loadOrganizationData()
     } else {
@@ -218,12 +220,12 @@ onMounted(() => {
                 <template v-if="hasCurrentOrg && hasPermission(PERMISSIONS.CREATE_REVIEWS)">
                     <SidebarGroupLabel text="Repository" />
 
-                    <SidebarNavItem :to="{ name: 'org.doc-review', params: { id: currentOrgId } }"
+                    <!-- <SidebarNavItem :to="{ name: 'org.doc-review', params: { id: currentOrgId } }"
                         title="Document Review" :badge="pendingReviews || undefined">
                         <template #icon>
                             <FileCheck :size="16" :stroke-width="1.25" />
                         </template>
-                    </SidebarNavItem>
+                    </SidebarNavItem> -->
 
                     <SidebarNavDropdown label="My Submissions" :matchPaths="[
                         `/org/${currentOrgId}/documents/submit`,

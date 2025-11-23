@@ -20,6 +20,17 @@ const authenticatedRoutes = [
   },
 
   // ========================================
+  // Organization Manage - Admin? --LEYNARDDDDDD
+  // ========================================
+
+  {
+    path: '/organizations/:id/manage',
+    name: 'org.manage',
+    component: () => import('@/views/org/OrgManagement.vue'),
+    meta: { requiresAuth: true }
+  },
+
+  // ========================================
   // Organization Discovery - Public routes
   // ========================================
   {
@@ -86,6 +97,7 @@ const authenticatedRoutes = [
   // ========================================
   {
     path: "/org/:id",
+    name: 'org-dashboard',
     component: () => import("@/layouts/AdminLayout.vue"),
     meta: {
       requiresAuth: true,
@@ -99,7 +111,7 @@ const authenticatedRoutes = [
         component: () => import("@views/org/OverviewTab.vue"),
         meta: {
           title: "Organization Overview",
-          requiresMember: true // Only membership required
+          requiresMember: true
         },
       },
 
@@ -110,7 +122,7 @@ const authenticatedRoutes = [
         component: () => import("@views/org/AnnouncementsTab.vue"),
         meta: {
           title: "Announcements",
-          requiresMember: true // All members can view
+          requiresMember: true
         },
       },
 
@@ -121,7 +133,7 @@ const authenticatedRoutes = [
         component: () => import("@views/org/MembersTab.vue"),
         meta: {
           title: "Members",
-          requiresMember: true // All members can view
+          requiresMember: true
         },
       },
 
@@ -181,15 +193,15 @@ const authenticatedRoutes = [
       },
 
       // ===== DOCUMENT REVIEW SYSTEM =====
-      {
-        path: "documents",
-        name: "org.doc-review",
-        component: () => import("@views/doc/DocReview.vue"),
-        meta: {
-          title: "Document Review",
-          requiresPermission: PERMISSIONS.VIEW_REVIEWS
-        },
-      },
+      // {
+      //   path: "documents",
+      //   name: "org.doc-review",
+      //   component: () => import("@views/doc/DocReview.vue"),
+      //   meta: {
+      //     title: "Document Review",
+      //     requiresPermission: PERMISSIONS.VIEW_REVIEWS
+      //   },
+      // },
       {
         path: "documents/submit",
         name: "org.doc-submit",
@@ -214,7 +226,8 @@ const authenticatedRoutes = [
         component: () => import("@views/doc/PublisherReviewbox.vue"),
         meta: {
           title: "Submissions",
-          requiresPermission: PERMISSIONS.MANAGE_REVIEWS
+          // requiresPermission: PERMISSIONS.MANAGE_REVIEWS
+          requiresPermission: 'manage_reviews'
         },
       },
     ],

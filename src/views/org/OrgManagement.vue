@@ -7,11 +7,11 @@ import {
     ArrowLeft, LayoutGrid, Megaphone, Users, MailOpen, Cog, Loader2, Image, Home
 } from 'lucide-vue-next'
 
-import OverviewTab from '@/components/org/OverviewTab.vue'
-import AnnouncementsTab from '@/components/org/AnnouncementsTab.vue'
-import MembersTab from '@/components/org/MembersTab.vue'
-import RequestsInvitesTab from '@/components/org/RequestsInvitesTab.vue'
-import SettingsTab from '@/components/org/SettingsTab.vue'
+import OverviewTab from '@/views/org/OverviewTab.vue'
+import AnnouncementsTab from '@/views/org/AnnouncementsTab.vue'
+import MembersTab from '@/views/org/MembersTab.vue'
+import RequestsInvitesTab from '@/views/org/RequestsInvitesTab.vue'
+import SettingsTab from '@/views/org/SettingsTab.vue'
 
 const R2_WORKER_ENDPOINT = import.meta.env.VITE_R2_WORKER_ENDPOINT
 

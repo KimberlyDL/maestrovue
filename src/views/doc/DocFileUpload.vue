@@ -4,7 +4,7 @@ import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import axios from '@/utils/api'
 import { useAuthStore } from '@/stores/auth'
-import { Send, Save, AlertCircle, Loader2 } from 'lucide-vue-next' // Ensure Loader2 is imported
+import { Send, Save, AlertCircle, Loader2 } from 'lucide-vue-next'
 
 const router = useRouter()
 const route = useRoute()
@@ -26,6 +26,7 @@ const myOrganizations = ref([])       // orgs where the current user is a member
 const targetOrganizations = ref([])   // other orgs (reviewer sources)
 const reviewers = ref([])             // merged reviewers from selected target orgs
 const loadingOptions = ref(false)
+const permissionError = ref('')
 
 /* ===========================
    Form state
@@ -71,27 +72,47 @@ const publisherOrgName = computed(() =>
 )
 
 /* ===========================
-   Loaders (existing routes only)
+   Permission Check
+=========================== */
+async function checkPermissions(orgId) {
+    try {
+        const { data } = await axios.get(`/api/org/${orgId}/permissions/users/${auth.user.id}`)
+
+        // Check if user has create_reviews permission
+        const hasPermission = data.is_admin ||
+            (Array.isArray(data.granted_permissions) &&
+                data.granted_permissions.includes('create_reviews'))
+
+        if (!hasPermission) {
+            permissionError.value = 'You do not have permission to create reviews in this organization'
+            return false
+        }
+
+        permissionError.value = ''
+        return true
+    } catch (e) {
+        console.error('Permission check failed:', e)
+        permissionError.value = 'Failed to verify permissions'
+        return false
+    }
+}
+
+/* ===========================
+   Loaders
 =========================== */
 async function loadMyOrganizations() {
-    const { data: me } = await axios.get('/api/me') // you already return organizations here
+    const { data: me } = await axios.get('/api/me')
     const orgs = Array.isArray(me.organizations) ? me.organizations : []
     myOrganizations.value = orgs
     if (!form.organization_id && orgs.length > 0) {
         form.organization_id = orgs[0].id
+        await checkPermissions(orgs[0].id)
     }
 }
 
-/**
- * Tries:
- * 1) GET /api/organizations?scope=others  (if your OrganizationController@index supports it)
- * 2) falls back to GET /api/organizations, then filters out my orgs client-side
- */
 async function loadTargetOrganizations() {
-    // my org ids for filtering fallback
     const myIds = new Set(myOrganizations.value.map(o => o.id))
 
-    // Try ?scope=others first
     try {
         const { data } = await axios.get('/api/organizations', { params: { scope: 'others' } })
         if (Array.isArray(data)) {
@@ -99,27 +120,20 @@ async function loadTargetOrganizations() {
             return
         }
     } catch (_) {
-        // ignore and try fallback
+        // Fallback
     }
 
-    // Fallback: GET /api/organizations then filter out mine (works if your index returns all orgs)
     try {
         const { data } = await axios.get('/api/organizations')
         if (Array.isArray(data) && data.length) {
-            // If this endpoint already returns "mine", we’ll end with empty set after filtering—still safe.
             targetOrganizations.value = data.filter(o => !myIds.has(o.id))
             return
         }
     } catch (e) {
-        // final: empty list
         targetOrganizations.value = []
     }
 }
 
-/**
- * Merge reviewers from each selected target org using:
- * GET /api/organizations/{orgId}/members
- */
 async function loadReviewersForTargets() {
     reviewers.value = []
     if (form.selectedTargetOrgIds.length === 0) return
@@ -133,18 +147,17 @@ async function loadReviewersForTargets() {
                 name: m.name || 'Unknown',
                 email: m.email || null,
                 avatar: m.avatar || m.avatar_url || null,
-                org_id: orgId,         // reviewer’s home org
+                org_id: orgId,
                 org_name: targetOrganizations.value.find(o => o.id === orgId)?.name ?? '',
-                role: m.role || null,  // pivot role if included
+                role: m.role || null,
             }))
             merged.push(...normalized)
         } catch (e) {
-            // ignore single org failure; continue aggregating others
-            // console.warn('Failed to load members for org', orgId, e)
+            console.warn('Failed to load members for org', orgId, e)
         }
     }
 
-    // de-dupe by user_id across selected orgs (keep first occurrence)
+    // De-dupe by user_id
     const seen = new Set()
     reviewers.value = merged.filter(r => {
         if (seen.has(r.id)) return false
@@ -165,7 +178,6 @@ onMounted(async () => {
         loadingOptions.value = false
     }
 
-    // Optional: preselect target org via query ?targetOrgIds=1,2
     const qs = route.query.targetOrgIds
     if (qs) {
         const parsed = String(qs).split(',').map(v => Number(v.trim())).filter(Boolean)
@@ -177,10 +189,13 @@ onMounted(async () => {
 /* ===========================
    Watchers
 =========================== */
-watch(() => form.organization_id, () => {
-    // changing publisher org doesn’t affect target orgs, but we should clear selected reviewers
+watch(() => form.organization_id, async (newOrgId) => {
     form.reviewerIds = []
     form.perDue = {}
+
+    if (newOrgId) {
+        await checkPermissions(newOrgId)
+    }
 })
 
 watch(() => [...form.selectedTargetOrgIds], async () => {
@@ -195,9 +210,11 @@ watch(() => [...form.selectedTargetOrgIds], async () => {
 function onFileChange(e) {
     form.file = e.target.files?.[0] ?? null
 }
+
 function isChecked(userId) {
     return form.reviewerIds.includes(userId)
 }
+
 function toggleReviewer(userId) {
     const i = form.reviewerIds.indexOf(userId)
     if (i === -1) {
@@ -210,7 +227,7 @@ function toggleReviewer(userId) {
 }
 
 /* ===========================
-   Submit flow (existing endpoints)
+   Submit flow
 =========================== */
 const isSubmitting = ref(false)
 const submitError = ref('')
@@ -218,43 +235,67 @@ const toDateTime = v => (v && typeof v === 'string') ? v : ''
 
 async function submit(status = 'sent') {
     submitError.value = ''
+
     if (!canSubmit.value) {
         submitError.value = 'Please complete all required fields'
         return
     }
 
+    // Final permission check
+    const hasPermission = await checkPermissions(form.organization_id)
+    if (!hasPermission) {
+        submitError.value = permissionError.value || 'You do not have permission to create reviews'
+        return
+    }
+
     isSubmitting.value = true
     try {
-        // 1) create document + v1
+        // 1) Create document + v1
         const fd = new FormData()
-        fd.append('organization_id', String(form.organization_id)) // publisher org
+        fd.append('organization_id', String(form.organization_id))
         fd.append('title', form.title)
         fd.append('type', form.type)
         fd.append('file', form.file)
         if (form.version_note) fd.append('note', form.version_note)
 
-        const { data: createdDoc } = await axios.post(`/api/org/${form.organization_id}/documents`, fd, {
-            headers: { 'Content-Type': 'multipart/form-data' }
+        const { data: createdDoc } = await axios.post(
+            `/api/org/${form.organization_id}/documents`,
+            fd,
+            { headers: { 'Content-Type': 'multipart/form-data' } }
+        )
+
+        // 2) Build recipients array
+        const recipients = form.reviewerIds.map(uid => {
+            const reviewer = reviewers.value.find(r => r.id === uid)
+            return {
+                user_id: uid,
+                org_id: reviewer?.org_id || null,
+                due_at: toDateTime(form.perDue[uid]) || toDateTime(form.due_at) || null,
+            }
         })
 
+        // 3) Create review thread
         const payload = {
             document_id: createdDoc.id,
             document_version_id: createdDoc.latest_version_id,
-            publisher_org_id: form.organization_id,
             subject: form.subject,
             body: form.body || null,
             status,
             due_at: toDateTime(form.due_at) || null,
             recipients,
-            // ...
         }
 
-        // FIX: Uncomment, define 'thread', and use the organization-scoped API path for review creation
-        const { data: thread } = await axios.post(`/api/org/${form.organization_id}/reviews`, payload)
+        const { data: threadData } = await axios.post(
+            `/api/org/${form.organization_id}/reviews`,
+            payload
+        )
 
-
-        // This line now works because 'thread' is defined
-        router.push({ name: 'org.doc-submission', params: { id: thread.id } })
+        // Navigate to the review thread
+        router.push({
+            name: 'org.doc-submission',
+            params: { id: form.organization_id },
+            query: { review_id: threadData.id }
+        })
 
     } catch (err) {
         const msg = err?.response?.data?.message
@@ -277,7 +318,13 @@ async function submit(status = 'sent') {
 
         <div v-if="loadingOptions" class="flex items-center justify-center py-12">
             <Loader2 class="w-8 h-8 animate-spin text-kaitoke-green-600" />
-            <span class="ml-3 text-platinum-700">Loading organizations…</span>
+            <span class="ml-3 text-platinum-700">Loading organizationsâ€¦</span>
+        </div>
+
+        <div v-if="permissionError"
+            class="mb-4 rounded-lg border border-amber-300/50 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-900/20 p-3 text-amber-700 dark:text-amber-400 flex gap-2 items-start">
+            <AlertCircle class="w-4 h-4 mt-0.5 flex-shrink-0" />
+            <div class="text-sm">{{ permissionError }}</div>
         </div>
 
         <div v-if="submitError"
@@ -295,7 +342,7 @@ async function submit(status = 'sent') {
                 </label>
                 <select v-model.number="form.organization_id"
                     class="w-full rounded-lg border border-platinum-300 dark:border-abyss-600 px-3 py-2 text-sm bg-white dark:bg-abyss-700 dark:text-platinum-100">
-                    <option :value="null" disabled>Choose an organization…</option>
+                    <option :value="null" disabled>Choose an organizationâ€¦</option>
                     <option v-for="org in myOrganizations" :key="org.id" :value="org.id">
                         {{ org.name }}
                     </option>
@@ -422,7 +469,7 @@ async function submit(status = 'sent') {
                                 <span class="text-sm font-medium">{{ r.name }}</span>
                                 <span v-if="r.email" class="text-xs text-platinum-700 block">{{ r.email }}</span>
                                 <span class="text-xs text-platinum-700">Org: {{ r.org_name }}</span>
-                                <span v-if="r.role" class="text-xs text-platinum-700"> • {{ r.role }}</span>
+                                <span v-if="r.role" class="text-xs text-platinum-700"> â€¢ {{ r.role }}</span>
                             </div>
                         </label>
 
@@ -444,19 +491,16 @@ async function submit(status = 'sent') {
                     Cancel
                 </router-link>
 
-                <button :disabled="!canSubmit || isSubmitting" @click="submit('draft')" class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm rounded-lg border
-                       border-platinum-300 dark:border-abyss-600 bg-white dark:bg-abyss-800
-                       hover:bg-platinum-50 dark:hover:bg-abyss-700
-                       disabled:opacity-50 disabled:cursor-not-allowed">
+                <button :disabled="!canSubmit || isSubmitting || !!permissionError" @click="submit('draft')"
+                    class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm rounded-lg border border-platinum-300 dark:border-abyss-600 bg-white dark:bg-abyss-800 hover:bg-platinum-50 dark:hover:bg-abyss-700 disabled:opacity-50 disabled:cursor-not-allowed">
                     <Loader2 v-if="isSubmitting" class="w-4 h-4 animate-spin" />
-                    <Save v-else class="w-4 h-4" />
+                    <Save v-else class="w-4 w-4" />
                     Save as draft
                 </button>
 
-                <button :disabled="!canSubmit || isSubmitting" @click="submit('sent')" class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm rounded-lg text-white
-                       bg-kaitoke-green-600 hover:bg-kaitoke-green-700
-                       disabled:opacity-50 disabled:cursor-not-allowed">
-                    <Loader2 v-if="isSubmitting" class="w-4 h-4 animate-spin" />
+                <button :disabled="!canSubmit || isSubmitting || !!permissionError" @click="submit('sent')"
+                    class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm rounded-lg text-whitebg-kaitoke-green-600 hover:bg-kaitoke-green-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <Loader2 v-if="isSubmitting" class="w-4 w-4 animate-spin" />
                     <Send v-else class="w-4 h-4" />
                     Submit for review
                 </button>
