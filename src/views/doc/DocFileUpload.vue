@@ -159,7 +159,10 @@ async function loadReviewersForTargets() {
 
     // De-dupe by user_id
     const seen = new Set()
-    reviewers.value = merged.filter(r => {
+    const currentUserId = auth.user.id
+reviewers.value = merged.filter(r => {
+        if (Number(r.id) === Number(currentUserId)) return false
+
         if (seen.has(r.id)) return false
         seen.add(r.id)
         return true

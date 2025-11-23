@@ -41,7 +41,7 @@ const versions = ref([])
 const versionsLoading = ref(false)
 
 const actionBusy = reactive({ view: false, approve: false, decline: false, reload: false })
-
+const orgId = computed(() => route.params.id)
 /* ===========================
    Helpers / Mapping
 =========================== */
@@ -95,13 +95,19 @@ async function fetchMe() {
 }
 
 async function fetchAssignedThreads(page = 1) {
+
+    if (!orgId.value) {
+        errorMsg.value = 'Organization ID missing from route';
+        return;
+    }
+
     const params = { filter: 'as_reviewer', page }
     if (statusFilter.value !== 'all') params.status = statusFilter.value
     if (q.value.trim()) params.q = q.value.trim()
     const orgIdQ = Number(route.query.orgId || '')
     if (orgIdQ) params.publisher_org_id = orgIdQ
 
-    const { data } = await axios.get('/api/reviews', { params })
+    const { data } = await axios.get(`/api/org/${orgId.value}/reviews`, { params })
     const rows = Array.isArray(data) ? data : (data?.data || [])
     threads.value = normalizeThreads(rows)
     pageMeta.value = data?.meta || null
@@ -123,31 +129,38 @@ function normalizeThreads(list) {
 }
 
 async function openThread(id) {
-    const { data } = await axios.get(`/api/reviews/${id}`)
-    thread.value = data
-    selectedId.value = id
-    await Promise.all([
-        fetchComments(id),
-        fetchVersionHistory(data.document_id || data.document?.id)
-    ])
+    if (!orgId.value) return
 
-    const mine = myRecipient.value
-    if (mine && !mine.viewed_at && mine.id) {
-        try {
-            await axios.patch(`/api/reviews/${id}/recipients/${mine.id}/view`)
-            mine.viewed_at = new Date().toISOString()
-        } catch (e) {
-            console.error('Failed to mark as viewed:', e)
+    try {
+        const { data } = await axios.get(`/api/org/${orgId.value}/reviews/${id}`)
+        thread.value = data
+        selectedId.value = id
+        const mine = myRecipient.value
+        if (mine && mine.status === 'pending' && mine.id) {
+             // We don't await this, allowing comments/versions to load in parallel
+             markViewed() 
         }
+
+        await Promise.all([
+            fetchComments(id),
+            fetchVersionHistory(data.document_id || data.document?.id)
+        ])
+    }catch (e) {
+        // Keep error handling separate
+        console.error('Failed to load thread:', e)
     }
 }
 
 async function fetchComments(reviewId) {
+    if (!orgId.value || !myRecipient.value?.id) return
+
     commentsLoading.value = true
     try {
-        const { data } = await axios.get(`/api/reviews/${reviewId}/comments`)
+        const recipientId = myRecipient.value.id
+        const { data } = await axios.get(`/api/org/${orgId.value}/reviews/${reviewId}/recipients/${recipientId}/comments`)
         comments.value = Array.isArray(data) ? data : (data?.data || [])
-    } catch {
+    } catch (e) {
+        console.error("Failed to load reviewer comments:", e);
         comments.value = []
     } finally {
         commentsLoading.value = false
@@ -169,11 +182,17 @@ async function fetchVersionHistory(documentId) {
 }
 
 async function postComment() {
-    if (!replyText.value.trim() || !thread.value) return
+    if (!replyText.value.trim() || !thread.value || !orgId.value || !myRecipient.value?.id) return
     postBusy.value = true
     try {
         const payload = { body: replyText.value.trim() }
-        const { data: saved } = await axios.post(`/api/reviews/${thread.value.id}/comments`, payload)
+        const recipientId = myRecipient.value.id
+
+        const { data: saved } = await axios.post(
+            `/api/org/${orgId.value}/reviews/${thread.value.id}/recipients/${recipientId}/comments`, // <-- UPDATED URL
+            payload
+        )
+
         comments.value.push(saved)
         replyText.value = ''
         successMsg.value = 'Message sent successfully'
@@ -187,9 +206,13 @@ async function postComment() {
 
 async function markViewed() {
     if (!thread.value || !myRecipient.value?.id) return
+
+    const status = String(myRecipient.value.status || '').toLowerCase()
+    if (['approved', 'declined', 'viewed'].includes(status)) return
     actionBusy.view = true
     try {
         await axios.patch(`/api/reviews/${thread.value.id}/recipients/${myRecipient.value.id}/view`)
+        myRecipient.value.status = 'viewed'
         myRecipient.value.viewed_at = new Date().toISOString()
         successMsg.value = 'Marked as viewed'
         setTimeout(() => successMsg.value = '', 2000)
@@ -359,7 +382,7 @@ function initials(name) {
                         @click="openThread(t.id)">
                         <div class="flex items-center justify-between gap-2">
                             <div class="font-medium text-sm truncate text-abyss-900 dark:text-platinum-100">{{ t.subject
-                                }}</div>
+                            }}</div>
                             <div class="text-[11px] text-platinum-700">{{ shortDateTime(t.updated_at) }}</div>
                         </div>
                         <div class="text-xs text-platinum-700 truncate flex items-center gap-2 mt-0.5">
