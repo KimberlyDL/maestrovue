@@ -230,6 +230,17 @@ const authenticatedRoutes = [
           requiresPermission: 'manage_reviews'
         },
       },
+
+
+      {
+        path: "reviews/submit",
+        name: "org.review-submit",
+        component: () => import("@views/doc/ReviewUpload.vue"),
+        meta: {
+          title: "Submit Review",
+          requiresPermission: PERMISSIONS.CREATE_REVIEWS
+        },
+      },
     ],
   },
 ];

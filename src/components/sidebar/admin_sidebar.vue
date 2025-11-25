@@ -227,6 +227,13 @@ onMounted(() => {
                         </template>
                     </SidebarNavItem> -->
 
+                    <SidebarNavItem :to="{ name: 'org.review-submit', params: { id: currentOrgId } }"
+                        title="Submit Document">
+                        <template #icon>
+                            <Upload :size="16" :stroke-width="1.25" />
+                        </template>
+                    </SidebarNavItem>
+
                     <SidebarNavDropdown label="My Submissions" :matchPaths="[
                         `/org/${currentOrgId}/documents/submit`,
                         `/org/${currentOrgId}/documents/reviews`
