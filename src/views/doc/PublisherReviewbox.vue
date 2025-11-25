@@ -125,13 +125,14 @@ function initials(name) {
 }
 
 /* ===========================
-   API Calls
+   API Calls - FIXED
 =========================== */
 async function fetchMe() {
     const { data } = await axios.get('/api/me')
     me.value = data
 }
 
+// ✅ FIXED: Use organization-scoped endpoint with correct filter
 async function fetchPublishedThreads(page = 1) {
     if (!orgId.value) {
         errorMsg.value = 'Organization ID missing'
@@ -139,7 +140,7 @@ async function fetchPublishedThreads(page = 1) {
     }
 
     const params = {
-        filter: 'as_publisher',
+        filter: 'as_publisher', // ✅ Get documents I submitted FROM this org
         page
     }
 
@@ -147,7 +148,6 @@ async function fetchPublishedThreads(page = 1) {
     if (q.value.trim()) params.q = q.value.trim()
 
     try {
-        // âœ… Use organization-scoped endpoint
         const { data } = await axios.get(`/api/org/${orgId.value}/reviews`, { params })
         const rows = Array.isArray(data) ? data : (data?.data || [])
         threads.value = normalizeThreads(rows)
@@ -174,6 +174,7 @@ function normalizeThreads(list) {
     }))
 }
 
+// ✅ FIXED: Use organization-scoped endpoint
 async function openThread(id) {
     if (!orgId.value) return
 
@@ -194,12 +195,15 @@ async function openThread(id) {
     }
 }
 
+// ✅ FIXED: Use organization-scoped endpoint
 async function fetchRecipientComments(reviewId, recipientId) {
     if (!orgId.value) return
 
     commentsLoading.value = true
     try {
-        const { data } = await axios.get(`/api/org/${orgId.value}/reviews/${reviewId}/recipients/${recipientId}/comments`)
+        const { data } = await axios.get(
+            `/api/org/${orgId.value}/reviews/${reviewId}/recipients/${recipientId}/comments`
+        )
         const comments = Array.isArray(data) ? data : (data?.data || [])
         recipientComments.value[recipientId] = comments
     } catch (e) {
@@ -224,6 +228,7 @@ async function fetchVersionHistory(documentId) {
     }
 }
 
+// ✅ FIXED: Use organization-scoped endpoint
 async function fetchActivityLog(reviewId) {
     if (!orgId.value) return
 
@@ -235,6 +240,7 @@ async function fetchActivityLog(reviewId) {
     }
 }
 
+// ✅ FIXED: Use organization-scoped endpoint
 async function postCommentToRecipient() {
     if (!replyText.value.trim() || !thread.value || !selectedRecipientId.value || !orgId.value) return
 
@@ -260,6 +266,7 @@ async function postCommentToRecipient() {
     }
 }
 
+// ✅ FIXED: Use organization-scoped endpoint
 async function uploadNewVersion() {
     if (!uploadFile.value || !thread.value || !orgId.value) {
         errorMsg.value = 'Please select a file'
@@ -273,6 +280,7 @@ async function uploadNewVersion() {
         fd.append('file', uploadFile.value)
         if (uploadNote.value) fd.append('note', uploadNote.value)
 
+        // ✅ THIS WAS THE MAIN BUG - Now using org-scoped route
         const { data } = await axios.post(
             `/api/org/${orgId.value}/reviews/${thread.value.id}/versions`,
             fd,
@@ -290,12 +298,14 @@ async function uploadNewVersion() {
         successMsg.value = 'New version uploaded successfully'
         setTimeout(() => successMsg.value = '', 3000)
     } catch (err) {
+        console.error('Upload error:', err)
         errorMsg.value = err?.response?.data?.message || 'Failed to upload version'
     } finally {
         uploadBusy.value = false
     }
 }
 
+// ✅ FIXED: Use organization-scoped endpoint
 async function closeReview() {
     if (!thread.value || !orgId.value) return
     actionBusy.close = true
@@ -311,6 +321,7 @@ async function closeReview() {
     }
 }
 
+// ✅ FIXED: Use organization-scoped endpoint
 async function reopenReview() {
     if (!thread.value || !orgId.value) return
     actionBusy.reopen = true
@@ -326,11 +337,14 @@ async function reopenReview() {
     }
 }
 
+// ✅ FIXED: Use organization-scoped endpoint
 async function remindRecipient(recipientId) {
     if (!thread.value || !orgId.value) return
     actionBusy.remind[recipientId] = true
     try {
-        await axios.post(`/api/org/${orgId.value}/reviews/${thread.value.id}/recipients/${recipientId}/remind`)
+        await axios.post(
+            `/api/org/${orgId.value}/reviews/${thread.value.id}/recipients/${recipientId}/remind`
+        )
         successMsg.value = 'Reminder sent successfully'
         setTimeout(() => successMsg.value = '', 3000)
     } catch (e) {
@@ -465,7 +479,7 @@ watch(selectedRecipientId, async (recipientId) => {
                         @click="openThread(t.id)">
                         <div class="flex items-center justify-between gap-2">
                             <div class="font-medium text-sm truncate text-abyss-900 dark:text-platinum-100">{{ t.subject
-                            }}</div>
+                                }}</div>
                             <div class="text-[11px] text-platinum-700">{{ shortDateTime(t.updated_at) }}</div>
                         </div>
                         <div class="text-xs text-platinum-700 truncate flex items-center gap-2 mt-0.5">

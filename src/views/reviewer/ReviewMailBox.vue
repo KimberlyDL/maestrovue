@@ -1,4 +1,3 @@
-<!-- src/views/review/ReviewerInbox.vue -->
 <script setup>
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -40,10 +39,17 @@ const showVersionHistory = ref(false)
 const versions = ref([])
 const versionsLoading = ref(false)
 
-const actionBusy = reactive({ view: false, approve: false, decline: false, reload: false })
+const actionBusy = reactive({
+    view: false,
+    approve: false,
+    decline: false,
+    reload: false
+})
+
 const orgId = computed(() => route.params.id)
+
 /* ===========================
-   Helpers / Mapping
+   Computed Properties
 =========================== */
 const myRecipient = computed(() => {
     if (!thread.value || !me.value) return null
@@ -51,10 +57,8 @@ const myRecipient = computed(() => {
     return recs.find(r => Number(r.reviewer_user_id) === Number(me.value.id)) || null
 })
 
-// Show ALL comments - don't filter them
 const visibleComments = computed(() => {
-    const list = Array.isArray(comments.value) ? comments.value : []
-    return list
+    return Array.isArray(comments.value) ? comments.value : []
 })
 
 const rightPanelMeta = computed(() => {
@@ -87,31 +91,37 @@ const filteredThreads = computed(() => {
 })
 
 /* ===========================
-   API
+   API Functions
 =========================== */
 async function fetchMe() {
     const { data } = await axios.get('/api/me')
     me.value = data
 }
 
+// ✅ Keep this org-scoped for listing
 async function fetchAssignedThreads(page = 1) {
-
     if (!orgId.value) {
-        errorMsg.value = 'Organization ID missing from route';
-        return;
+        errorMsg.value = 'Organization ID missing from route'
+        return
     }
 
-    const params = { filter: 'as_reviewer', page }
+    const params = {
+        filter: 'as_reviewer',
+        page
+    }
     if (statusFilter.value !== 'all') params.status = statusFilter.value
     if (q.value.trim()) params.q = q.value.trim()
-    const orgIdQ = Number(route.query.orgId || '')
-    if (orgIdQ) params.publisher_org_id = orgIdQ
 
-    const { data } = await axios.get(`/api/org/${orgId.value}/reviews`, { params })
-    const rows = Array.isArray(data) ? data : (data?.data || [])
-    threads.value = normalizeThreads(rows)
-    pageMeta.value = data?.meta || null
-    pageLinks.value = data?.links || null
+    try {
+        const { data } = await axios.get(`/api/org/${orgId.value}/reviews`, { params })
+        const rows = Array.isArray(data) ? data : (data?.data || [])
+        threads.value = normalizeThreads(rows)
+        pageMeta.value = data?.meta || null
+        pageLinks.value = data?.links || null
+    } catch (e) {
+        console.error('Failed to fetch reviews:', e)
+        errorMsg.value = e?.response?.data?.message || 'Failed to load reviews'
+    }
 }
 
 function normalizeThreads(list) {
@@ -128,44 +138,47 @@ function normalizeThreads(list) {
     }))
 }
 
+// ✅ CHANGED: Use global route for viewing individual review
 async function openThread(id) {
-    if (!orgId.value) return
-
     try {
-        const { data } = await axios.get(`/api/org/${orgId.value}/reviews/${id}`)
+        const { data } = await axios.get(`/api/reviews/${id}`) // CHANGED: No org prefix
         thread.value = data
         selectedId.value = id
+
         const mine = myRecipient.value
         if (mine && mine.status === 'pending' && mine.id) {
-             // We don't await this, allowing comments/versions to load in parallel
-             markViewed() 
+            markViewed()
         }
 
         await Promise.all([
             fetchComments(id),
             fetchVersionHistory(data.document_id || data.document?.id)
         ])
-    }catch (e) {
-        // Keep error handling separate
+    } catch (e) {
         console.error('Failed to load thread:', e)
+        errorMsg.value = e?.response?.data?.message || 'Failed to load review'
     }
 }
 
+// ✅ CHANGED: Use global route for comments
 async function fetchComments(reviewId) {
-    if (!orgId.value || !myRecipient.value?.id) return
+    if (!myRecipient.value?.id) return
 
     commentsLoading.value = true
     try {
         const recipientId = myRecipient.value.id
-        const { data } = await axios.get(`/api/org/${orgId.value}/reviews/${reviewId}/recipients/${recipientId}/comments`)
+        const { data } = await axios.get(
+            `/api/reviews/${reviewId}/recipients/${recipientId}/comments` // CHANGED: No org prefix
+        )
         comments.value = Array.isArray(data) ? data : (data?.data || [])
     } catch (e) {
-        console.error("Failed to load reviewer comments:", e);
+        console.error("Failed to load reviewer comments:", e)
         comments.value = []
     } finally {
         commentsLoading.value = false
     }
 }
+
 
 async function fetchVersionHistory(documentId) {
     if (!documentId) return
@@ -181,15 +194,17 @@ async function fetchVersionHistory(documentId) {
     }
 }
 
+// ✅ CHANGED: Use global route for posting comments
 async function postComment() {
-    if (!replyText.value.trim() || !thread.value || !orgId.value || !myRecipient.value?.id) return
+    if (!replyText.value.trim() || !thread.value || !myRecipient.value?.id) return
+
     postBusy.value = true
     try {
         const payload = { body: replyText.value.trim() }
         const recipientId = myRecipient.value.id
 
         const { data: saved } = await axios.post(
-            `/api/org/${orgId.value}/reviews/${thread.value.id}/recipients/${recipientId}/comments`, // <-- UPDATED URL
+            `/api/reviews/${thread.value.id}/recipients/${recipientId}/comments`, // CHANGED: No org prefix
             payload
         )
 
@@ -209,6 +224,7 @@ async function markViewed() {
 
     const status = String(myRecipient.value.status || '').toLowerCase()
     if (['approved', 'declined', 'viewed'].includes(status)) return
+
     actionBusy.view = true
     try {
         await axios.patch(`/api/reviews/${thread.value.id}/recipients/${myRecipient.value.id}/view`)
@@ -253,21 +269,15 @@ async function decline() {
     }
 }
 
-/**
- * NEW: Use temporary URL method for downloads
- */
 async function downloadVersion(docId, versionId, versionNumber) {
     try {
         errorMsg.value = ''
-
-        // Step 1: Get temporary download URL
         const { data } = await axios.get(`/api/documents/${docId}/versions/${versionId}/download-url`)
 
         if (!data.url) {
             throw new Error('Download URL not available')
         }
 
-        // Step 2: Download using the temporary URL
         const link = document.createElement('a')
         link.href = data.url
         link.download = data.filename || `document_v${versionNumber}`
@@ -292,6 +302,23 @@ async function downloadCurrentVersion() {
 }
 
 /* ===========================
+   Utility Functions
+=========================== */
+function shortDateTime(s) {
+    if (!s) return ''
+    const d = new Date(s)
+    return isNaN(d) ? s : d.toLocaleString()
+}
+
+function initials(name) {
+    if (!name) return '?'
+    const parts = String(name).split(' ')
+    const a = parts[0]?.[0] || ''
+    const b = parts[1]?.[0] || ''
+    return (a + b || a).toUpperCase()
+}
+
+/* ===========================
    Lifecycle
 =========================== */
 onMounted(async () => {
@@ -303,7 +330,7 @@ onMounted(async () => {
         if (!me.value) await fetchMe()
 
         await fetchAssignedThreads()
-        const fromRoute = Number(route.query.rid || route.params.id || '')
+        const fromRoute = Number(route.query.rid || '')
         const firstId = fromRoute || (threads.value[0]?.id ?? null)
         if (firstId) await openThread(firstId)
     } catch (e) {
@@ -318,21 +345,9 @@ watch(() => route.query.rid, (rid) => {
     if (id) openThread(id)
 })
 
-/* ===========================
-   UI utils
-=========================== */
-function shortDateTime(s) {
-    if (!s) return ''
-    const d = new Date(s)
-    return isNaN(d) ? s : d.toLocaleString()
-}
-function initials(name) {
-    if (!name) return '?'
-    const parts = String(name).split(' ')
-    const a = parts[0]?.[0] || ''
-    const b = parts[1]?.[0] || ''
-    return (a + b || a).toUpperCase()
-}
+watch(() => statusFilter.value, () => {
+    fetchAssignedThreads()
+})
 </script>
 
 <template>
@@ -370,9 +385,10 @@ function initials(name) {
             <div class="flex-1 overflow-y-auto">
                 <div v-if="loading"
                     class="p-4 text-sm text-platinum-800 dark:text-platinum-300 flex items-center gap-2">
-                    <Loader2 class="h-4 w-4 animate-spin" /> Loadingâ€¦
+                    <Loader2 class="h-4 w-4 animate-spin" /> Loading…
                 </div>
-                <div v-else-if="filteredThreads.length === 0" class="p-4 text-sm text-platinum-700">No assigned reviews.
+                <div v-else-if="filteredThreads.length === 0" class="p-4 text-sm text-platinum-700">
+                    No assigned reviews.
                 </div>
 
                 <ul v-else class="divide-y divide-platinum-100 dark:divide-abyss-700">
@@ -381,13 +397,14 @@ function initials(name) {
                         :class="t.id === selectedId ? 'bg-kaitoke-green-50 dark:bg-abyss-700 ring-1 ring-kaitoke-green-300/40' : ''"
                         @click="openThread(t.id)">
                         <div class="flex items-center justify-between gap-2">
-                            <div class="font-medium text-sm truncate text-abyss-900 dark:text-platinum-100">{{ t.subject
-                            }}</div>
+                            <div class="font-medium text-sm truncate text-abyss-900 dark:text-platinum-100">
+                                {{ t.subject }}
+                            </div>
                             <div class="text-[11px] text-platinum-700">{{ shortDateTime(t.updated_at) }}</div>
                         </div>
                         <div class="text-xs text-platinum-700 truncate flex items-center gap-2 mt-0.5">
                             <Building2 class="h-3.5 w-3.5" />
-                            <span>{{ t.publisher?.name || 'â€”' }}</span>
+                            <span>{{ t.publisher?.name || '–' }}</span>
                         </div>
                         <div class="text-[11px] mt-1 flex items-center gap-2">
                             <span
@@ -421,12 +438,13 @@ function initials(name) {
             <div class="px-4 py-3 border-b border-platinum-200 dark:border-abyss-700 flex items-center justify-between">
                 <div class="min-w-0">
                     <div class="text-xs text-platinum-700">Subject</div>
-                    <h2 class="text-lg font-semibold truncate text-abyss-900 dark:text-platinum-100">{{ thread?.subject
-                        || 'â€”' }}</h2>
+                    <h2 class="text-lg font-semibold truncate text-abyss-900 dark:text-platinum-100">
+                        {{ thread?.subject || '–' }}
+                    </h2>
                 </div>
                 <div class="text-xs text-platinum-700">
                     <span>Status: </span>
-                    <span class="font-medium text-abyss-900 dark:text-platinum-100">{{ thread?.status || 'â€”' }}</span>
+                    <span class="font-medium text-abyss-900 dark:text-platinum-100">{{ thread?.status || '–' }}</span>
                 </div>
             </div>
 
@@ -454,10 +472,11 @@ function initials(name) {
                         </div>
 
                         <div v-if="commentsLoading" class="text-sm text-platinum-700 flex items-center gap-2">
-                            <Loader2 class="h-4 w-4 animate-spin" /> Loading messagesâ€¦
+                            <Loader2 class="h-4 w-4 animate-spin" /> Loading messages…
                         </div>
 
-                        <div v-else-if="visibleComments.length === 0" class="text-sm text-platinum-700">No messages yet.
+                        <div v-else-if="visibleComments.length === 0" class="text-sm text-platinum-700">
+                            No messages yet.
                         </div>
 
                         <div v-else class="space-y-4">
@@ -473,7 +492,7 @@ function initials(name) {
                                             <span v-if="c.author_user_id === me?.id"
                                                 class="text-kaitoke-green-600">(You)</span>
                                         </span>
-                                        <span>â€¢</span>
+                                        <span>•</span>
                                         <span>{{ shortDateTime(c.created_at) }}</span>
                                     </div>
                                     <div class="text-sm whitespace-pre-wrap text-abyss-900 dark:text-platinum-100 mt-1">
@@ -489,7 +508,7 @@ function initials(name) {
                         <label class="block text-xs text-platinum-700 mb-1">Write a reply</label>
                         <textarea v-model="replyText" rows="3"
                             class="w-full border border-platinum-300 dark:border-abyss-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-kaitoke-green-500 bg-white dark:bg-abyss-800 text-abyss-900 dark:text-platinum-100"
-                            placeholder="Type your messageâ€¦" />
+                            placeholder="Type your message…" />
                         <div class="flex justify-end mt-2">
                             <button :disabled="!replyText.trim() || postBusy"
                                 class="inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg text-white"
@@ -548,8 +567,9 @@ function initials(name) {
                             <div v-for="ver in versions" :key="ver.id"
                                 class="flex items-center justify-between text-xs p-2 rounded bg-platinum-50 dark:bg-abyss-700">
                                 <div class="flex-1 min-w-0">
-                                    <div class="font-medium text-abyss-900 dark:text-platinum-100">v{{
-                                        ver.version_number }}</div>
+                                    <div class="font-medium text-abyss-900 dark:text-platinum-100">
+                                        v{{ ver.version_number }}
+                                    </div>
                                     <div class="text-platinum-700">{{ shortDateTime(ver.created_at) }}</div>
                                     <div v-if="ver.note" class="text-platinum-700 mt-1 truncate">{{ ver.note }}</div>
                                 </div>
@@ -569,7 +589,7 @@ function initials(name) {
                         <span class="font-medium">Publisher</span>
                     </div>
                     <div class="text-xs text-platinum-700 mt-1">
-                        {{ rightPanelMeta?.publisherOrgName || 'â€”' }}
+                        {{ rightPanelMeta?.publisherOrgName || '–' }}
                     </div>
                 </div>
 
@@ -582,7 +602,7 @@ function initials(name) {
                     <ul class="mt-1 space-y-1">
                         <li v-for="r in rightPanelMeta?.recipients || []" :key="r.id"
                             class="text-xs text-abyss-900 dark:text-platinum-100">
-                            â€¢ {{ r.reviewer?.name || r.user?.name || 'Unknown' }}
+                            • {{ r.reviewer?.name || r.user?.name || 'Unknown' }}
                         </li>
                     </ul>
                 </div>
@@ -594,7 +614,7 @@ function initials(name) {
                         <span class="font-medium">Deadline</span>
                     </div>
                     <div class="text-xs text-platinum-700 mt-1">
-                        {{ rightPanelMeta?.effectiveDue ? shortDateTime(rightPanelMeta.effectiveDue) : 'â€”' }}
+                        {{ rightPanelMeta?.effectiveDue ? shortDateTime(rightPanelMeta.effectiveDue) : '–' }}
                     </div>
                 </div>
 
@@ -608,9 +628,7 @@ function initials(name) {
                         <Loader2 v-if="actionBusy.view" class="h-4 w-4 animate-spin" />
                         <Eye v-else class="h-4 w-4" />
                         Mark as viewed
-                    </button>
-
-                    <button
+                    </button><button
                         v-if="myRecipient && !['approved', 'declined'].includes(String(myRecipient.status || '').toLowerCase())"
                         :disabled="actionBusy.approve"
                         class="w-full inline-flex items-center justify-center gap-2 px-3 py-1.5 text-sm rounded-lg text-white bg-kaitoke-green-600 hover:bg-kaitoke-green-700 disabled:opacity-50"
