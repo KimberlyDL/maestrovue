@@ -1,3 +1,4 @@
+<!-- frontend\src\views\doc\PublisherReviewbox.vue -->
 <script setup>
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'

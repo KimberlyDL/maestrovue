@@ -114,8 +114,11 @@ async function requestJoinOrg() {
 }
 
 
-function navigateToManage() {
-    router.push({ name: 'org.manage', params: { id: orgId.value } })
+// function navigateToManage() {
+//     router.push({ name: 'org.manage', params: { id: orgId.value } })
+// }
+function navigateToManage(id) {
+    router.push({ name: 'org.overview', params: { id } })
 }
 
 function goBack() {
@@ -175,7 +178,7 @@ watchEffect(() => {
                             <Users2 class="w-6 h-6" :stroke-width="1.25" />
                         </button>
 
-                        <button v-if="isMemberOrAdmin" @click="navigateToManage" title="Manage Organization"
+                        <button v-if="isMemberOrAdmin" @click="navigateToManage(org.id)" title="'Manage Organization' + org.name"
                             class="p-2 text-kaitoke-green-600 dark:text-kaitoke-green-400 hover:text-kaitoke-green-700 dark:hover:text-kaitoke-green-300 hover:bg-sun-200 dark:hover:bg-abyss-700 rounded-full transition-colors">
                             <SquareArrowOutUpRight class="w-6 h-6" :stroke-width="1.25" />
                         </button>

@@ -140,7 +140,7 @@ async function submit() {
     try {
         const orgId = route.params.id
 
-        // Step 1: Create document
+        // Step 1: Create document (FIXED: using org-scoped endpoint)
         const docFormData = new FormData()
         docFormData.append('organization_id', String(orgId))
         docFormData.append('title', form.value.title)
@@ -148,7 +148,7 @@ async function submit() {
         docFormData.append('file', form.value.file)
         if (form.value.note) docFormData.append('note', form.value.note)
 
-        const { data: document } = await axios.post('/api/documents', docFormData, {
+        const { data: document } = await axios.post(`/api/org/${orgId}/documents`, docFormData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         })
 
@@ -177,7 +177,7 @@ async function submit() {
 
         // Navigate to reviews list
         router.push({
-            name: 'org.reviews',
+            name: 'org.my-submissions',
             params: { id: orgId },
             query: { filter: 'as_publisher' }
         })

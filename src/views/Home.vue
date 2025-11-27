@@ -179,7 +179,6 @@ async function loadAnnouncements() {
 async function loadMyRequests() {
     loadingRequests.value = true
     try {
-        // TODO: Create this endpoint in backend
         const { data } = await axios.get('/api/organizations/my-requests')
         myRequests.value = data
     } catch (error) {

@@ -203,14 +203,37 @@ const authenticatedRoutes = [
       //   },
       // },
       {
+        path: "documents/my-submissions",
+        name: "org.my-submissions",
+        component: () => import("@views/doc/ReviewDashboard.vue"),
+        meta: {
+          title: "Upload Document",
+          // requiresPermission: PERMISSIONS.CREATE_REVIEWS
+        },
+      },
+      {
+        path: "documents/all-submissions",
+        name: "org.submissions",
+        component: () => import("@views/doc/AdminSubmissions.vue"),
+        meta: {
+          title: "Upload Document",
+          // requiresPermission: PERMISSIONS.CREATE_REVIEWS
+        },
+      },
+      {
         path: "documents/submit",
-        name: "org.doc-submit",
-        component: () => import("@views/doc/DocFileUpload.vue"),
+        name: "org.review-submit",
+        component: () => import("@views/doc/ReviewUpload.vue"),
         meta: {
           title: "Upload Document",
           requiresPermission: PERMISSIONS.CREATE_REVIEWS
         },
       },
+
+
+
+
+
       {
         path: "documents/reviews",
         name: "reviewer.mailbox",
@@ -241,6 +264,30 @@ const authenticatedRoutes = [
           requiresPermission: PERMISSIONS.CREATE_REVIEWS
         },
       },
+
+      {
+        path: "incoming-reviews",
+        name: "reviewer.mailbox", // Or "org.incoming-reviews"
+        component: () => import("@views/reviewer/ReviewMailBox.vue"),
+        meta: {
+          title: "Review Inbox",
+          requiresMember: true // Any member can access, controller filters by assignment
+        },
+      },
+      {
+        path: "incoming-reviews/:reviewId",
+        name: "org.incoming-review-workspace",
+        component: () => import("@views/reviewer/ReviewerWorkspace.vue"),
+        props: true,
+        meta: {
+          title: "Review Workspace",
+          requiresMember: true
+        },
+      },
+
+
+
+
     ],
   },
 ];
