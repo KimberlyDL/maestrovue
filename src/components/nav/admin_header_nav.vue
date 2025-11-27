@@ -4,6 +4,7 @@ import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useOrganizationStore } from '@/stores/organization'
+import NotificationBell from '@/components/notif/notification_bell.vue'
 import { Bell, MessageSquare, ChevronDown, User, Settings, LogOut } from 'lucide-vue-next'
 import axios from '@/utils/api'
 
@@ -112,47 +113,7 @@ onUnmounted(() => {
                 </div>
 
                 <div class="flex items-center gap-2 sm:gap-4">
-                    <!-- Notifications -->
-                    <div class="relative">
-                        <button @click.stop="toggleDropdown('notifications')" type="button"
-                            :aria-expanded="activeDropdown === 'notifications'" aria-label="View notifications"
-                            class="relative p-2 rounded-full text-abyss-600/90 dark:text-platinum-200 hover:text-kaitoke-green-700 hover:bg-kaitoke-green-50 dark:hover:bg-abyss-800 focus:outline-none focus:ring-2 focus:ring-kaitoke-green-400"
-                            :class="{ 'bg-kaitoke-green-50 text-kaitoke-green-700': activeDropdown === 'notifications' }">
-                            <Bell class="w-5 h-5" />
-                            <span v-if="notifications.length"
-                                class="absolute -top-0.5 -right-0.5 inline-flex items-center justify-center h-4 min-w-4 px-1 text-[10px] font-bold text-white bg-red-600 rounded-full ring-2 ring-white dark:ring-abyss-900">{{
-                                    notifications.length }}</span>
-                        </button>
-
-                        <Transition enter-active-class="transition ease-out duration-200"
-                            enter-from-class="transform opacity-0 scale-95"
-                            enter-to-class="transform opacity-100 scale-100"
-                            leave-active-class="transition ease-in duration-150"
-                            leave-from-class="transform opacity-100 scale-100"
-                            leave-to-class="transform opacity-0 scale-95">
-                            <div v-if="activeDropdown === 'notifications'"
-                                class="absolute right-0 mt-3 w-80 rounded-2xl shadow-2xl ring-1 ring-black/5 bg-white dark:bg-abyss-900 divide-y divide-platinum-200/70 dark:divide-abyss-800">
-                                <div
-                                    class="px-5 py-3 text-base font-bold text-abyss-900 dark:text-white border-b border-platinum-200/70 dark:border-abyss-800">
-                                    Notifications</div>
-                                <div class="max-h-[320px] overflow-auto">
-                                    <a v-for="n in notifications" :key="n.id" href="#"
-                                        class="block px-5 py-3 hover:bg-kaitoke-green-50/70 dark:hover:bg-abyss-800 transition">
-                                        <p class="text-sm font-medium text-abyss-900 dark:text-platinum-50">{{ n.text }}
-                                        </p>
-                                        <p class="text-xs text-kaitoke-green-700 dark:text-platinum-300 mt-1">{{ n.time
-                                            }}</p>
-                                    </a>
-                                    <div v-if="!notifications.length"
-                                        class="px-5 py-3 text-sm text-abyss-500 dark:text-platinum-300">No new
-                                        notifications.</div>
-                                </div>
-                                <button type="button"
-                                    class="w-full text-center py-2 text-sm font-medium text-kaitoke-green-700 hover:bg-platinum-100 dark:hover:bg-abyss-800 rounded-b-2xl">View
-                                    All</button>
-                            </div>
-                        </Transition>
-                    </div>
+                    <!-- Notifications --><NotificationBell />
 
                     <!-- Messages -->
                     <div class="relative">

@@ -3,12 +3,14 @@ import { ref, computed, watch, onMounted, provide } from 'vue'
 import { useRoute } from 'vue-router'
 import { useOrganizationStore } from '@/stores/organization'
 import { usePermissionStore } from '@/stores/permission'
+import { useNotificationStore } from '@/stores/notification'
 import AdminSidebar from '@/components/sidebar/admin_sidebar.vue'
 import HeaderComponent from '@/components/nav/admin_header_nav.vue'
 
 const route = useRoute()
 const orgStore = useOrganizationStore()
 const permissionStore = usePermissionStore()
+const notificationStore = useNotificationStore()
 
 const loading = ref(true)
 
@@ -64,7 +66,17 @@ watch(() => route.params.id, (newId) => {
 }, { immediate: false })
 
 onMounted(() => {
+    
+    // Load initial notifications
+    notificationStore.fetchNotifications({ per_page: 20 })
+    notificationStore.fetchUnreadCount()
+    
+    // Poll for updates every 30 seconds
+    setInterval(() => {
+        notificationStore.fetchUnreadCount()
+    }, 30000)
     console.log('🚀 AdminLayout mounted with org ID:', organizationId.value)
+
     if (organizationId.value) {
         orgStore.setCurrentOrg(organizationId.value)
         loadOrganizationData()
@@ -72,6 +84,8 @@ onMounted(() => {
         orgStore.restoreCurrentOrg()
         loading.value = false
     }
+
+    
 })
 </script>
 

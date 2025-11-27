@@ -41,7 +41,7 @@ export function useDocumentDownload() {
         } catch (e) {
             console.error('Download error:', e)
             error.value = e.response?.data?.message || e.message || 'Download failed'
-            
+
             return {
                 success: false,
                 error: error.value,
@@ -85,7 +85,7 @@ export function useDocumentDownload() {
         } catch (e) {
             console.error('Public download error:', e)
             error.value = e.response?.data?.message || e.message || 'Download failed'
-            
+
             return {
                 success: false,
                 error: error.value,
@@ -163,7 +163,7 @@ export function useDocumentDownload() {
         } catch (e) {
             console.error('Download error:', e)
             error.value = e.message || 'Download failed'
-            
+
             return {
                 success: false,
                 error: error.value,
@@ -191,6 +191,60 @@ export function useDocumentDownload() {
         }, 100)
     }
 
+
+    async function downloadVersion(documentId, versionId, orgId = null) {
+        downloading.value = true
+        downloadProgress.value = 0
+        error.value = ''
+
+        try {
+            // Build correct URL based on context
+            let url
+
+            if (orgId) {
+                // Storage context
+                url = `/api/org/${orgId}/storage/documents/${documentId}/versions/${versionId}/download-url`
+            } else {
+                // Global context
+                url = `/api/documents/${documentId}/versions/${versionId}/download-url`
+            }
+
+            console.log('Requesting download URL from:', url)
+
+            // Get signed URL
+            const response = await axios.get(url)
+
+            if (!response.data?.url) {
+                throw new Error('Failed to generate download URL')
+            }
+
+            // Trigger download
+            triggerDownload(response.data.url, response.data.filename)
+
+            return {
+                success: true,
+                filename: response.data.filename,
+            }
+
+        } catch (e) {
+            console.error('Download error:', {
+                status: e.response?.status,
+                data: e.response?.data,
+                message: e.message
+            })
+
+            error.value = e.response?.data?.message || e.message || 'Download failed'
+
+            return {
+                success: false,
+                error: error.value,
+            }
+        } finally {
+            downloading.value = false
+            downloadProgress.value = 0
+        }
+    }
+
     return {
         downloading,
         downloadProgress,
@@ -198,5 +252,6 @@ export function useDocumentDownload() {
         downloadDocument,
         downloadPublicDocument,
         downloadWithProgress,
+        downloadVersion,
     }
 }

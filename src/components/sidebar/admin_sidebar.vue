@@ -217,16 +217,18 @@ onMounted(() => {
                     </SidebarNavItem>
                 </template>
 
-                <template v-if="hasCurrentOrg && hasPermission(PERMISSIONS.CREATE_REVIEWS)">
-                    <SidebarGroupLabel text="Repository" />
+                <SidebarGroupLabel text="Repository" />
 
-                    <SidebarNavItem :to="{ name: 'org.submissions', params: { id: currentOrgId } }"
-                        title="Submissions">
+                <template v-if="hasCurrentOrg && hasPermission(PERMISSIONS.MANAGE_REVIEWS)">
+                    <SidebarNavItem :to="{ name: 'org.submissions', params: { id: currentOrgId } }" title="Submissions">
                         <template #icon>
                             <Upload :size="16" :stroke-width="1.25" />
                         </template>
                     </SidebarNavItem>
+                </template>
 
+
+                <template v-if="hasCurrentOrg && hasPermission(PERMISSIONS.CREATE_REVIEWS)">
                     <SidebarNavItem :to="{ name: 'org.my-submissions', params: { id: currentOrgId } }"
                         title="My Submissions">
                         <template #icon>
@@ -241,22 +243,22 @@ onMounted(() => {
                         </template>
                     </SidebarNavItem>
 
-                    <SidebarNavItem :to="{ name: 'reviewer.mailbox', params: { id: currentOrgId } }"
-                        title="Incoming Reviews" 
-                        :badge="pendingReviews || undefined">
-                        <template #icon>
-                            <Inbox :size="16" :stroke-width="1.25" />
-                        </template>
-                    </SidebarNavItem>
-
-                    <SidebarNavItem v-if="hasPermission(PERMISSIONS.MANAGE_REVIEWS)"
+                    <!-- <SidebarNavItem v-if="hasPermission(PERMISSIONS.MANAGE_REVIEWS)"
                         :to="{ name: 'org.doc-submission', params: { id: currentOrgId } }" 
                         title="All Org Submissions">
                         <template #icon>
                             <FolderKanban :size="16" :stroke-width="1.25" />
                         </template>
+                    </SidebarNavItem> -->
+                </template>
+
+                <template v-if="hasCurrentOrg && isMember">
+                    <SidebarNavItem :to="{ name: 'reviewer.mailbox', params: { id: currentOrgId } }"
+                        title="Incoming Reviews" :badge="pendingReviews || undefined">
+                        <template #icon>
+                            <Inbox :size="16" :stroke-width="1.25" />
+                        </template>
                     </SidebarNavItem>
-                    
                 </template>
 
                 <template v-if="hasCurrentOrg && hasPermission(PERMISSIONS.VIEW_DUTY_SCHEDULES)">

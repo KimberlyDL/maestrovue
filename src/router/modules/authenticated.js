@@ -207,8 +207,8 @@ const authenticatedRoutes = [
         name: "org.my-submissions",
         component: () => import("@views/doc/ReviewDashboard.vue"),
         meta: {
-          title: "Upload Document",
-          // requiresPermission: PERMISSIONS.CREATE_REVIEWS
+          title: "My Submissions",
+          requiresPermission: PERMISSIONS.CREATE_REVIEWS
         },
       },
       {
@@ -217,44 +217,35 @@ const authenticatedRoutes = [
         component: () => import("@views/doc/AdminSubmissions.vue"),
         meta: {
           title: "Upload Document",
-          // requiresPermission: PERMISSIONS.CREATE_REVIEWS
-        },
-      },
-      {
-        path: "documents/submit",
-        name: "org.review-submit",
-        component: () => import("@views/doc/ReviewUpload.vue"),
-        meta: {
-          title: "Upload Document",
-          requiresPermission: PERMISSIONS.CREATE_REVIEWS
+          requiresPermission: PERMISSIONS.MANAGE_REVIEWS
         },
       },
 
 
+      // {
+      //   path: "documents/submit",
+      //   name: "org.review-submit",
+      //   component: () => import("@views/doc/ReviewUpload.vue"),
+      //   meta: {
+      //     title: "Upload Document",
+      //     requiresPermission: PERMISSIONS.CREATE_REVIEWS
+      //   },
+      // },
 
 
-
-      {
-        path: "documents/reviews",
-        name: "reviewer.mailbox",
-        component: () => import("@views/reviewer/ReviewMailBox.vue"),
-        meta: {
-          title: "Review Mailbox",
-          requiresPermission: PERMISSIONS.COMMENT_ON_REVIEWS
-        },
-      },
-      {
-        path: "documents/submissions",
-        name: "org.doc-submission",
-        component: () => import("@views/doc/PublisherReviewbox.vue"),
-        meta: {
-          title: "Submissions",
-          // requiresPermission: PERMISSIONS.MANAGE_REVIEWS
-          requiresPermission: 'manage_reviews'
-        },
-      },
+      // {
+      //   path: "documents/submissions",
+      //   name: "org.doc-submission",
+      //   component: () => import("@views/doc/PublisherReviewbox.vue"),
+      //   meta: {
+      //     title: "Submissions",
+      //     // requiresPermission: PERMISSIONS.MANAGE_REVIEWS
+      //     requiresPermission: 'manage_reviews'
+      //   },
+      // },
 
 
+      // eto ang gamit talaga
       {
         path: "reviews/submit",
         name: "org.review-submit",
@@ -286,7 +277,12 @@ const authenticatedRoutes = [
       },
 
 
-
+{
+    path: '/notifications',
+    name: 'notifications',
+    component: () => import('@/views/duty/NotificationPage.vue'),
+    meta: { requiresAuth: true, title: 'Notifications' }
+}
 
     ],
   },

@@ -32,12 +32,15 @@ export const PERMISSIONS = {
     DELETE_DOCUMENTS: 'delete_documents',
     MANAGE_DOCUMENT_SHARING: 'manage_document_sharing',
 
-    // Review System
-    VIEW_REVIEWS: 'view_reviews',
-    CREATE_REVIEWS: 'create_reviews',
+    // // Review System
+    // VIEW_REVIEWS: 'view_reviews',
+    // CREATE_REVIEWS: 'create_reviews',
+    // MANAGE_REVIEWS: 'manage_reviews',
+    // ASSIGN_REVIEWERS: 'assign_reviewers',
+    // COMMENT_ON_REVIEWS: 'comment_on_reviews',
+
+    CREATE_REVIEWS: 'create_reviews',        // Members: Create & manage their own reviews
     MANAGE_REVIEWS: 'manage_reviews',
-    ASSIGN_REVIEWERS: 'assign_reviewers',
-    COMMENT_ON_REVIEWS: 'comment_on_reviews',
 
     // Duty Management
     VIEW_DUTY_SCHEDULES: 'view_duty_schedules',

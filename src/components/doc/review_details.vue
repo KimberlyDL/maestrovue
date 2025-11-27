@@ -6,7 +6,7 @@ import {
     Upload, ChevronDown, ChevronUp, Loader2, CheckCircle,
     AlertCircle, Clock
 } from 'lucide-vue-next'
-
+import { useDocumentDownload } from '@/utils/useDocumentDownload'
 const props = defineProps({
     review: { type: Object, required: true },
     orgId: { type: [String, Number], required: true } // Pass orgId from parent
@@ -27,6 +27,9 @@ const uploadNote = ref('')
 const uploadBusy = ref(false)
 const errorMsg = ref('')
 const successMsg = ref('')
+
+// Initialize composable
+const { downloadVersion: downloadService, error: downloadError } = useDocumentDownload()
 
 /* ===========================
    Computed
@@ -113,23 +116,12 @@ const uploadNewVersion = async () => {
 }
 
 // Download logic (Secure URL generation)
+// FIXME : Download specific history
 const downloadVersion = async (verId, filename) => {
-    try {
-        const { data } = await axios.get(
-            `/api/org/${props.orgId}/storage/documents/${documentId.value}/versions/${verId}/download-url`
-        )
-
-        // Trigger download
-        const link = document.createElement('a')
-        link.href = data.url
-        link.setAttribute('download', data.filename || filename)
-        document.body.appendChild(link)
-        link.click()
-        link.remove()
-
-    } catch (err) {
-        console.error(err)
-        alert('Failed to generate download link.')
+    await downloadService(documentId.value, verId, null) 
+    
+    if (downloadError.value) {
+        alert(downloadError.value) 
     }
 }
 
