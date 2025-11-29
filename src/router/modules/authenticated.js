@@ -62,6 +62,12 @@ const authenticatedRoutes = [
         component: () => import("@views/org_discovery/JoinOrg.vue"),
         meta: { title: "Join Organization" },
       },
+      {
+        path: "create",
+        name: "orgs.create",
+        component: () => import("@views/org_discovery/Create.vue"),
+        meta: { title: "Create Organization" },
+      },
     ],
   },
 
@@ -73,12 +79,7 @@ const authenticatedRoutes = [
     component: () => import("@/layouts/HomeLayoutWithoutSidebar.vue"),
     meta: { requiresAuth: true },
     children: [
-      {
-        path: "create",
-        name: "orgs.create",
-        component: () => import("@views/org_discovery/Create.vue"),
-        meta: { title: "Create Organization" },
-      },
+
     ],
   },
 

@@ -1,17 +1,18 @@
 <template>
-    <div class="min-h-screen bg-abyss-900 py-10">
+    <div class="min-h-screen bg-platinum-50 text-abyss-900 dark:bg-abyss-900 dark:text-platinum-50 py-10">
         <div class="max-w-xl mx-auto px-4">
             <div class="text-center mb-8">
-                <h1 class="text-3xl font-bold text-platinum-50 mb-2">Join an Organization</h1>
-                <p class="text-platinum-500">Request to join or use an invite code</p>
+                <h1 class="text-3xl font-bold text-abyss-900 dark:text-platinum-50 mb-2">Join an Organization</h1>
+                <p class="text-platinum-600 dark:text-platinum-500">Request to join or use an invite code</p>
             </div>
 
-            <div class="flex gap-2 mb-6 bg-abyss-800 p-1 rounded-lg border border-abyss-700">
+            <div
+                class="flex gap-2 mb-6 bg-white dark:bg-abyss-800 p-1 rounded-lg border border-sun-200 dark:border-abyss-700">
                 <button @click="activeTab = 'request'" :class="[
                     'flex-1 py-2 px-4 rounded-md font-medium transition-all text-sm',
                     activeTab === 'request'
                         ? 'bg-kaitoke-green-600 text-abyss-900'
-                        : 'text-platinum-400 hover:text-platinum-50'
+                        : 'text-platinum-600 dark:text-platinum-400 hover:text-abyss-900 dark:hover:text-platinum-50'
                 ]">
                     Request to Join
                 </button>
@@ -19,25 +20,26 @@
                     'flex-1 py-2 px-4 rounded-md font-medium transition-all text-sm',
                     activeTab === 'invite'
                         ? 'bg-kaitoke-green-600 text-abyss-900'
-                        : 'text-platinum-400 hover:text-platinum-50'
+                        : 'text-platinum-600 dark:text-platinum-400 hover:text-abyss-900 dark:hover:text-platinum-50'
                 ]">
                     Use Invite Code
                 </button>
             </div>
 
-            <div class="bg-abyss-800 p-6 rounded-lg shadow-lg border border-abyss-700">
+            <div class="bg-white dark:bg-abyss-800 p-6 rounded-lg border border-sun-200 dark:border-abyss-700">
                 <form v-if="activeTab === 'request'" @submit.prevent="submitJoinRequest" class="space-y-4">
                     <div>
-                        <label for="org-name" class="block text-sm font-medium text-platinum-300 mb-2">Organization
+                        <label for="org-name"
+                            class="block text-sm font-medium text-abyss-800 dark:text-platinum-300 mb-2">Organization
                             Name</label>
                         <input id="org-name" v-model="joinForm.organization_name" type="text"
                             placeholder="Enter organization name"
-                            class="w-full px-4 py-2 bg-abyss-700 border border-abyss-600 rounded-md text-platinum-50 placeholder-platinum-500 focus:outline-none focus:border-kaitoke-green-500 focus:ring-1 focus:ring-kaitoke-green-500"
+                            class="w-full px-4 py-2 bg-platinum-50 border border-sun-200 rounded-md text-abyss-900 placeholder-platinum-600 focus:outline-none focus:border-kaitoke-green-500 focus:ring-1 focus:ring-kaitoke-green-500 dark:bg-abyss-700 dark:border-abyss-600 dark:text-platinum-50 dark:placeholder-platinum-500"
                             required />
                     </div>
 
                     <button type="submit" :disabled="isSubmitting"
-                        class="w-full py-2 px-4 bg-kaitoke-green-600 hover:bg-kaitoke-green-500 disabled:bg-abyss-700 text-abyss-900 font-medium rounded-md transition-colors">
+                        class="w-full py-2 px-4 bg-kaitoke-green-600 hover:bg-kaitoke-green-500 disabled:bg-abyss-700 text-abyss-900 font-medium rounded-md transition-colors disabled:text-platinum-400">
                         {{ isSubmitting ? 'Submitting...' : 'Send Join Request' }}
                     </button>
 
@@ -53,15 +55,16 @@
 
                 <form v-if="activeTab === 'invite'" @submit.prevent="submitInviteCode" class="space-y-4">
                     <div>
-                        <label for="invite-code" class="block text-sm font-medium text-platinum-300 mb-2">Invite
+                        <label for="invite-code"
+                            class="block text-sm font-medium text-abyss-800 dark:text-platinum-300 mb-2">Invite
                             Code</label>
                         <input id="invite-code" v-model="inviteForm.code" type="text" placeholder="Enter invite code"
-                            class="w-full px-4 py-2 bg-abyss-700 border border-abyss-600 rounded-md text-platinum-50 placeholder-platinum-500 focus:outline-none focus:border-kaitoke-green-500 focus:ring-1 focus:ring-kaitoke-green-500"
+                            class="w-full px-4 py-2 bg-platinum-50 border border-sun-200 rounded-md text-abyss-900 placeholder-platinum-600 focus:outline-none focus:border-kaitoke-green-500 focus:ring-1 focus:ring-kaitoke-green-500 dark:bg-abyss-700 dark:border-abyss-600 dark:text-platinum-50 dark:placeholder-platinum-500"
                             required />
                     </div>
 
                     <button type="submit" :disabled="isSubmitting"
-                        class="w-full py-2 px-4 bg-kaitoke-green-600 hover:bg-kaitoke-green-500 disabled:bg-abyss-700 text-abyss-900 font-medium rounded-md transition-colors">
+                        class="w-full py-2 px-4 bg-kaitoke-green-600 hover:bg-kaitoke-green-500 disabled:bg-abyss-700 text-abyss-900 font-medium rounded-md transition-colors disabled:text-platinum-400">
                         {{ isSubmitting ? 'Processing...' : 'Join via Invite' }}
                     </button>
 

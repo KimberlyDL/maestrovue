@@ -29,7 +29,11 @@ const form = ref({
     recurrence_type: 'none',
     recurrence_days: [],
     recurrence_end_date: null,
-    officer_ids: []
+    officer_ids: [],
+    check_in_window_start: '',
+    check_in_window_end: '',
+    check_out_window_start: '',
+    check_out_window_end: '',
 })
 
 const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -231,6 +235,52 @@ async function handleSave() {
                             </label>
                             <input v-model="form.end_time" type="time" required
                                 class="w-full px-4 py-2 rounded-lg border border-platinum-300 dark:border-abyss-600 bg-white dark:bg-abyss-800 text-abyss-900 dark:text-platinum-200 focus:ring-2 focus:ring-kaitoke-green-500" />
+                        </div>
+                    </div>
+
+                    <!-- Attendance Windows (Optional) -->
+                    <div
+                        class="space-y-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-300 dark:border-blue-700/50">
+                        <h4 class="text-sm font-semibold text-blue-900 dark:text-blue-300 flex items-center gap-2">
+                            <Clock class="w-4 h-4" />
+                            Attendance Windows (Optional)
+                        </h4>
+                        <p class="text-xs text-blue-700 dark:text-blue-400">
+                            Set specific time windows for check-in and check-out. Leave empty to allow anytime.
+                        </p>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-platinum-300 mb-2">
+                                    Check-In Window Start
+                                </label>
+                                <input v-model="form.check_in_window_start" type="time"
+                                    class="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-abyss-600 bg-white dark:bg-abyss-900 text-gray-800 dark:text-platinum-200 shadow-inner focus:ring-1 focus:ring-kaitoke-green-600" />
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-platinum-300 mb-2">
+                                    Check-In Window End
+                                </label>
+                                <input v-model="form.check_in_window_end" type="time"
+                                    class="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-abyss-600 bg-white dark:bg-abyss-900 text-gray-800 dark:text-platinum-200 shadow-inner focus:ring-1 focus:ring-kaitoke-green-600" />
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-platinum-300 mb-2">
+                                    Check-Out Window Start
+                                </label>
+                                <input v-model="form.check_out_window_start" type="time"
+                                    class="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-abyss-600 bg-white dark:bg-abyss-900 text-gray-800 dark:text-platinum-200 shadow-inner focus:ring-1 focus:ring-kaitoke-green-600" />
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-platinum-300 mb-2">
+                                    Check-Out Window End
+                                </label>
+                                <input v-model="form.check_out_window_end" type="time"
+                                    class="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-abyss-600 bg-white dark:bg-abyss-900 text-gray-800 dark:text-platinum-200 shadow-inner focus:ring-1 focus:ring-kaitoke-green-600" />
+                            </div>
                         </div>
                     </div>
 

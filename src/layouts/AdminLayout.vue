@@ -93,9 +93,9 @@ onMounted(() => {
     <div class="min-h-screen flex bg-platinum-50 dark:bg-abyss-900">
         <AdminSidebar />
         <div class="flex-1 flex overflow-y-hidden h-screen">
-            <div class="flex-1 flex flex-col overflow-y-auto bg-platinum-50 dark:bg-abyss-800 dark:border-sun-700">
+            <div class="flex-1 flex flex-col bg-platinum-50 dark:bg-abyss-800 dark:border-sun-700">
                 <HeaderComponent />
-                <main class="flex-1">
+                <main class="flex-1 overflow-y-auto">
                     <!-- 🔥 Loading State -->
                     <div v-if="loading" class="flex items-center justify-center h-64">
                         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-kaitoke-green-600"></div>

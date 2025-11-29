@@ -33,16 +33,35 @@ const dateRange = ref({
     end_date: new Date().toISOString().split('T')[0]
 })
 
+// const stats = ref({
+//     total_assignments: 0,
+//     confirmed: 0,
+//     completed: 0,
+//     declined: 0,
+//     no_show: 0,
+//     pending: 0,
+//     hours_worked: 0,
+//     completion_rate: 0,
+//     reliability_score: 0,
+//     check_in_rate: 0,
+//     avg_actual_duration: 0,
+//     on_time_rate: 0,
+// })
+
+
 const stats = ref({
+    total_schedules: 0,
     total_assignments: 0,
-    confirmed: 0,
-    completed: 0,
-    declined: 0,
-    no_show: 0,
-    pending: 0,
-    hours_worked: 0,
+    confirmed_assignments: 0,
+    declined_assignments: 0,
+    completed_assignments: 0,
+    no_show_assignments: 0,
+    fill_rate: 0,
+    officers_active: 0,
+    avg_duty_duration: 0,
+    confirmation_rate: 0,
     completion_rate: 0,
-    reliability_score: 0,
+    // NEW: Check-in/out stats
     check_in_rate: 0,
     avg_actual_duration: 0,
     on_time_rate: 0
@@ -315,6 +334,51 @@ function formatTime(timeStr) {
                         </p>
                         <p class="text-sm text-amber-700 dark:text-amber-400">Hours Worked</p>
                     </div>
+                    <!-- Check-in/out Stats (NEW) -->
+                    <div>
+                        <h2
+                            class="text-xl font-semibold text-gray-800 dark:text-platinum-100 mb-4 flex items-center gap-2">
+                            <Clock class="w-5 h-5 text-kaitoke-green-600 dark:text-kaitoke-green-400" />
+                            Attendance & Punctuality
+                        </h2>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div
+                                class="p-5 bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 shadow-lg">
+                                <div class="flex items-center gap-3 mb-2">
+                                    <LogIn class="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                                    <span class="text-sm text-gray-600 dark:text-platinum-400">Check-in Rate</span>
+                                </div>
+                                <p class="text-3xl font-bold text-gray-800 dark:text-platinum-100">
+                                    {{ stats.check_in_rate }}%
+                                </p>
+                            </div>
+
+                            <div
+                                class="p-5 bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 shadow-lg">
+                                <div class="flex items-center gap-3 mb-2">
+                                    <Clock class="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                                    <span class="text-sm text-gray-600 dark:text-platinum-400">Avg. Actual
+                                        Duration</span>
+                                </div>
+                                <p class="text-3xl font-bold text-gray-800 dark:text-platinum-100">
+                                    {{ stats.avg_actual_duration }}h
+                                </p>
+                            </div>
+
+                            <div
+                                class="p-5 bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 shadow-lg">
+                                <div class="flex items-center gap-3 mb-2">
+                                    <CheckCircle class="w-6 h-6 text-kaitoke-green-600 dark:text-kaitoke-green-400" />
+                                    <span class="text-sm text-gray-600 dark:text-platinum-400">On-Time Rate</span>
+                                </div>
+                                <p class="text-3xl font-bold text-gray-800 dark:text-platinum-100">
+                                    {{ stats.on_time_rate }}%
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 

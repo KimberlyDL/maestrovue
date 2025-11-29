@@ -29,16 +29,16 @@ export default [
                 },
             },
 
-            // ===== MY AVAILABILITY (All members - implicit permission) =====
-            {
-                path: 'my/availability',
-                name: 'duty.availability',
-                component: () => import('@views/duty/MyAvailability.vue'),
-                meta: {
-                    title: 'My Availability',
-                    requiresMember: true // Implicit: manage_own_availability
-                },
-            },
+            // // ===== MY AVAILABILITY (All members - implicit permission) =====
+            // {
+            //     path: 'my/availability',
+            //     name: 'duty.availability',
+            //     component: () => import('@views/duty/MyAvailability.vue'),
+            //     meta: {
+            //         title: 'My Availability',
+            //         requiresMember: true // Implicit: manage_own_availability
+            //     },
+            // },
 
             // ===== MY ASSIGNMENTS (All members - implicit permission) =====
             {

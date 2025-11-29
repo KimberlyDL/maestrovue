@@ -223,7 +223,7 @@ watch(() => route.params.id, () => {
 </script>
 
 <template>
-    <div class="p-6 max-w-7xl mx-auto">
+    <div class="max-w-7xl px-4 sm:px-6 py-6 lg:px-8">
         <!-- Header -->
         <div class="mb-6">
             <div class="flex items-center justify-between mb-4">

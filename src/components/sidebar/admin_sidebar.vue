@@ -268,7 +268,7 @@ onMounted(() => {
                         <template #icon>
                             <Calendar :size="16" :stroke-width="1.25" />
                         </template>
-                    </SidebarNavItem> -->
+</SidebarNavItem> -->
 
                     <template v-if="hasPermission('participate_in_duties')">
                         <SidebarGroupLabel text="My Duties" />
@@ -280,12 +280,12 @@ onMounted(() => {
                             </template>
                         </SidebarNavItem>
 
-                        <SidebarNavItem :to="{ name: 'duty.availability', params: { id: currentOrgId } }"
+                        <!-- <SidebarNavItem :to="{ name: 'duty.availability', params: { id: currentOrgId } }"
                             title="My Availability">
                             <template #icon>
                                 <CalendarClock :size="16" :stroke-width="1.25" />
                             </template>
-                        </SidebarNavItem>
+                        </SidebarNavItem> -->
 
                         <SidebarNavItem :to="{ name: 'duty.my_swap', params: { id: currentOrgId } }"
                             title="My Swap Requests">
@@ -338,7 +338,7 @@ onMounted(() => {
                         </SidebarNavItem>
 
                         <SidebarNavItem :to="{ name: 'duty.reports', params: { id: currentOrgId } }"
-                            title="Statistics & Logs">
+                            title="Statistics & Reports">
                             <template #icon>
                                 <BarChart3 :size="16" :stroke-width="1.25" />
                             </template>

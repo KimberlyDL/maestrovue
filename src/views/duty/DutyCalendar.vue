@@ -240,94 +240,97 @@ async function exportCalendar() {
 </script>
 
 <template>
-    <div class="h-full flex flex-col gap-4">
-        <!-- Header -->
-        <div class="flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="p-2 bg-kaitoke-green-100 dark:bg-kaitoke-green-900/30 rounded-lg">
-                    <Calendar class="w-6 h-6 text-kaitoke-green-600 dark:text-kaitoke-green-400" />
+    <div class="max-w-7xl px-4 sm:px-6 py-6 lg:px-8">
+        <div class="h-full flex flex-col gap-4">
+            <!-- Header -->
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 bg-kaitoke-green-100 dark:bg-kaitoke-green-900/30 rounded-lg">
+                        <Calendar class="w-6 h-6 text-kaitoke-green-600 dark:text-kaitoke-green-400" />
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-abyss-900 dark:text-platinum-50">Duty Calendar</h1>
+                        <p class="text-sm text-platinum-600 dark:text-platinum-400">Schedule and manage officer duties
+                        </p>
+                    </div>
                 </div>
-                <div>
-                    <h1 class="text-2xl font-bold text-abyss-900 dark:text-platinum-50">Duty Calendar</h1>
-                    <p class="text-sm text-platinum-600 dark:text-platinum-400">Schedule and manage officer duties</p>
+                <div class="flex gap-2">
+                    <button @click="exportCalendar"
+                        class="flex items-center gap-2 px-4 py-2 rounded-lg border border-platinum-300 dark:border-abyss-600 text-abyss-900 dark:text-platinum-200 hover:bg-platinum-100 dark:hover:bg-abyss-700">
+                        <Download :size="18" />
+                        Export
+                    </button>
+                    <button @click="openNewSchedule"
+                        class="flex items-center gap-2 px-4 py-2 rounded-lg bg-kaitoke-green-600 hover:bg-kaitoke-green-500 text-white">
+                        <Plus :size="18" />
+                        New Duty
+                    </button>
                 </div>
-            </div>
-            <div class="flex gap-2">
-                <button @click="exportCalendar"
-                    class="flex items-center gap-2 px-4 py-2 rounded-lg border border-platinum-300 dark:border-abyss-600 text-abyss-900 dark:text-platinum-200 hover:bg-platinum-100 dark:hover:bg-abyss-700">
-                    <Download :size="18" />
-                    Export
-                </button>
-                <button @click="openNewSchedule"
-                    class="flex items-center gap-2 px-4 py-2 rounded-lg bg-kaitoke-green-600 hover:bg-kaitoke-green-500 text-white">
-                    <Plus :size="18" />
-                    New Duty
-                </button>
-            </div>
-        </div>
-
-        <!-- Filters & Legend -->
-        <div
-            class="flex items-center justify-between p-4 bg-white dark:bg-abyss-800 rounded-lg border border-platinum-200 dark:border-abyss-700">
-            <div class="flex gap-4 items-center flex-wrap">
-                <div class="flex items-center gap-2">
-                    <Filter :size="16" class="text-platinum-600" />
-                    <span class="text-sm font-medium text-abyss-900 dark:text-platinum-300">Status:</span>
-                </div>
-                <select v-model="filterStatus" @change="loadCalendarEvents"
-                    class="px-3 py-1.5 text-sm rounded-md border border-platinum-300 dark:border-abyss-600 bg-white dark:bg-abyss-900 text-abyss-900 dark:text-platinum-300">
-                    <option value="all">All</option>
-                    <option value="draft">Draft</option>
-                    <option value="published">Published</option>
-                    <option value="completed">Completed</option>
-                    <option value="cancelled">Cancelled</option>
-                </select>
             </div>
 
-            <!-- Legend -->
-            <div class="flex gap-4 items-center text-xs">
-                <div class="flex items-center gap-2">
-                    <div class="w-3 h-3 rounded bg-blue-500"></div>
-                    <span class="text-platinum-600 dark:text-platinum-400">Staffed</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <div class="w-3 h-3 rounded bg-amber-500"></div>
-                    <span class="text-platinum-600 dark:text-platinum-400">Needs Officers</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <div class="w-3 h-3 rounded bg-emerald-500"></div>
-                    <span class="text-platinum-600 dark:text-platinum-400">Completed</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <div class="w-3 h-3 rounded bg-gray-500"></div>
-                    <span class="text-platinum-600 dark:text-platinum-400">Draft</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Loading Indicator -->
-        <div v-if="loading" class="absolute top-20 right-4 z-10">
+            <!-- Filters & Legend -->
             <div
-                class="px-4 py-2 bg-white dark:bg-abyss-800 rounded-lg shadow-lg border border-platinum-200 dark:border-abyss-700">
-                <div class="flex items-center gap-2">
-                    <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-kaitoke-green-600"></div>
-                    <span class="text-sm text-platinum-600 dark:text-platinum-400">Loading events...</span>
+                class="flex items-center justify-between p-4 bg-white dark:bg-abyss-800 rounded-lg border border-platinum-200 dark:border-abyss-700">
+                <div class="flex gap-4 items-center flex-wrap">
+                    <div class="flex items-center gap-2">
+                        <Filter :size="16" class="text-platinum-600" />
+                        <span class="text-sm font-medium text-abyss-900 dark:text-platinum-300">Status:</span>
+                    </div>
+                    <select v-model="filterStatus" @change="loadCalendarEvents"
+                        class="px-3 py-1.5 text-sm rounded-md border border-platinum-300 dark:border-abyss-600 bg-white dark:bg-abyss-900 text-abyss-900 dark:text-platinum-300">
+                        <option value="all">All</option>
+                        <option value="draft">Draft</option>
+                        <option value="published">Published</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+
+                <!-- Legend -->
+                <div class="flex gap-4 items-center text-xs">
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded bg-blue-500"></div>
+                        <span class="text-platinum-600 dark:text-platinum-400">Staffed</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded bg-amber-500"></div>
+                        <span class="text-platinum-600 dark:text-platinum-400">Needs Officers</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded bg-emerald-500"></div>
+                        <span class="text-platinum-600 dark:text-platinum-400">Completed</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded bg-gray-500"></div>
+                        <span class="text-platinum-600 dark:text-platinum-400">Draft</span>
+                    </div>
                 </div>
             </div>
+
+            <!-- Loading Indicator -->
+            <div v-if="loading" class="absolute top-20 right-4 z-10">
+                <div
+                    class="px-4 py-2 bg-white dark:bg-abyss-800 rounded-lg shadow-lg border border-platinum-200 dark:border-abyss-700">
+                    <div class="flex items-center gap-2">
+                        <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-kaitoke-green-600"></div>
+                        <span class="text-sm text-platinum-600 dark:text-platinum-400">Loading events...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calendar -->
+            <div
+                class="flex-1 bg-white dark:bg-abyss-800 rounded-lg border border-platinum-200 dark:border-abyss-700 p-4 overflow-hidden relative">
+                <FullCalendar ref="calendarRef" :options="calendarOptions" class="duty-calendar" />
+            </div>
+
+            <!-- Modals -->
+            <DutyScheduleModal v-if="showScheduleModal" :duty="selectedDuty" :initial-date="selectedDate"
+                :organization-id="organizationId" @close="showScheduleModal = false" @saved="handleScheduleSaved" />
+
+            <DutyDetailModal v-if="showDetailModal" :duty="selectedDuty" :organization-id="organizationId"
+                @close="showDetailModal = false" @updated="handleScheduleSaved" @deleted="handleScheduleSaved" />
         </div>
-
-        <!-- Calendar -->
-        <div
-            class="flex-1 bg-white dark:bg-abyss-800 rounded-lg border border-platinum-200 dark:border-abyss-700 p-4 overflow-hidden relative">
-            <FullCalendar ref="calendarRef" :options="calendarOptions" class="duty-calendar" />
-        </div>
-
-        <!-- Modals -->
-        <DutyScheduleModal v-if="showScheduleModal" :duty="selectedDuty" :initial-date="selectedDate"
-            :organization-id="organizationId" @close="showScheduleModal = false" @saved="handleScheduleSaved" />
-
-        <DutyDetailModal v-if="showDetailModal" :duty="selectedDuty" :organization-id="organizationId"
-            @close="showDetailModal = false" @updated="handleScheduleSaved" @deleted="handleScheduleSaved" />
     </div>
 </template>
 
