@@ -10,7 +10,8 @@ import {
     Settings,
     ChevronLeft,
     ChevronRight,
-    SquareArrowUpRight
+    SquareArrowUpRight,
+    Share2 
 } from 'lucide-vue-next'
 
 /** Props:
@@ -133,6 +134,19 @@ function getOrgInitials(org) {
     const first = parts[0]?.[0] || ''
     const second = parts[1]?.[0] || ''
     return (first + second).toUpperCase()
+}
+
+function goSharedDocuments() {
+    // If user has a current org, show shared docs for that org
+    if (currentId.value) {
+        router.push({
+            name: 'org.shared-documents',
+            params: { id: currentId.value }
+        })
+    } else {
+        // Otherwise go to home with a shared docs filter
+        router.push({ name: 'home', query: { tab: 'shared' } })
+    }
 }
 
 /* ------- helpers ------- */
@@ -303,7 +317,8 @@ function goMyRequests() {
                             'flex items-center gap-3',
                             isIcon ? 'justify-center' : 'justify-between'
                         ]">
-                            <div :class="[isIcon ? '' : 'flex items-center gap-3', reqs.length > 0 ? 'text-sun-500' : '']">
+                            <div
+                                :class="[isIcon ? '' : 'flex items-center gap-3', reqs.length > 0 ? 'text-sun-500' : '']">
                                 <ClipboardList class="h-5 w-5 flex-shrink-0" />
                                 <span v-if="!isIcon" class="font-heading text-sm font-[300]">
                                     My Requests
@@ -314,6 +329,36 @@ function goMyRequests() {
                                 class="rounded-full px-2 py-0.5 text-xs font-medium text-abyss-900 bg-sun-500 dark:text-platinum-100 dark:bg-electric-lime-600">
                                 {{ reqs.length || 2 }}
                             </span>
+                        </div>
+                    </button>
+                </section>
+
+                <hr class="border-sun-200 dark:border-abyss-700" />
+
+                <section>
+                    <div v-if="isFull || isMobileShown"
+                        class="px-2 text-[11px] uppercase tracking-wide text-kaitoke-green-500 dark:text-kaitoke-green-400">
+                        Shared with Me
+                    </div>
+
+                    <button @click="goSharedDocuments()" :class="[
+                        'w-full rounded-lg transition px-3 py-2',
+                        'hover:bg-sun-100 dark:hover:bg-abyss-800',
+                        'text-left',
+                        route.name === 'org.shared-documents'
+                            ? 'bg-kaitoke-green-100 text-kaitoke-green-700 dark:bg-kaitoke-green-900/30 dark:text-kaitoke-green-300'
+                            : ''
+                    ]">
+                        <div :class="[
+                            'flex items-center gap-3',
+                            isIcon ? 'justify-center' : 'justify-between'
+                        ]">
+                            <div class="flex items-center gap-3">
+                                <Share2 class="h-5 w-5 flex-shrink-0" />
+                                <span v-if="!isIcon" class="font-heading text-sm font-[300]">
+                                    Shared Documents
+                                </span>
+                            </div>
                         </div>
                     </button>
                 </section>

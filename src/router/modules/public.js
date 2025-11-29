@@ -1,5 +1,14 @@
 const publicRoutes = [
     {
+        path: '/share/:token',
+        name: 'public.share',
+        component: () => import('@/views/storage/PublicShareView.vue'),
+        meta: {
+            title: 'Shared Document',
+            requiresAuth: false
+        }
+    },
+    {
         path: "/",
         name: "Landing",
         component: () => import("@views/Landing.vue"),

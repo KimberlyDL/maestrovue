@@ -207,7 +207,7 @@ onMounted(() => {
                 </template>
 
                 <template v-if="hasCurrentOrg && hasPermission(PERMISSIONS.VIEW_STORAGE)">
-                    <SidebarGroupLabel text="Document Storage" />
+                    <SidebarGroupLabel text="Document Repository" />
 
                     <SidebarNavItem :to="{ name: 'org.doc-storage', params: { id: currentOrgId } }"
                         title="Document Vault">
@@ -217,7 +217,7 @@ onMounted(() => {
                     </SidebarNavItem>
                 </template>
 
-                <SidebarGroupLabel text="Repository" />
+                <SidebarGroupLabel text="Review" />
 
                 <template v-if="hasCurrentOrg && hasPermission(PERMISSIONS.MANAGE_REVIEWS)">
                     <SidebarNavItem :to="{ name: 'org.submissions', params: { id: currentOrgId } }" title="Submissions">
@@ -261,25 +261,17 @@ onMounted(() => {
                     </SidebarNavItem>
                 </template>
 
-                <template v-if="hasCurrentOrg && hasPermission(PERMISSIONS.VIEW_DUTY_SCHEDULES)">
-                    <SidebarGroupLabel text="Duty Schedule" />
+                <template v-if="hasCurrentOrg && isMember">
+                    <!-- <SidebarGroupLabel text="Duty Schedule" />
 
                     <SidebarNavItem :to="{ name: 'duty.calendar', params: { id: currentOrgId } }" title="Calendar">
                         <template #icon>
                             <Calendar :size="16" :stroke-width="1.25" />
                         </template>
-                    </SidebarNavItem>
+                    </SidebarNavItem> -->
 
-                    <SidebarNavDropdown label="My Duties" :matchPaths="[
-                        `/org/${currentOrgId}/duty/my/assignments`,
-                        `/org/${currentOrgId}/duty/my/availability`,
-                        `/org/${currentOrgId}/duty/my/my-requests`,
-                        `/org/${currentOrgId}/duty/swaps/available`,
-                        `/org/${currentOrgId}/duty/my/performance`
-                    ]">
-                        <template #icon>
-                            <User :size="16" :stroke-width="1.25" />
-                        </template>
+                    <template v-if="hasPermission('participate_in_duties')">
+                        <SidebarGroupLabel text="My Duties" />
 
                         <SidebarNavItem :to="{ name: 'duty.assignments', params: { id: currentOrgId } }"
                             title="My Assignments">
@@ -308,14 +300,7 @@ onMounted(() => {
                                 <ArrowRightLeft :size="16" :stroke-width="1.25" />
                             </template>
                         </SidebarNavItem>
-
-                        <SidebarNavItem :to="{ name: 'duty.my_performance', params: { id: currentOrgId } }"
-                            title="My Performance">
-                            <template #icon>
-                                <BarChart3 :size="16" :stroke-width="1.25" />
-                            </template>
-                        </SidebarNavItem>
-                    </SidebarNavDropdown>
+                    </template>
                 </template>
 
                 <template v-if="isAdmin || canManageRequests || canManageSettings || canManagePermissions">
@@ -330,38 +315,37 @@ onMounted(() => {
                         </div>
                     </div>
 
-                    <template v-if="hasPermission(PERMISSIONS.CREATE_DUTY_SCHEDULES)">
-                        <SidebarNavDropdown label="Duty Admin" :matchPaths="[
-                            `/org/${currentOrgId}/duty/schedules`,
-                            `/org/${currentOrgId}/duty/swaps`,
-                            `/org/${currentOrgId}/duty/reports`
-                        ]">
+                    <template v-if="hasPermission('manage_duty_system')">
+                        <SidebarGroupLabel text="Duty" />
+
+                        <SidebarNavItem :to="{ name: 'duty.calendar', params: { id: currentOrgId } }" title="Calendar">
                             <template #icon>
-                                <CheckCircle :size="16" :stroke-width="1.25" />
+                                <Calendar :size="16" :stroke-width="1.25" />
                             </template>
+                        </SidebarNavItem>
 
-                            <SidebarNavItem :to="{ name: 'duty.schedules', params: { id: currentOrgId } }"
-                                title="Manage Schedules">
-                                <template #icon>
-                                    <CalendarClock :size="16" :stroke-width="1.25" />
-                                </template>
-                            </SidebarNavItem>
+                        <SidebarNavItem :to="{ name: 'duty.schedules', params: { id: currentOrgId } }"
+                            title="Manage Schedules">
+                            <template #icon>
+                                <CalendarClock :size="16" :stroke-width="1.25" />
+                            </template>
+                        </SidebarNavItem>
 
-                            <SidebarNavItem v-if="hasPermission(PERMISSIONS.APPROVE_DUTY_SWAPS)"
-                                :to="{ name: 'duty.swaps', params: { id: currentOrgId } }" title="Approve Swaps">
-                                <template #icon>
-                                    <ArrowRightLeft :size="16" :stroke-width="1.25" />
-                                </template>
-                            </SidebarNavItem>
+                        <SidebarNavItem :to="{ name: 'duty.swaps', params: { id: currentOrgId } }" title="Review Swaps">
+                            <template #icon>
+                                <ArrowRightLeft :size="16" :stroke-width="1.25" />
+                            </template>
+                        </SidebarNavItem>
 
-                            <SidebarNavItem v-if="hasPermission(PERMISSIONS.VIEW_STATISTICS)"
-                                :to="{ name: 'duty.reports', params: { id: currentOrgId } }" title="Org Reports">
-                                <template #icon>
-                                    <BarChart3 :size="16" :stroke-width="1.25" />
-                                </template>
-                            </SidebarNavItem>
-                        </SidebarNavDropdown>
+                        <SidebarNavItem :to="{ name: 'duty.reports', params: { id: currentOrgId } }"
+                            title="Statistics & Logs">
+                            <template #icon>
+                                <BarChart3 :size="16" :stroke-width="1.25" />
+                            </template>
+                        </SidebarNavItem>
                     </template>
+
+                    <SidebarGroupLabel text="Others" />
 
                     <SidebarNavItem v-if="canManageRequests"
                         :to="{ name: 'org.requests', params: { id: currentOrgId } }" title="Requests & Invites"

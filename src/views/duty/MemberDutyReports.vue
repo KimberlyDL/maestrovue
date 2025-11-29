@@ -2,20 +2,31 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from '@/utils/api'
+import { useToast } from '@/utils/useToast'
 import {
-    TrendingUp, Users, Calendar, CheckCircle, XCircle,
-    Clock, Download, RefreshCw, BarChart3, Award, Target, Hourglass
+    TrendingUp, Calendar, CheckCircle, XCircle, Clock, Download,
+    RefreshCw, BarChart3, Award, Target, Timer, LogIn, LogOut
 } from 'lucide-vue-next'
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js'
-import { Doughnut, Bar } from 'vue-chartjs'
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Filler } from 'chart.js'
+import { Doughnut, Bar, Line } from 'vue-chartjs'
 
-ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title)
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Filler)
 
 const route = useRoute()
+const toast = useToast()
 
 const organizationId = computed(() => route.params.id)
 const loading = ref(false)
-const error = ref('')
+
+const CHART_COLORS = {
+    completed: '#10b981',
+    confirmed: '#3b82f6',
+    declined: '#ef4444',
+    no_show: '#dc2626',
+    pending: '#f59e0b',
+    text: 'rgb(148, 163, 184)',
+    grid: 'rgba(148, 163, 184, 0.2)'
+}
 
 const dateRange = ref({
     start_date: new Date(new Date().setMonth(new Date().getMonth() - 3)).toISOString().split('T')[0],
@@ -31,24 +42,15 @@ const stats = ref({
     pending: 0,
     hours_worked: 0,
     completion_rate: 0,
-    reliability_score: 0
+    reliability_score: 0,
+    check_in_rate: 0,
+    avg_actual_duration: 0,
+    on_time_rate: 0
 })
 
 const monthlyBreakdown = ref([])
 const recentDuties = ref([])
 
-// Chart Colors (Adaptive for Dark Mode readability on graph elements)
-const CHART_COLORS = {
-    completed: '#10b981', // emerald-600
-    confirmed: '#3b82f6', // blue-500
-    declined: '#ef4444',  // red-500
-    no_show: '#dc2626',   // red-700
-    pending: '#f59e0b',   // amber-500
-    text: 'rgb(148, 163, 184)', // platinum-400
-    grid: 'rgba(148, 163, 184, 0.2)'
-}
-
-// Status Distribution Chart
 const statusChartData = computed(() => ({
     labels: ['Completed', 'Confirmed', 'Declined', 'No Show', 'Pending'],
     datasets: [{
@@ -70,7 +72,6 @@ const statusChartData = computed(() => ({
     }]
 }))
 
-// Monthly Performance Chart
 const monthlyChartData = computed(() => ({
     labels: monthlyBreakdown.value.map(m => m.month),
     datasets: [{
@@ -96,7 +97,7 @@ const monthlyChartOptions = {
         }
     },
     scales: {
-        x: { 
+        x: {
             stacked: false,
             ticks: { stepSize: 1, color: CHART_COLORS.text },
             grid: { color: CHART_COLORS.grid }
@@ -115,7 +116,6 @@ watch(dateRange, loadStatistics, { deep: true })
 
 async function loadStatistics() {
     loading.value = true
-    error.value = ''
     try {
         const { data } = await axios.get(
             `/api/org/${organizationId.value}/duty-schedules/my-statistics`,
@@ -136,14 +136,19 @@ async function loadStatistics() {
             pending: data.pending || 0,
             hours_worked: data.hours_worked || 0,
             completion_rate: data.completion_rate || 0,
-            reliability_score: data.reliability_score || 0
+            reliability_score: data.reliability_score || 0,
+            check_in_rate: data.check_in_rate || 0,
+            avg_actual_duration: data.avg_actual_duration || 0,
+            on_time_rate: data.on_time_rate || 0
         }
 
         monthlyBreakdown.value = data.monthly_breakdown || []
         recentDuties.value = data.recent_duties || []
+
+        toast.success('Statistics loaded successfully')
     } catch (e) {
         console.error('Failed to load statistics:', e)
-        error.value = e?.response?.data?.message || 'Failed to load statistics'
+        toast.error(e?.response?.data?.message || 'Failed to load statistics')
     } finally {
         loading.value = false
     }
@@ -170,15 +175,17 @@ async function exportReport() {
         link.click()
         document.body.removeChild(link)
         window.URL.revokeObjectURL(url)
+
+        toast.success('Report exported successfully')
     } catch (e) {
-        alert('Failed to export report')
+        toast.error('Failed to export report')
     }
 }
 
-function getReliabilityColor(score) {
-    if (score >= 90) return 'text-emerald-600 dark:text-emerald-400'
-    if (score >= 75) return 'text-blue-600 dark:text-blue-400'
-    if (score >= 60) return 'text-amber-600 dark:text-amber-400'
+function getReliabilityColor(rate) {
+    if (rate >= 90) return 'text-emerald-600 dark:text-emerald-400'
+    if (rate >= 75) return 'text-blue-600 dark:text-blue-400'
+    if (rate >= 60) return 'text-amber-600 dark:text-amber-400'
     return 'text-red-600 dark:text-red-400'
 }
 
@@ -257,15 +264,6 @@ function formatTime(timeStr) {
             </div>
         </div>
 
-        <!-- Error Message -->
-        <div v-if="error"
-            class="p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-300 dark:border-red-900/50 shadow-md">
-            <div class="flex items-center gap-2 text-red-700 dark:text-red-400">
-                <XCircle class="w-5 h-5" />
-                <p class="text-sm font-medium">{{ error }}</p>
-            </div>
-        </div>
-
         <!-- Loading State -->
         <div v-if="loading" class="text-center py-12">
             <RefreshCw class="h-8 w-8 animate-spin mx-auto text-kaitoke-green-600 dark:text-kaitoke-green-400" />
@@ -282,7 +280,8 @@ function formatTime(timeStr) {
                 </h2>
 
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-                    <div class="p-5 bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 shadow-lg">
+                    <div
+                        class="p-5 bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 shadow-lg">
                         <Calendar class="w-6 h-6 text-blue-600 dark:text-blue-400 mb-2" />
                         <p class="text-3xl font-bold text-gray-800 dark:text-platinum-100">
                             {{ stats.total_assignments }}
@@ -290,7 +289,8 @@ function formatTime(timeStr) {
                         <p class="text-sm text-gray-600 dark:text-platinum-400">Total Assignments</p>
                     </div>
 
-                    <div class="p-5 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-300 dark:border-emerald-900/50 shadow-lg">
+                    <div
+                        class="p-5 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-300 dark:border-emerald-900/50 shadow-lg">
                         <Target class="w-6 h-6 text-emerald-600 dark:text-emerald-400 mb-2" />
                         <p class="text-3xl font-bold text-emerald-900 dark:text-emerald-300">
                             {{ stats.completion_rate }}%
@@ -298,7 +298,8 @@ function formatTime(timeStr) {
                         <p class="text-sm text-emerald-700 dark:text-emerald-400">Completion Rate</p>
                     </div>
 
-                    <div class="p-5 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-300 dark:border-blue-900/50 shadow-lg">
+                    <div
+                        class="p-5 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-300 dark:border-blue-900/50 shadow-lg">
                         <Award class="w-6 h-6 text-blue-600 dark:text-blue-400 mb-2" />
                         <p class="text-3xl font-bold" :class="getReliabilityColor(stats.reliability_score)">
                             {{ stats.reliability_score }}%
@@ -306,8 +307,9 @@ function formatTime(timeStr) {
                         <p class="text-sm text-blue-700 dark:text-blue-400">Reliability Score</p>
                     </div>
 
-                    <div class="p-5 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-300 dark:border-amber-900/50 shadow-lg">
-                        <Hourglass class="w-6 h-6 text-amber-600 dark:text-amber-400 mb-2" />
+                    <div
+                        class="p-5 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-300 dark:border-amber-900/50 shadow-lg">
+                        <Timer class="w-6 h-6 text-amber-600 dark:text-amber-400 mb-2" />
                         <p class="text-3xl font-bold text-amber-900 dark:text-amber-300">
                             {{ stats.hours_worked }}h
                         </p>
@@ -316,12 +318,55 @@ function formatTime(timeStr) {
                 </div>
             </div>
 
+            <!-- Check-in/out Stats (NEW) -->
+            <div>
+                <h2 class="text-xl font-semibold text-gray-800 dark:text-platinum-100 mb-4 flex items-center gap-2">
+                    <Clock class="w-5 h-5 text-kaitoke-green-600 dark:text-kaitoke-green-400" />
+                    Attendance & Punctuality
+                </h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div
+                        class="p-5 bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 shadow-lg">
+                        <div class="flex items-center gap-3 mb-2">
+                            <LogIn class="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                            <span class="text-sm text-gray-600 dark:text-platinum-400">Check-in Rate</span>
+                        </div>
+                        <p class="text-3xl font-bold text-gray-800 dark:text-platinum-100">
+                            {{ stats.check_in_rate }}%
+                        </p>
+                    </div>
+
+                    <div
+                        class="p-5 bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 shadow-lg">
+                        <div class="flex items-center gap-3 mb-2">
+                            <Clock class="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                            <span class="text-sm text-gray-600 dark:text-platinum-400">Avg. Actual Duration</span>
+                        </div>
+                        <p class="text-3xl font-bold text-gray-800 dark:text-platinum-100">
+                            {{ stats.avg_actual_duration }}h
+                        </p>
+                    </div>
+
+                    <div
+                        class="p-5 bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 shadow-lg">
+                        <div class="flex items-center gap-3 mb-2">
+                            <CheckCircle class="w-6 h-6 text-kaitoke-green-600 dark:text-kaitoke-green-400" />
+                            <span class="text-sm text-gray-600 dark:text-platinum-400">On-Time Rate</span>
+                        </div>
+                        <p class="text-3xl font-bold text-gray-800 dark:text-platinum-100">
+                            {{ stats.on_time_rate }}%
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             <!-- Charts Grid -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <!-- Status Distribution -->
-                <div class="bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 p-6 shadow-xl">
-                    <h3
-                        class="text-xl font-semibold text-gray-800 dark:text-platinum-100 mb-4 flex items-center gap-2">
+                <div
+                    class="bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 p-6 shadow-xl">
+                    <h3 class="text-xl font-semibold text-gray-800 dark:text-platinum-100 mb-4 flex items-center gap-2">
                         <BarChart3 class="w-5 h-5 text-kaitoke-green-600 dark:text-kaitoke-green-400" />
                         Assignment Status
                     </h3>
@@ -337,7 +382,8 @@ function formatTime(timeStr) {
                 </div>
 
                 <!-- Status Breakdown -->
-                <div class="bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 p-6 shadow-xl">
+                <div
+                    class="bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 p-6 shadow-xl">
                     <h3 class="text-xl font-semibold text-gray-800 dark:text-platinum-100 mb-4">
                         Detailed Breakdown
                     </h3>
@@ -354,7 +400,8 @@ function formatTime(timeStr) {
                             </span>
                         </div>
 
-                        <div class="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-300 dark:border-blue-700/50 shadow-inner">
+                        <div
+                            class="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-300 dark:border-blue-700/50 shadow-inner">
                             <div class="flex items-center gap-3">
                                 <CheckCircle class="w-5 h-5 text-blue-600 dark:text-blue-400" />
                                 <span class="text-sm font-medium text-blue-900 dark:text-blue-300">Confirmed</span>
@@ -364,7 +411,8 @@ function formatTime(timeStr) {
                             </span>
                         </div>
 
-                        <div class="flex items-center justify-between p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-300 dark:border-amber-700/50 shadow-inner">
+                        <div
+                            class="flex items-center justify-between p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-300 dark:border-amber-700/50 shadow-inner">
                             <div class="flex items-center gap-3">
                                 <Clock class="w-5 h-5 text-amber-600 dark:text-amber-400" />
                                 <span class="text-sm font-medium text-amber-900 dark:text-amber-300">Pending</span>
@@ -374,7 +422,8 @@ function formatTime(timeStr) {
                             </span>
                         </div>
 
-                        <div class="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-300 dark:border-red-700/50 shadow-inner">
+                        <div
+                            class="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-300 dark:border-red-700/50 shadow-inner">
                             <div class="flex items-center gap-3">
                                 <XCircle class="w-5 h-5 text-red-600 dark:text-red-400" />
                                 <span class="text-sm font-medium text-red-900 dark:text-red-300">Declined</span>
@@ -384,7 +433,8 @@ function formatTime(timeStr) {
                             </span>
                         </div>
 
-                        <div class="flex items-center justify-between p-3 bg-rose-50 dark:bg-rose-900/20 rounded-xl border border-rose-300 dark:border-rose-700/50 shadow-inner">
+                        <div
+                            class="flex items-center justify-between p-3 bg-rose-50 dark:bg-rose-900/20 rounded-xl border border-rose-300 dark:border-rose-700/50 shadow-inner">
                             <div class="flex items-center gap-3">
                                 <XCircle class="w-5 h-5 text-rose-600 dark:text-rose-400" />
                                 <span class="text-sm font-medium text-rose-900 dark:text-rose-300">No Show</span>
@@ -452,7 +502,8 @@ function formatTime(timeStr) {
                                     {{ formatTime(duty.start_time) }} - {{ formatTime(duty.end_time) }}
                                 </td>
                                 <td class="px-4 py-3 text-center">
-                                    <span class="px-2 py-1 rounded-full text-xs font-semibold uppercase tracking-wider" :class="getStatusBadgeColor(duty.status)">
+                                    <span class="px-2 py-1 rounded-full text-xs font-semibold uppercase tracking-wider"
+                                        :class="getStatusBadgeColor(duty.status)">
                                         {{ duty.status }}
                                     </span>
                                 </td>

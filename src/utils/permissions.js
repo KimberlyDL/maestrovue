@@ -25,21 +25,15 @@ export const PERMISSIONS = {
     EDIT_ANNOUNCEMENTS: 'edit_announcements',
     DELETE_ANNOUNCEMENTS: 'delete_announcements',
 
-    // Document Storage
+    // Document Storage (Simplified)
     VIEW_STORAGE: 'view_storage',
-    UPLOAD_DOCUMENTS: 'upload_documents',
+    UPLOAD_DOCUMENTS: 'upload_documents', // Also grants: create folders, share own docs
     CREATE_FOLDERS: 'create_folders',
-    DELETE_DOCUMENTS: 'delete_documents',
-    MANAGE_DOCUMENT_SHARING: 'manage_document_sharing',
+    DELETE_DOCUMENTS: 'delete_documents', // Delete own documents
+    ADMIN_DELETE_DOCUMENTS: 'admin_delete_documents', // Admin: delete any document
 
-    // // Review System
-    // VIEW_REVIEWS: 'view_reviews',
-    // CREATE_REVIEWS: 'create_reviews',
-    // MANAGE_REVIEWS: 'manage_reviews',
-    // ASSIGN_REVIEWERS: 'assign_reviewers',
-    // COMMENT_ON_REVIEWS: 'comment_on_reviews',
-
-    CREATE_REVIEWS: 'create_reviews',        // Members: Create & manage their own reviews
+    // Review System
+    CREATE_REVIEWS: 'create_reviews',
     MANAGE_REVIEWS: 'manage_reviews',
 
     // Duty Management
@@ -109,14 +103,11 @@ export function getPermissionsByCategory() {
             PERMISSIONS.UPLOAD_DOCUMENTS,
             PERMISSIONS.CREATE_FOLDERS,
             PERMISSIONS.DELETE_DOCUMENTS,
-            PERMISSIONS.MANAGE_DOCUMENT_SHARING,
+            PERMISSIONS.ADMIN_DELETE_DOCUMENTS,
         ],
         reviews: [
-            PERMISSIONS.VIEW_REVIEWS,
             PERMISSIONS.CREATE_REVIEWS,
             PERMISSIONS.MANAGE_REVIEWS,
-            PERMISSIONS.ASSIGN_REVIEWERS,
-            PERMISSIONS.COMMENT_ON_REVIEWS,
         ],
         duty: [
             PERMISSIONS.VIEW_DUTY_SCHEDULES,

@@ -192,6 +192,15 @@ const authenticatedRoutes = [
         },
       },
 
+      {
+        path: "shared-documents",
+        name: "org.shared-documents",
+        component: () => import("@views/storage/SharedDocumentsPanel.vue"),
+        meta: {
+          title: "Shared Documents",
+          requiresMember: true
+        }
+      },
       // ===== DOCUMENT REVIEW SYSTEM =====
       // {
       //   path: "documents",
@@ -277,12 +286,12 @@ const authenticatedRoutes = [
       },
 
 
-{
-    path: '/notifications',
-    name: 'notifications',
-    component: () => import('@/views/duty/NotificationPage.vue'),
-    meta: { requiresAuth: true, title: 'Notifications' }
-}
+      {
+        path: '/notifications',
+        name: 'notifications',
+        component: () => import('@/views/duty/NotificationPage.vue'),
+        meta: { requiresAuth: true, title: 'Notifications' }
+      }
 
     ],
   },

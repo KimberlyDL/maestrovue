@@ -34,18 +34,36 @@ const dateRange = ref({
     end_date: new Date().toISOString().split('T')[0]
 })
 
+// const stats = ref({
+//     total_schedules: 0,
+//     total_assignments: 0,
+//     confirmed_assignments: 0,
+//     declined_assignments: 0,
+//     completed_assignments: 0,
+//     no_show_assignments: 0,
+//     fill_rate: 0,
+//     officers_active: 0,
+//     avg_duty_duration: 0,
+//     confirmation_rate: 0,
+//     completion_rate: 0
+// })
+
 const stats = ref({
-    total_schedules: 0,
-    total_assignments: 0,
-    confirmed_assignments: 0,
-    declined_assignments: 0,
-    completed_assignments: 0,
-    no_show_assignments: 0,
-    fill_rate: 0,
-    officers_active: 0,
-    avg_duty_duration: 0,
-    confirmation_rate: 0,
-    completion_rate: 0
+    total_schedules: data.total_schedules || 0,
+    total_assignments: data.total_assignments || 0,
+    confirmed_assignments: data.confirmed_assignments || 0,
+    declined_assignments: data.declined_assignments || 0,
+    completed_assignments: data.completed_assignments || 0,
+    no_show_assignments: data.no_show_assignments || 0,
+    fill_rate: data.fill_rate || 0,
+    officers_active: data.officers_active || 0,
+    avg_duty_duration: data.avg_duty_duration || 0,
+    confirmation_rate: data.confirmation_rate || 0,
+    completion_rate: data.completion_rate || 0,
+    // NEW: Check-in/out stats
+    check_in_rate: data.check_in_rate || 0,
+    avg_actual_duration: data.avg_actual_duration || 0,
+    on_time_rate: data.on_time_rate || 0
 })
 
 const officerStats = ref([])
@@ -108,16 +126,16 @@ const officerChartOptions = {
         }
     },
     scales: {
-        x: { 
-            stacked: true, 
+        x: {
+            stacked: true,
             beginAtZero: true,
             ticks: { color: CHART_COLORS.text },
             grid: { color: CHART_COLORS.grid }
         },
-        y: { 
+        y: {
             stacked: true,
             ticks: { color: CHART_COLORS.text },
-            grid: { color: CHART_COLORS.grid } 
+            grid: { color: CHART_COLORS.grid }
         }
     }
 }
@@ -339,7 +357,8 @@ function getCompletionRateColor(rate) {
                 </h2>
 
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-                    <div class="p-5 bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 shadow-lg">
+                    <div
+                        class="p-5 bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 shadow-lg">
                         <Calendar class="w-6 h-6 text-blue-600 dark:text-blue-400 mb-2" />
                         <p class="text-3xl font-bold text-gray-800 dark:text-platinum-100">
                             {{ stats.total_schedules }}
@@ -347,7 +366,8 @@ function getCompletionRateColor(rate) {
                         <p class="text-sm text-gray-600 dark:text-platinum-400">Total Schedules</p>
                     </div>
 
-                    <div class="p-5 bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 shadow-lg">
+                    <div
+                        class="p-5 bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 shadow-lg">
                         <Users class="w-6 h-6 text-purple-600 dark:text-purple-400 mb-2" />
                         <p class="text-3xl font-bold text-gray-800 dark:text-platinum-100">
                             {{ stats.total_assignments }}
@@ -355,7 +375,8 @@ function getCompletionRateColor(rate) {
                         <p class="text-sm text-gray-600 dark:text-platinum-400">Total Assignments</p>
                     </div>
 
-                    <div class="p-5 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-300 dark:border-emerald-900/50 shadow-lg">
+                    <div
+                        class="p-5 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-300 dark:border-emerald-900/50 shadow-lg">
                         <Target class="w-6 h-6 text-emerald-600 dark:text-emerald-400 mb-2" />
                         <p class="text-3xl font-bold text-emerald-900 dark:text-emerald-300">
                             {{ stats.completion_rate }}%
@@ -363,7 +384,8 @@ function getCompletionRateColor(rate) {
                         <p class="text-sm text-emerald-700 dark:text-emerald-400">Completion Rate</p>
                     </div>
 
-                    <div class="p-5 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-300 dark:border-blue-900/50 shadow-lg">
+                    <div
+                        class="p-5 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-300 dark:border-blue-900/50 shadow-lg">
                         <Activity class="w-6 h-6 text-blue-600 dark:text-blue-400 mb-2" />
                         <p class="text-3xl font-bold text-blue-900 dark:text-blue-300">
                             {{ stats.fill_rate }}%
@@ -374,9 +396,9 @@ function getCompletionRateColor(rate) {
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 p-6 shadow-xl">
-                    <h3
-                        class="text-xl font-semibold text-gray-800 dark:text-platinum-100 mb-4 flex items-center gap-2">
+                <div
+                    class="bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 p-6 shadow-xl">
+                    <h3 class="text-xl font-semibold text-gray-800 dark:text-platinum-100 mb-4 flex items-center gap-2">
                         <PieChart class="w-5 h-5 text-kaitoke-green-600 dark:text-kaitoke-green-400" />
                         Assignment Distribution
                     </h3>
@@ -391,7 +413,8 @@ function getCompletionRateColor(rate) {
                     </div>
                 </div>
 
-                <div class="bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 p-6 shadow-xl">
+                <div
+                    class="bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 p-6 shadow-xl">
                     <h3 class="text-xl font-semibold text-gray-800 dark:text-platinum-100 mb-4">
                         Detailed Breakdown
                     </h3>
@@ -408,7 +431,8 @@ function getCompletionRateColor(rate) {
                             </span>
                         </div>
 
-                        <div class="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-300 dark:border-blue-700/50 shadow-inner">
+                        <div
+                            class="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-300 dark:border-blue-700/50 shadow-inner">
                             <div class="flex items-center gap-3">
                                 <CheckCircle class="w-5 h-5 text-blue-600 dark:text-blue-400" />
                                 <span class="text-sm font-medium text-blue-900 dark:text-blue-300">Confirmed</span>
@@ -418,7 +442,8 @@ function getCompletionRateColor(rate) {
                             </span>
                         </div>
 
-                        <div class="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-300 dark:border-red-700/50 shadow-inner">
+                        <div
+                            class="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-300 dark:border-red-700/50 shadow-inner">
                             <div class="flex items-center gap-3">
                                 <XCircle class="w-5 h-5 text-red-600 dark:text-red-400" />
                                 <span class="text-sm font-medium text-red-900 dark:text-red-300">Declined</span>
@@ -428,7 +453,8 @@ function getCompletionRateColor(rate) {
                             </span>
                         </div>
 
-                        <div class="flex items-center justify-between p-3 bg-rose-50 dark:bg-rose-900/20 rounded-xl border border-rose-300 dark:border-rose-700/50 shadow-inner">
+                        <div
+                            class="flex items-center justify-between p-3 bg-rose-50 dark:bg-rose-900/20 rounded-xl border border-rose-300 dark:border-rose-700/50 shadow-inner">
                             <div class="flex items-center gap-3">
                                 <XCircle class="w-5 h-5 text-rose-600 dark:text-rose-400" />
                                 <span class="text-sm font-medium text-rose-900 dark:text-rose-300">No Show</span>
@@ -451,7 +477,8 @@ function getCompletionRateColor(rate) {
             </div>
 
             <div v-if="timeSeriesData.length > 0" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 p-6 shadow-xl">
+                <div
+                    class="bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 p-6 shadow-xl">
                     <h3 class="text-xl font-semibold text-gray-800 dark:text-platinum-100 mb-4 flex items-center gap-2">
                         <LineChart class="w-5 h-5 text-kaitoke-green-600 dark:text-kaitoke-green-400" />
                         Completion Rate Trend
@@ -461,7 +488,8 @@ function getCompletionRateColor(rate) {
                     </div>
                 </div>
 
-                <div class="bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 p-6 shadow-xl">
+                <div
+                    class="bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 p-6 shadow-xl">
                     <h3 class="text-xl font-semibold text-gray-800 dark:text-platinum-100 mb-4 flex items-center gap-2">
                         <LineChart class="w-5 h-5 text-blue-600 dark:text-blue-400" />
                         Duty Fill Rate Trend
@@ -512,8 +540,7 @@ function getCompletionRateColor(rate) {
                                         <td class="px-4 py-3 text-sm font-medium text-gray-800 dark:text-platinum-100">
                                             {{ officer.officer_name }}
                                         </td>
-                                        <td
-                                            class="px-4 py-3 text-sm text-center text-gray-700 dark:text-platinum-300">
+                                        <td class="px-4 py-3 text-sm text-center text-gray-700 dark:text-platinum-300">
                                             {{ officer.total }}
                                         </td>
                                         <td class="px-4 py-3 text-sm text-center font-semibold"
@@ -529,7 +556,8 @@ function getCompletionRateColor(rate) {
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="p-6 bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 shadow-lg">
+                <div
+                    class="p-6 bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 shadow-lg">
                     <div class="flex items-center gap-3 mb-4">
                         <Users class="w-6 h-6 text-kaitoke-green-600 dark:text-kaitoke-green-400" />
                         <h3 class="text-lg font-semibold text-gray-800 dark:text-platinum-100">
@@ -544,7 +572,8 @@ function getCompletionRateColor(rate) {
                     </p>
                 </div>
 
-                <div class="p-6 bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 shadow-lg">
+                <div
+                    class="p-6 bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 shadow-lg">
                     <div class="flex items-center gap-3 mb-4">
                         <Clock class="w-6 h-6 text-kaitoke-green-600 dark:text-kaitoke-green-400" />
                         <h3 class="text-lg font-semibold text-gray-800 dark:text-platinum-100">
@@ -559,7 +588,8 @@ function getCompletionRateColor(rate) {
                     </p>
                 </div>
 
-                <div class="p-6 bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 shadow-lg">
+                <div
+                    class="p-6 bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 shadow-lg">
                     <div class="flex items-center gap-3 mb-4">
                         <Award class="w-6 h-6 text-kaitoke-green-600 dark:text-kaitoke-green-400" />
                         <h3 class="text-lg font-semibold text-gray-800 dark:text-platinum-100">
