@@ -208,6 +208,16 @@ const authenticatedRoutes = [
           requiresMember: true
         }
       },
+      {
+        path: 'storage/stats',
+        name: 'OrgStorageStats',
+        component: () => import('@/views/storage/StorageStats.vue'),
+        meta: {
+          title: 'Storage Statistics',
+          // Allow any permission level that can view storage
+          requiresPermission: 'view_storage|contribute_to_storage|manage_storage_system'
+        }
+      },
       // ===== DOCUMENT REVIEW SYSTEM =====
       // {
       //   path: "documents",
