@@ -26,9 +26,11 @@ export const PERMISSIONS = {
     DELETE_ANNOUNCEMENTS: 'delete_announcements',
 
     // Document Storage (Consolidated)
-    VIEW_STORAGE: 'view_storage',
-    CONTRIBUTE_TO_STORAGE: 'contribute_to_storage',
-    MANAGE_STORAGE_SYSTEM: 'manage_storage_system',
+    STORAGE: {
+        VIEW: 'storage.view',
+        CONTRIBUTE: 'storage.contribute',
+        MANAGE: 'storage.manage',
+    },
 
     // Review System
     CREATE_REVIEWS: 'create_reviews',
