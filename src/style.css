@@ -270,19 +270,24 @@ body {
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 4px;
+  height: 4x;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgb(15, 23, 42);
+  /* background: rgb(15, 23, 42);  */
+  background: transparent; /* Makes the track background transparent */
+  /* If you want the thumb to stand out, you might add a subtle border */
+  /* border: 1px solid rgba(255, 255, 255, 0.1); */
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgb(71, 85, 105);
+  /* background: rgb(71, 85, 105); */
   border-radius: 4px;
+  background: rgba(239, 139, 17, 0.5);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgb(100, 116, 139);
+  /* background: rgb(100, 116, 139); */
+  background: rgba(239, 139, 17, 0.3);
 }

@@ -16,6 +16,12 @@ const authenticatedRoutes = [
         component: () => import("@views/org_discovery/OrgsFeed.vue"),
         meta: { title: "Home Feed" },
       },
+      {
+        path: "shared-documents",
+        name: "home.shared-documents",
+        component: () => import("@views/storage/SharedDocumentsPanel.vue"),
+        meta: { title: "Shared Documents" },
+      },
     ],
   },
 

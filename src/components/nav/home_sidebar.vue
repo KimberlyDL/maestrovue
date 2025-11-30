@@ -11,7 +11,7 @@ import {
     ChevronLeft,
     ChevronRight,
     SquareArrowUpRight,
-    Share2 
+    Share2
 } from 'lucide-vue-next'
 
 /** Props:
@@ -144,8 +144,8 @@ function goSharedDocuments() {
             params: { id: currentId.value }
         })
     } else {
-        // Otherwise go to home with a shared docs filter
-        router.push({ name: 'home', query: { tab: 'shared' } })
+        // [FIXED] Go to the new dedicated route instead of query param
+        router.push({ name: 'home.shared-documents' })
     }
 }
 

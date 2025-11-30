@@ -352,9 +352,7 @@ watch(orgId, (newId) => {
 
 <template>
     <div class="h-[calc(100vh-64px)] flex bg-platinum-50 dark:bg-abyss-900">
-        <!-- Main Content -->
         <div class="flex-1 flex flex-col overflow-hidden">
-            <!-- Header -->
             <div class="border-b border-sun-200 dark:border-abyss-700 bg-white dark:bg-abyss-800 px-6 py-4 shadow-sm">
                 <div class="flex items-center justify-between mb-4">
                     <div class="flex items-center gap-4">
@@ -386,7 +384,6 @@ watch(orgId, (newId) => {
                     </div>
                 </div>
 
-                <!-- Breadcrumbs -->
                 <div class="flex items-center gap-2 text-sm text-platinum-600 dark:text-platinum-400 mb-4">
                     <button @click="navigateToFolder(null)"
                         class="flex items-center gap-1 hover:text-kaitoke-green-600 dark:hover:text-kaitoke-green-400 transition">
@@ -403,7 +400,6 @@ watch(orgId, (newId) => {
                     </template>
                 </div>
 
-                <!-- Toolbar -->
                 <div
                     class="flex items-center gap-4 p-3 bg-sun-50 dark:bg-abyss-700 rounded-xl border border-sun-200 dark:border-abyss-600">
                     <div class="relative flex-1 max-w-md">
@@ -447,7 +443,6 @@ watch(orgId, (newId) => {
                 </div>
             </div>
 
-            <!-- Stats Bar -->
             <div class="bg-sun-50 dark:bg-abyss-800 px-6 py-2 border-b border-sun-200 dark:border-abyss-700">
                 <div class="flex items-center gap-6 text-sm text-platinum-600 dark:text-platinum-400">
                     <div class="flex items-center gap-2">
@@ -464,12 +459,11 @@ watch(orgId, (newId) => {
                     </div>
                     <div class="flex items-center gap-2 font-semibold">
                         <span class="text-abyss-900 dark:text-platinum-100">Total: {{ stats.total_size_formatted
-                            }}</span>
+                        }}</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Content Area -->
             <div class="flex-1 overflow-auto px-6 pb-6 pt-4">
                 <div v-if="loading" class="flex items-center justify-center py-12">
                     <Loader2 class="h-8 w-8 animate-spin text-kaitoke-green-600 dark:text-kaitoke-green-400" />
@@ -485,7 +479,6 @@ watch(orgId, (newId) => {
                     </p>
                 </div>
 
-                <!-- Grid View -->
                 <div v-else-if="viewMode === 'grid'"
                     class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                     <div v-for="doc in filteredDocuments" :key="doc.id" @click="openItem(doc)"
@@ -493,13 +486,11 @@ watch(orgId, (newId) => {
                         class="group relative p-4 rounded-xl border border-sun-200 dark:border-abyss-700 hover:border-kaitoke-green-500 dark:hover:border-kaitoke-green-600 cursor-pointer transition bg-white dark:bg-abyss-800 shadow-sm hover:shadow-md">
 
                         <div class="flex flex-col items-center text-center">
-                            <!-- File Type Badge -->
                             <div v-if="!doc.is_folder && doc.file_extension"
                                 class="absolute top-2 left-2 px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-xs font-bold rounded">
                                 {{ doc.file_extension }}
                             </div>
 
-                            <!-- Shared Badge -->
                             <div v-if="!doc.is_folder && doc.is_shared_public"
                                 class="absolute top-2 right-2 p-1 bg-kaitoke-green-100 dark:bg-kaitoke-green-900/30 rounded-full"
                                 title="Shared publicly">
@@ -514,7 +505,7 @@ watch(orgId, (newId) => {
                             </p>
 
                             <p class="text-xs text-platinum-600 dark:text-platinum-400 mt-1">
-                                {{ doc.is_folder ? `${doc.children?.length || 0} items` : formatSize(doc.file_size) }}
+                                {{ doc.is_folder ? `${doc.children_count || 0} items` : formatSize(doc.file_size) }}
                             </p>
                         </div>
 
@@ -542,7 +533,6 @@ watch(orgId, (newId) => {
                     </div>
                 </div>
 
-                <!-- List View -->
                 <div v-else
                     class="bg-white dark:bg-abyss-800 rounded-xl border border-sun-200 dark:border-abyss-700 overflow-hidden shadow">
                     <table class="w-full">
@@ -621,7 +611,6 @@ watch(orgId, (newId) => {
             </div>
         </div>
 
-        <!-- Properties Sidebar (Desktop) -->
         <div v-if="showPropertiesSidebar && selectedDocument"
             class="hidden xl:block w-80 border-l border-sun-200 dark:border-abyss-700 bg-white dark:bg-abyss-800 overflow-y-auto">
             <div class="p-6">
@@ -722,7 +711,6 @@ watch(orgId, (newId) => {
             </div>
         </div>
 
-        <!-- Context Menu -->
         <div v-if="showContextMenu && contextMenuItem"
             :style="{ top: contextMenuPos.y + 'px', left: contextMenuPos.x + 'px' }"
             class="fixed z-50 bg-white dark:bg-abyss-800 rounded-xl shadow-2xl border border-sun-200 dark:border-abyss-700 py-1 min-w-[200px]">
@@ -755,7 +743,6 @@ watch(orgId, (newId) => {
             </button>
         </div>
 
-        <!-- Upload Modal -->
         <div v-if="showUploadModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
             @click.self="showUploadModal = false">
             <div
@@ -806,7 +793,6 @@ watch(orgId, (newId) => {
             </div>
         </div>
 
-        <!-- Create Folder Modal -->
         <div v-if="showCreateFolderModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
             @click.self="showCreateFolderModal = false">
             <div
@@ -852,7 +838,6 @@ watch(orgId, (newId) => {
             </div>
         </div>
 
-        <!-- Properties Modal (Mobile) -->
         <div v-if="showPropertiesModal && selectedDocument"
             class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
             @click.self="showPropertiesModal = false">
@@ -866,7 +851,6 @@ watch(orgId, (newId) => {
                     </button>
                 </div>
 
-                <!-- Same content as sidebar -->
                 <div class="space-y-4">
                     <div
                         class="flex flex-col items-center text-center pb-4 border-b border-sun-200 dark:border-abyss-700">
@@ -956,7 +940,6 @@ watch(orgId, (newId) => {
             </div>
         </div>
 
-        <!-- Help Modal -->
         <div v-if="showHelpModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
             @click.self="showHelpModal = false">
             <div
