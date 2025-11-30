@@ -268,6 +268,33 @@ body {
   @apply transition-colors duration-200;
 }
 
+/* FullCalendar Dark Mode Readability Overrides */
+
+/* Target calendar headers, day numbers, and titles */
+.dark .fc-col-header-cell-cushion,
+.dark .fc-daygrid-day-number,
+.dark .fc-toolbar-title {
+    color: #e5e5e5 !important; /* platinum-200 for controls */
+}
+
+/* Target event titles */
+.dark .fc-event-title,
+.dark .fc-list-event-title {
+    color: #fff !important; /* White text on event bars */
+}
+
+/* Fix grid lines and background elements for dark mode visibility */
+.dark .fc-daygrid-event-dot,
+.dark .fc-day-other {
+    color: #9ca3af !important; /* Gray color for non-current-month days */
+}
+
+.dark .fc-scrollgrid-border-box,
+.dark .fc-theme-standard td,
+.dark .fc-theme-standard th {
+    border-color: #3f4450 !important; /* abysss-700 equivalent for borders */
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 4px;

@@ -279,7 +279,7 @@ onMounted(() => {
                     </template>
                 </template>
 
-                <template v-if="isAdmin || canManageRequests || canManageSettings || canManagePermissions">
+                <template v-if="isAdmin || canManageRequests || canManageSettings || canManagePermissions || hasPermission('manage_duty_system')">
                     <div class="px-3 pt-5 pb-2">
                         <div class="flex items-center gap-2">
                             <div class="flex-1 h-px bg-gray-300 dark:bg-abyss-700"></div>

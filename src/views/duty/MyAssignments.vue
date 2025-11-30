@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from '@/utils/api'
+// import { isToday } from '@/utils/dateUtils'
 import { useToast } from '@/utils/useToast'
 import SwapRequestModal from '@/components/duty/swap_request_modal.vue'
 import {
@@ -68,6 +69,22 @@ const stats = computed(() => {
         completed: assignments.value.filter(a => a.status === 'completed').length,
     }
 })
+
+const isPastDuty = (duty) => {
+    if (!duty || !duty.date || !duty.end_time) return false;
+    const dutyEnd = new Date(duty.date + ' ' + duty.end_time);
+    return dutyEnd < Date.now();
+};
+
+const isUpcomingDuty = (duty) => {
+    if (!duty || !duty.date || !duty.start_time) return false;
+    const dutyStart = new Date(duty.date + ' ' + duty.start_time);
+    return dutyStart > Date.now();
+};
+
+const isHappeningDuty = (duty) => {
+    return !isPastDuty(duty) && !isUpcomingDuty(duty) && isToday(duty.date);
+};
 
 onMounted(loadAssignments)
 
@@ -189,20 +206,82 @@ function isToday(dateStr) {
         date.getFullYear() === today.getFullYear()
 }
 
+// New function to parse time and check window state
+function getAttendanceState(assignment, type = 'in') {
+    const schedule = assignment.duty_schedule;
+    const now = new Date();
+    const dutyDate = new Date(schedule.date);
+
+    // Normalize dutyDate to midnight for comparison
+    dutyDate.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // 1. Check date
+    if (dutyDate.toDateString() !== today.toDateString()) {
+        const status = dutyDate > today ? 'Upcoming' : 'Past';
+        return { canAct: false, window: status, message: `Duty is ${status}.` };
+    }
+
+    // 2. Determine time windows
+    const startWindowStr = type === 'in' ? (schedule.check_in_window_start || schedule.start_time) : (schedule.check_out_window_start || schedule.end_time);
+    const endWindowStr = type === 'in' ? (schedule.check_in_window_end || schedule.start_time) : (schedule.check_out_window_end || schedule.end_time);
+
+    // Convert time strings to Date objects on the current day
+    const [startHrs, startMins] = startWindowStr.split(':').map(Number);
+    const [endHrs, endMins] = endWindowStr.split(':').map(Number);
+
+    const windowStart = new Date();
+    windowStart.setHours(startHrs, startMins, 0, 0);
+
+    const windowEnd = new Date();
+    windowEnd.setHours(endHrs, endMins, 0, 0);
+
+    const niceStart = formatTime(startWindowStr);
+    const niceEnd = formatTime(endWindowStr);
+
+    // 3. Check current status
+    const actionTaken = type === 'in' ? assignment.check_in_at : assignment.check_out_at;
+
+    if (actionTaken) {
+        return { canAct: false, window: 'Completed', message: `Checked ${type} at ${formatDateTime(actionTaken)}` };
+    }
+
+    if (now < windowStart) {
+        return { canAct: false, window: 'TooEarly', message: `Opens at ${niceStart}`, niceStart, niceEnd };
+    }
+
+    if (now > windowEnd) {
+        return { canAct: false, window: 'Expired', message: `Window closed at ${niceEnd}`, niceStart, niceEnd };
+    }
+
+    // 4. Inside active window
+    return { canAct: true, window: 'Active', message: `Check ${type} now (until ${niceEnd})`, niceStart, niceEnd };
+}
+
+
 // Logic Checks
 function canRespond(assignment) {
     return assignment.status === 'assigned'
 }
 
 function canCheckIn(assignment) {
+    // Must be confirmed to check in
     if (assignment.status !== 'confirmed') return false
     if (assignment.check_in_at) return false
-    // Backend handles precise time window; Frontend just checks date
-    return isToday(assignment.duty_schedule.date)
+
+    // Check against window
+    const state = getAttendanceState(assignment, 'in')
+    return state.canAct
 }
 
 function canCheckOut(assignment) {
-    return assignment.check_in_at && !assignment.check_out_at
+    // Must be checked in to check out
+    if (!assignment.check_in_at || assignment.check_out_at) return false
+
+    // Check against window
+    const state = getAttendanceState(assignment, 'out')
+    return state.canAct
 }
 
 function canRequestSwap(assignment) {
@@ -271,6 +350,7 @@ function canRequestSwap(assignment) {
                     <option value="assigned">Pending</option>
                     <option value="confirmed">Confirmed</option>
                     <option value="completed">Completed</option>
+                    <option value="no_show">No Show</option>
                 </select>
             </div>
 
@@ -306,6 +386,36 @@ function canRequestSwap(assignment) {
                                         TODAY
                                     </span>
                                 </div>
+
+                                <!-- <div v-for="assignment in filteredAssignments" :key="assignment.id"
+                        class="p-5 bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 shadow-md transition"
+                        :class="{
+                            // NEW: UI Status based on Time (OrgFeed Reference)
+                            'ring-2 ring-emerald-500/50 hover:border-emerald-500': isHappeningDuty(assignment.duty_schedule),
+                            'opacity-70': isPastDuty(assignment.duty_schedule),
+                            'hover:border-kaitoke-green-500': isUpcomingDuty(assignment.duty_schedule)
+                        }">
+
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span v-if="isHappeningDuty(assignment.duty_schedule)"
+                                        class="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">
+                                        HAPPENING NOW
+                                    </span>
+                                    <span v-else-if="isPastDuty(assignment.duty_schedule)"
+                                        class="px-3 py-1 rounded-full text-xs font-semibold bg-gray-200 text-gray-600 dark:bg-abyss-700 dark:text-platinum-400">
+                                        PAST
+                                    </span>
+                                    <span
+                                        v-else-if="isUpcomingDuty(assignment.duty_schedule) && isToday(assignment.duty_schedule.date)"
+                                        class="px-3 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300">
+                                        TODAY
+                                    </span>
+                                </div> -->
+
+
+
                                 <p v-if="assignment.duty_schedule.description"
                                     class="text-sm text-gray-600 dark:text-platinum-400">
                                     {{ assignment.duty_schedule.description }}
@@ -333,6 +443,32 @@ function canRequestSwap(assignment) {
                                 <span class="text-gray-700 dark:text-platinum-300 font-medium">
                                     {{ assignment.duty_schedule.location }}
                                 </span>
+                            </div>
+                        </div>
+
+                        <div v-if="getAttendanceState(assignment, 'in').window !== 'Upcoming' && assignment.status !== 'completed' && assignment.status !== 'declined' && assignment.status !== 'no_show'"
+                            class="mb-4 p-3 rounded-xl border" :class="[
+                                getAttendanceState(assignment, 'in').window === 'Active' ? 'bg-green-50 border-green-300 dark:bg-green-900/20 dark:border-green-700/50' : 'bg-yellow-50 border-yellow-300 dark:bg-yellow-900/20 dark:border-yellow-700/50'
+                            ]">
+                            <div class="flex items-start gap-2 text-sm">
+                                <AlertCircle v-if="getAttendanceState(assignment, 'in').window !== 'Active'"
+                                    class="w-4 h-4 text-yellow-600 dark:text-yellow-400 mt-0.5" />
+                                <CheckCircle v-else class="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5" />
+                                <div>
+                                    <p class="text-xs font-medium mb-1"
+                                        :class="getAttendanceState(assignment, 'in').window === 'Active' ? 'text-green-700 dark:text-green-400' : 'text-yellow-700 dark:text-yellow-400'">
+                                        Check-in Status
+                                    </p>
+                                    <p class="font-semibold"
+                                        :class="getAttendanceState(assignment, 'in').window === 'Active' ? 'text-green-900 dark:text-green-300' : 'text-yellow-900 dark:text-yellow-300'">
+                                        {{ getAttendanceState(assignment, 'in').message }}
+                                    </p>
+                                    <p v-if="assignment.check_in_at && !assignment.check_out_at && getAttendanceState(assignment, 'out').window !== 'Completed'"
+                                        class="mt-2 text-xs text-gray-600 dark:text-platinum-400">
+                                        Check-out window: {{ getAttendanceState(assignment, 'out').niceStart }} - {{
+                                            getAttendanceState(assignment, 'out').niceEnd }}
+                                    </p>
+                                </div>
                             </div>
                         </div>
 
@@ -405,12 +541,12 @@ function canRequestSwap(assignment) {
                             </template>
 
                             <button v-if="canCheckIn(assignment)" @click="checkIn(assignment)"
-                                class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-kaitoke-green-600 hover:bg-kaitoke-green-500 text-white text-sm font-semibold transition-colors">
+                                class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-kaitoke-green-600 hover:bg-kaitoke-green-500 text-white text-sm font-semibold shadow-md transition-colors">
                                 <LogIn class="w-4 h-4" />
                                 Check In
                             </button>
                             <button v-if="canCheckOut(assignment)" @click="checkOut(assignment)"
-                                class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold transition-colors">
+                                class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold shadow-md transition-colors">
                                 <LogOut class="w-4 h-4" />
                                 Check Out
                             </button>
