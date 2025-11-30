@@ -1,5 +1,5 @@
 <template>
-    <div class="space-y-8">
+    <div class="max-w-5xl mx-auto space-y-6 p-6">
         <div>
             <h2 class="text-2xl font-bold text-gray-800 dark:text-platinum-50 flex items-center gap-2">
                 <MailOpen class="w-6 h-6 text-kaitoke-green-600 dark:text-kaitoke-green-400" /> Join Requests & Invites

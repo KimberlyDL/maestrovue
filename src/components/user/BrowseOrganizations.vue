@@ -5,7 +5,7 @@
             <h2 class="text-xl font-semibold text-platinum-50">Browse Organizations</h2>
             <div class="flex gap-2">
                 <input v-model="searchQuery" type="text" placeholder="Search organizations..."
-                    class="px-3 py-2 rounded-md bg-abyss-800 border border-abyss-700 text-platinum-50 text-sm w-64 focus:border-kaitoke-green-700 focus:outline-none" />
+                    class="px-3 py-2 rounded-mdbg-platinum-50 dark:bg-abyss-800 border border-abyss-700 text-platinum-50 text-sm w-64 focus:border-kaitoke-green-700 focus:outline-none" />
             </div>
         </div>
 
@@ -16,7 +16,7 @@
         </div>
 
         <!-- Empty State -->
-        <div v-else-if="!filteredOrgs.length" class="text-center py-12 bg-abyss-800 rounded-lg border border-abyss-700">
+        <div v-else-if="!filteredOrgs.length" class="text-center py-12bg-platinum-50 dark:bg-abyss-800 rounded-lg border border-abyss-700">
             <div class="text-4xl mb-3">🔍</div>
             <p class="text-platinum-400">No organizations found</p>
         </div>
@@ -24,7 +24,7 @@
         <!-- Organizations Grid -->
         <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div v-for="org in filteredOrgs" :key="org.id"
-                class="rounded-lg border border-abyss-700 bg-abyss-800 p-5 hover:border-kaitoke-green-700/50 transition-all">
+                class="rounded-lg border border-abyss-700bg-platinum-50 dark:bg-abyss-800 p-5 hover:border-kaitoke-green-700/50 transition-all">
                 <div class="mb-3">
                     <h3 class="text-lg font-semibold text-platinum-50 mb-1">{{ org.name }}</h3>
                     <p class="text-platinum-500 text-xs">@{{ org.slug }}</p>

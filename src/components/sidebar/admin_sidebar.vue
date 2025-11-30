@@ -24,7 +24,7 @@ const permissionStore = usePermissionStore()
 const organization = ref(null)
 const loading = ref(true)
 const pendingRequests = ref(0)
-const pendingReviews = ref(4)
+const pendingReviews = ref(0)
 
 // Get current org ID from route
 const currentOrgId = computed(() => {
@@ -279,7 +279,8 @@ onMounted(() => {
                     </template>
                 </template>
 
-                <template v-if="isAdmin || canManageRequests || canManageSettings || canManagePermissions || hasPermission('manage_duty_system')">
+                <template
+                    v-if="isAdmin || canManageRequests || canManageSettings || canManagePermissions || hasPermission('manage_duty_system')">
                     <div class="px-3 pt-5 pb-2">
                         <div class="flex items-center gap-2">
                             <div class="flex-1 h-px bg-gray-300 dark:bg-abyss-700"></div>
@@ -294,7 +295,8 @@ onMounted(() => {
                     <template v-if="hasPermission('manage_duty_system')">
                         <SidebarGroupLabel text="Duty" />
 
-                        <SidebarNavItem :to="{ name: 'duty.calendar', params: { id: currentOrgId } }" title="Calendar">
+                        <SidebarNavItem :to="{ name: 'duty.calendar', params: { id: currentOrgId } }" title="Calendar"
+                            exact>
                             <template #icon>
                                 <Calendar :size="16" :stroke-width="1.25" />
                             </template>

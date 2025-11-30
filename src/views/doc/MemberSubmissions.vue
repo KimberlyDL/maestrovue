@@ -6,7 +6,7 @@ import { useToast } from '@/utils/useToast'
 import {
     FileText, Search, RefreshCw, Clock, Calendar, Building2, User,
     CheckCircle2, XCircle, AlertCircle, Edit3, Send, Loader2,
-    Eye, MessageSquare, Download, Upload, Plus, Mail, Ban
+    Eye, MessageSquare, Download, Upload, Plus, Mail, Ban, Trash2, Lock
 } from 'lucide-vue-next'
 
 const route = useRoute()
@@ -23,16 +23,13 @@ const search = ref('')
 const statusFilter = ref('all')
 const approvalFilter = ref('all')
 
-// Update modal
+// Modals & Forms
 const showUpdateModal = ref(false)
-const updateForm = ref({
-    subject: '',
-    body: '',
-    due_at: ''
-})
+const showDeleteModal = ref(false) // New
+const updateForm = ref({ subject: '', body: '', due_at: '' })
 const updating = ref(false)
+const deleting = ref(false) // New
 
-// Recipient due modal
 const showRecipientDueModal = ref(false)
 const selectedRecipient = ref(null)
 const recipientDueForm = ref({ due_at: '' })
@@ -49,6 +46,13 @@ const filteredSubmissions = computed(() => {
 
         return matchesStatus && matchesApproval && matchesSearch
     })
+})
+
+// Check if the review is locked (Cannot edit/update)
+const isLocked = computed(() => {
+    if (!selectedSubmission.value) return true
+    return selectedSubmission.value.approval_status === 'rejected' ||
+        selectedSubmission.value.status === 'closed'
 })
 
 // Helper functions
@@ -70,15 +74,9 @@ function getStatusColor(status) {
 }
 
 function getApprovalBadge(submission) {
-    if (submission.approval_status === 'approved') {
-        return { icon: CheckCircle2, text: 'Admin Approved', color: 'text-green-600' }
-    }
-    if (submission.approval_status === 'rejected') {
-        return { icon: Ban, text: 'Admin Rejected', color: 'text-red-600' }
-    }
-    if (submission.approval_status === 'pending') {
-        return { icon: Clock, text: 'Pending Admin Approval', color: 'text-amber-600' }
-    }
+    if (submission.approval_status === 'approved') return { icon: CheckCircle2, text: 'Admin Approved', color: 'text-green-600' }
+    if (submission.approval_status === 'rejected') return { icon: Ban, text: 'Admin Rejected', color: 'text-red-600' }
+    if (submission.approval_status === 'pending') return { icon: Clock, text: 'Pending Admin Approval', color: 'text-amber-600' }
     return null
 }
 
@@ -103,14 +101,12 @@ async function selectSubmission(submission) {
         const { data } = await axios.get(`/api/org/${orgId.value}/reviews/${submission.id}`)
         selectedSubmission.value = data
     } catch (error) {
-        console.error('Failed to load submission details:', error)
         toast.error('Failed to load submission details')
     }
 }
 
 function openUpdateModal() {
     if (!selectedSubmission.value) return
-
     updateForm.value = {
         subject: selectedSubmission.value.subject || '',
         body: selectedSubmission.value.body || '',
@@ -121,32 +117,42 @@ function openUpdateModal() {
 
 async function updateSubmission() {
     if (!selectedSubmission.value) return
-
     try {
         updating.value = true
         await axios.patch(
             `/api/org/${orgId.value}/reviews/${selectedSubmission.value.id}/details`,
             updateForm.value
         )
-
         // Update local data
-        selectedSubmission.value.subject = updateForm.value.subject
-        selectedSubmission.value.body = updateForm.value.body
-        selectedSubmission.value.due_at = updateForm.value.due_at
-
-        // Update in list
+        Object.assign(selectedSubmission.value, updateForm.value)
         const index = submissions.value.findIndex(s => s.id === selectedSubmission.value.id)
-        if (index !== -1) {
-            submissions.value[index] = { ...submissions.value[index], ...updateForm.value }
-        }
+        if (index !== -1) submissions.value[index] = { ...submissions.value[index], ...updateForm.value }
 
         showUpdateModal.value = false
-        toast.success('Review details updated successfully')
+        toast.success('Review updated')
     } catch (error) {
-        console.error('Failed to update submission:', error)
-        toast.error(error?.response?.data?.message || 'Failed to update review')
+        toast.error(error?.response?.data?.message || 'Update failed')
     } finally {
         updating.value = false
+    }
+}
+
+// New: Delete Function
+async function deleteSubmission() {
+    if (!selectedSubmission.value) return
+    try {
+        deleting.value = true
+        await axios.delete(`/api/org/${orgId.value}/reviews/${selectedSubmission.value.id}`)
+
+        // Remove from list
+        submissions.value = submissions.value.filter(s => s.id !== selectedSubmission.value.id)
+        selectedSubmission.value = null
+        showDeleteModal.value = false
+        toast.success('Review deleted successfully')
+    } catch (error) {
+        toast.error(error?.response?.data?.message || 'Delete failed')
+    } finally {
+        deleting.value = false
     }
 }
 
@@ -158,22 +164,17 @@ function openRecipientDueModal(recipient) {
 
 async function updateRecipientDue() {
     if (!selectedSubmission.value || !selectedRecipient.value) return
-
     try {
         updatingRecipient.value = true
         await axios.patch(
             `/api/org/${orgId.value}/reviews/${selectedSubmission.value.id}/recipients/${selectedRecipient.value.id}/due`,
             recipientDueForm.value
         )
-
-        // Update local data
         selectedRecipient.value.due_at = recipientDueForm.value.due_at
-
         showRecipientDueModal.value = false
-        toast.success('Due date updated successfully')
+        toast.success('Due date updated')
     } catch (error) {
-        console.error('Failed to update due date:', error)
-        toast.error(error?.response?.data?.message || 'Failed to update due date')
+        toast.error('Failed to update due date')
     } finally {
         updatingRecipient.value = false
     }
@@ -181,20 +182,15 @@ async function updateRecipientDue() {
 
 async function remindReviewer(recipient) {
     if (!selectedSubmission.value) return
-
     try {
-        await axios.post(
-            `/api/org/${orgId.value}/reviews/${selectedSubmission.value.id}/recipients/${recipient.id}/remind`
-        )
-        toast.success(`Reminder sent to ${recipient.reviewer?.name || 'reviewer'}`)
+        await axios.post(`/api/org/${orgId.value}/reviews/${selectedSubmission.value.id}/recipients/${recipient.id}/remind`)
+        toast.success(`Reminder sent`)
     } catch (error) {
-        console.error('Failed to send reminder:', error)
-        toast.error(error?.response?.data?.message || 'Failed to send reminder')
+        toast.error('Failed to send reminder')
     }
 }
 
 function navigateToConversation(recipient) {
-    // Navigate to publisher review box with this review selected
     router.push({
         name: 'org.reviews.publisher',
         params: { id: orgId.value },
@@ -203,23 +199,17 @@ function navigateToConversation(recipient) {
 }
 
 // Lifecycle
-onMounted(() => {
-    fetchSubmissions()
-})
-
-watch(() => route.params.id, () => {
-    fetchSubmissions()
-})
+onMounted(fetchSubmissions)
+watch(() => route.params.id, fetchSubmissions)
 </script>
 
 <template>
     <div class="p-6 max-w-7xl mx-auto">
-        <!-- Header -->
         <div class="flex items-center justify-between mb-6">
             <div>
                 <h1 class="text-2xl font-bold text-abyss-900 dark:text-platinum-50">My Submissions</h1>
                 <p class="text-sm text-platinum-600 dark:text-platinum-400 mt-1">
-                    Manage your review requests and track their approval status
+                    Manage your review requests
                 </p>
             </div>
             <button @click="router.push({ name: 'org.reviews.upload', params: { id: orgId } })"
@@ -229,7 +219,6 @@ watch(() => route.params.id, () => {
             </button>
         </div>
 
-        <!-- Filters -->
         <div class="bg-white dark:bg-abyss-800 rounded-xl border border-platinum-200 dark:border-abyss-700 p-4 mb-6">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="relative">
@@ -237,7 +226,6 @@ watch(() => route.params.id, () => {
                     <input v-model="search" type="text" placeholder="Search submissions..."
                         class="w-full pl-10 pr-4 py-2 rounded-lg border border-platinum-300 dark:border-abyss-600 bg-white dark:bg-abyss-700 text-abyss-900 dark:text-platinum-100" />
                 </div>
-
                 <select v-model="statusFilter"
                     class="px-4 py-2 rounded-lg border border-platinum-300 dark:border-abyss-600 bg-white dark:bg-abyss-700 text-abyss-900 dark:text-platinum-100">
                     <option value="all">All Statuses</option>
@@ -248,7 +236,6 @@ watch(() => route.params.id, () => {
                     <option value="declined">Declined</option>
                     <option value="closed">Closed</option>
                 </select>
-
                 <select v-model="approvalFilter"
                     class="px-4 py-2 rounded-lg border border-platinum-300 dark:border-abyss-600 bg-white dark:bg-abyss-700 text-abyss-900 dark:text-platinum-100">
                     <option value="all">All Approval States</option>
@@ -259,25 +246,18 @@ watch(() => route.params.id, () => {
             </div>
         </div>
 
-        <!-- Loading -->
         <div v-if="loading" class="flex items-center justify-center py-12">
             <Loader2 class="w-8 h-8 animate-spin text-kaitoke-green-600" />
-            <span class="ml-3 text-platinum-700 dark:text-platinum-400">Loading submissions...</span>
         </div>
-
-        <!-- Submissions Grid -->
         <div v-else-if="filteredSubmissions.length === 0"
             class="text-center py-12 bg-white dark:bg-abyss-800 rounded-xl border border-platinum-200 dark:border-abyss-700">
             <FileText class="w-16 h-16 mx-auto text-platinum-400 mb-4" />
             <p class="text-platinum-600 dark:text-platinum-400">No submissions found</p>
         </div>
-
         <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div v-for="submission in filteredSubmissions" :key="submission.id"
                 class="bg-white dark:bg-abyss-800 rounded-xl border border-platinum-200 dark:border-abyss-700 p-6 hover:shadow-lg transition cursor-pointer"
                 @click="selectSubmission(submission)">
-
-                <!-- Header -->
                 <div class="flex items-start justify-between mb-4">
                     <div class="flex-1 min-w-0">
                         <h3 class="text-lg font-semibold text-abyss-900 dark:text-platinum-50 truncate">
@@ -288,64 +268,23 @@ watch(() => route.params.id, () => {
                         </p>
                     </div>
                 </div>
-
-                <!-- Status Badges -->
                 <div class="flex flex-wrap gap-2 mb-4">
-                    <span :class="getStatusColor(submission.status)" class="px-2 py-1 rounded-full text-xs font-medium">
-                        {{ submission.status }}
-                    </span>
-
+                    <span :class="getStatusColor(submission.status)"
+                        class="px-2 py-1 rounded-full text-xs font-medium">{{ submission.status }}</span>
                     <span v-if="getApprovalBadge(submission)" :class="getApprovalBadge(submission).color"
                         class="px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
                         <component :is="getApprovalBadge(submission).icon" :size="12" />
                         {{ getApprovalBadge(submission).text }}
                     </span>
                 </div>
-
-                <!-- Recipients Preview -->
-                <div class="mb-4">
-                    <p class="text-xs font-medium text-platinum-700 dark:text-platinum-300 mb-2">Reviewers:</p>
-                    <div class="flex flex-wrap gap-2">
-                        <div v-for="recipient in submission.recipients?.slice(0, 3)" :key="recipient.id"
-                            class="inline-flex items-center gap-1.5 px-2 py-1 bg-platinum-100 dark:bg-abyss-700 rounded-lg text-xs">
-                            <User :size="12" class="text-platinum-600" />
-                            <span class="text-abyss-900 dark:text-platinum-100">
-                                {{ recipient.reviewer?.name || 'Unknown' }}
-                            </span>
-                            <span v-if="recipient.status === 'approved'" class="text-green-600">
-                                <CheckCircle2 :size="12" />
-                            </span>
-                            <span v-else-if="recipient.status === 'declined'" class="text-red-600">
-                                <XCircle :size="12" />
-                            </span>
-                        </div>
-                        <span v-if="submission.recipients?.length > 3"
-                            class="text-xs text-platinum-600 dark:text-platinum-400 self-center">
-                            +{{ submission.recipients.length - 3 }} more
-                        </span>
-                    </div>
-                </div>
-
-                <!-- Footer -->
-                <div class="flex items-center justify-between text-xs text-platinum-600 dark:text-platinum-400">
-                    <div class="flex items-center gap-1">
-                        <Calendar :size="14" />
-                        {{ formatDate(submission.created_at) }}
-                    </div>
-                    <div v-if="submission.due_at" class="flex items-center gap-1">
-                        <Clock :size="14" />
-                        Due: {{ formatDate(submission.due_at) }}
-                    </div>
-                </div>
             </div>
         </div>
 
-        <!-- Submission Details Modal -->
         <div v-if="selectedSubmission" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
             @click.self="selectedSubmission = null">
             <div class="bg-white dark:bg-abyss-800 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
                 <div
-                    class="p-6 border-b border-platinum-200 dark:border-abyss-700 flex items-center justify-between sticky top-0 bg-white dark:bg-abyss-800">
+                    class="p-6 border-b border-platinum-200 dark:border-abyss-700 flex items-center justify-between sticky top-0 bg-white dark:bg-abyss-800 z-10">
                     <h2 class="text-xl font-bold text-abyss-900 dark:text-platinum-50">Submission Details</h2>
                     <button @click="selectedSubmission = null"
                         class="text-platinum-500 hover:text-abyss-900 dark:hover:text-platinum-200">
@@ -354,17 +293,31 @@ watch(() => route.params.id, () => {
                 </div>
 
                 <div class="p-6 space-y-6">
-                    <!-- Subject & Actions -->
-                    <div class="flex items-start justify-between">
+
+                    <div v-if="selectedSubmission.approval_status === 'rejected'"
+                        class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 flex items-center gap-3">
+                        <Ban class="text-red-500 w-5 h-5" />
+                        <p class="text-sm text-red-700 dark:text-red-300">
+                            This submission was <strong>rejected</strong> by the admin. Editing and reviewer actions are
+                            disabled. You may delete this request.
+                        </p>
+                    </div>
+                    <div v-else-if="selectedSubmission.status === 'closed'"
+                        class="bg-platinum-100 dark:bg-abyss-700 border-l-4 border-platinum-500 p-4 flex items-center gap-3">
+                        <Lock class="text-platinum-500 w-5 h-5" />
+                        <p class="text-sm text-platinum-700 dark:text-platinum-300">
+                            This review is <strong>closed</strong>. No further actions can be taken.
+                        </p>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                         <div class="flex-1">
-                            <h3 class="text-lg font-semibold text-abyss-900 dark:text-platinum-50 mb-2">
-                                {{ selectedSubmission.subject }}
-                            </h3>
+                            <h3 class="text-lg font-semibold text-abyss-900 dark:text-platinum-50 mb-2">{{
+                                selectedSubmission.subject }}</h3>
                             <div class="flex flex-wrap gap-2">
                                 <span :class="getStatusColor(selectedSubmission.status)"
-                                    class="px-2 py-1 rounded-full text-xs font-medium">
-                                    {{ selectedSubmission.status }}
-                                </span>
+                                    class="px-2 py-1 rounded-full text-xs font-medium">{{ selectedSubmission.status
+                                    }}</span>
                                 <span v-if="getApprovalBadge(selectedSubmission)"
                                     :class="getApprovalBadge(selectedSubmission).color"
                                     class="px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
@@ -373,14 +326,22 @@ watch(() => route.params.id, () => {
                                 </span>
                             </div>
                         </div>
-                        <button @click="openUpdateModal"
-                            class="inline-flex items-center gap-2 px-3 py-2 border border-platinum-300 dark:border-abyss-600 rounded-lg hover:bg-platinum-100 dark:hover:bg-abyss-700 text-sm font-medium">
-                            <Edit3 :size="16" />
-                            Edit Details
-                        </button>
+
+                        <div class="flex gap-2">
+                            <button v-if="!isLocked" @click="openUpdateModal"
+                                class="inline-flex items-center gap-2 px-3 py-2 border border-platinum-300 dark:border-abyss-600 rounded-lg hover:bg-platinum-100 dark:hover:bg-abyss-700 text-sm font-medium">
+                                <Edit3 :size="16" /> Edit
+                            </button>
+
+                            <button
+                                v-if="selectedSubmission.approval_status === 'rejected' || selectedSubmission.status === 'draft'"
+                                @click="showDeleteModal = true"
+                                class="inline-flex items-center gap-2 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium">
+                                <Trash2 :size="16" /> Delete
+                            </button>
+                        </div>
                     </div>
 
-                    <!-- Body -->
                     <div v-if="selectedSubmission.body">
                         <h4 class="text-sm font-medium text-platinum-700 dark:text-platinum-300 mb-2">Message:</h4>
                         <p
@@ -389,7 +350,6 @@ watch(() => route.params.id, () => {
                         </p>
                     </div>
 
-                    <!-- Rejection Reason -->
                     <div v-if="selectedSubmission.approval_status === 'rejected' && selectedSubmission.rejection_reason"
                         class="rounded-lg border border-red-300 dark:border-red-900/50 bg-red-50 dark:bg-red-900/20 p-4">
                         <div class="flex items-start gap-2">
@@ -402,23 +362,6 @@ watch(() => route.params.id, () => {
                         </div>
                     </div>
 
-                    <!-- Document Info -->
-                    <div class="rounded-lg border border-platinum-200 dark:border-abyss-700 p-4">
-                        <h4 class="text-sm font-medium text-platinum-700 dark:text-platinum-300 mb-3">Document:</h4>
-                        <div class="flex items-center gap-3">
-                            <FileText class="w-8 h-8 text-kaitoke-green-600" />
-                            <div class="flex-1">
-                                <p class="text-sm font-medium text-abyss-900 dark:text-platinum-100">
-                                    {{ selectedSubmission.document?.title }}
-                                </p>
-                                <p class="text-xs text-platinum-600 dark:text-platinum-400">
-                                    Version {{ selectedSubmission.version?.version_number || 1 }}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Reviewers List -->
                     <div>
                         <h4 class="text-sm font-medium text-platinum-700 dark:text-platinum-300 mb-3">Reviewers:</h4>
                         <div class="space-y-3">
@@ -431,50 +374,27 @@ watch(() => route.params.id, () => {
                                             {{ recipient.reviewer?.name?.charAt(0).toUpperCase() }}
                                         </div>
                                         <div>
-                                            <p class="text-sm font-medium text-abyss-900 dark:text-platinum-100">
-                                                {{ recipient.reviewer?.name || 'Unknown' }}
-                                            </p>
-                                            <p class="text-xs text-platinum-600 dark:text-platinum-400">
-                                                {{ recipient.reviewer?.email }}
-                                            </p>
-                                            <p class="text-xs text-platinum-600 dark:text-platinum-400">
-                                                {{ recipient.org?.name || '—' }}
-                                            </p>
+                                            <p class="text-sm font-medium text-abyss-900 dark:text-platinum-100">{{
+                                                recipient.reviewer?.name }}</p>
+                                            <p class="text-xs text-platinum-600 dark:text-platinum-400">{{
+                                                recipient.status }}</p>
                                         </div>
                                     </div>
-                                    <span class="px-2 py-1 rounded-full text-xs font-medium" :class="{
-                                        'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300': recipient.status === 'approved',
-                                        'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300': recipient.status === 'declined',
-                                        'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300': recipient.status === 'viewed',
-                                        'bg-platinum-100 text-platinum-800 dark:bg-abyss-700 dark:text-platinum-300': recipient.status === 'pending'
-                                    }">
-                                        {{ recipient.status }}
-                                    </span>
-                                </div>
-
-                                <div
-                                    class="flex items-center gap-2 text-xs text-platinum-600 dark:text-platinum-400 mb-3">
-                                    <Clock :size="14" />
-                                    Due: {{ formatDate(recipient.due_at || selectedSubmission.due_at) || 'No deadline'
-                                    }}
                                 </div>
 
                                 <div class="flex gap-2">
-                                    <button @click="openRecipientDueModal(recipient)"
-                                        class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 text-sm border border-platinum-300 dark:border-abyss-600 rounded-lg hover:bg-platinum-100 dark:hover:bg-abyss-700">
-                                        <Calendar :size="14" />
-                                        Update Due Date
+                                    <button @click="openRecipientDueModal(recipient)" :disabled="isLocked"
+                                        class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 text-sm border border-platinum-300 dark:border-abyss-600 rounded-lg hover:bg-platinum-100 dark:hover:bg-abyss-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                                        <Calendar :size="14" /> Update Due
                                     </button>
                                     <button @click="remindReviewer(recipient)"
-                                        :disabled="['approved', 'declined'].includes(recipient.status)"
+                                        :disabled="isLocked || ['approved', 'declined'].includes(recipient.status)"
                                         class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 text-sm border border-platinum-300 dark:border-abyss-600 rounded-lg hover:bg-platinum-100 dark:hover:bg-abyss-700 disabled:opacity-50 disabled:cursor-not-allowed">
-                                        <Mail :size="14" />
-                                        Send Reminder
+                                        <Mail :size="14" /> Reminder
                                     </button>
                                     <button @click="navigateToConversation(recipient)"
                                         class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 text-sm bg-kaitoke-green-600 hover:bg-kaitoke-green-700 text-white rounded-lg">
-                                        <MessageSquare :size="14" />
-                                        View Chat
+                                        <MessageSquare :size="14" /> Chat
                                     </button>
                                 </div>
                             </div>
@@ -484,80 +404,68 @@ watch(() => route.params.id, () => {
             </div>
         </div>
 
-        <!-- Update Details Modal -->
-        <div v-if="showUpdateModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+        <div v-if="showDeleteModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[60]"
+            @click.self="showDeleteModal = false">
+            <div class="bg-white dark:bg-abyss-800 rounded-xl max-w-sm w-full p-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                        <Trash2 class="w-6 h-6 text-red-600" />
+                    </div>
+                    <h3 class="text-lg font-semibold text-abyss-900 dark:text-platinum-50">Delete Submission</h3>
+                </div>
+                <p class="text-sm text-platinum-600 dark:text-platinum-400 mb-6">
+                    Are you sure? This action cannot be undone.
+                </p>
+                <div class="flex gap-3">
+                    <button @click="showDeleteModal = false"
+                        class="flex-1 px-4 py-2 border border-platinum-300 dark:border-abyss-600 rounded-lg hover:bg-platinum-100 dark:hover:bg-abyss-700">
+                        Cancel
+                    </button>
+                    <button @click="deleteSubmission" :disabled="deleting"
+                        class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg disabled:opacity-50">
+                        <Loader2 v-if="deleting" class="w-4 h-4 animate-spin" />
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="showUpdateModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[60]"
             @click.self="showUpdateModal = false">
             <div class="bg-white dark:bg-abyss-800 rounded-xl max-w-2xl w-full p-6">
-                <h3 class="text-lg font-semibold text-abyss-900 dark:text-platinum-50 mb-4">Update Review Details</h3>
-
+                <h3 class="text-lg font-semibold text-abyss-900 dark:text-platinum-50 mb-4">Update Details</h3>
                 <div class="space-y-4 mb-6">
-                    <div>
-                        <label class="block text-sm font-medium text-platinum-700 dark:text-platinum-300 mb-2">
-                            Subject
-                        </label>
-                        <input v-model="updateForm.subject" type="text"
-                            class="w-full px-4 py-2 rounded-lg border border-platinum-300 dark:border-abyss-600 bg-white dark:bg-abyss-700" />
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-platinum-700 dark:text-platinum-300 mb-2">
-                            Message
-                        </label>
-                        <textarea v-model="updateForm.body" rows="4"
-                            class="w-full px-4 py-2 rounded-lg border border-platinum-300 dark:border-abyss-600 bg-white dark:bg-abyss-700"></textarea>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-platinum-700 dark:text-platinum-300 mb-2">
-                            Global Due Date
-                        </label>
-                        <input v-model="updateForm.due_at" type="datetime-local"
-                            class="w-full px-4 py-2 rounded-lg border border-platinum-300 dark:border-abyss-600 bg-white dark:bg-abyss-700" />
-                    </div>
-                </div>
-
-                <div class="flex gap-3">
-                    <button @click="showUpdateModal = false"
-                        class="flex-1 px-4 py-2 border border-platinum-300 dark:border-abyss-600 rounded-lg hover:bg-platinum-100 dark:hover:bg-abyss-700">
-                        Cancel
-                    </button>
-                    <button @click="updateSubmission" :disabled="updating"
-                        class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-kaitoke-green-600 hover:bg-kaitoke-green-700 text-white rounded-lg disabled:opacity-50">
-                        <Loader2 v-if="updating" class="w-4 h-4 animate-spin" />
-                        Update
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Recipient Due Modal -->
-        <div v-if="showRecipientDueModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
-            @click.self="showRecipientDueModal = false">
-            <div class="bg-white dark:bg-abyss-800 rounded-xl max-w-md w-full p-6">
-                <h3 class="text-lg font-semibold text-abyss-900 dark:text-platinum-50 mb-4">
-                    Update Due Date for {{ selectedRecipient?.reviewer?.name }}
-                </h3>
-
-                <div class="mb-6">
-                    <label class="block text-sm font-medium text-platinum-700 dark:text-platinum-300 mb-2">
-                        Due Date
-                    </label>
-                    <input v-model="recipientDueForm.due_at" type="datetime-local"
+                    <input v-model="updateForm.subject"
+                        class="w-full px-4 py-2 rounded-lg border border-platinum-300 dark:border-abyss-600 bg-white dark:bg-abyss-700"
+                        placeholder="Subject" />
+                    <textarea v-model="updateForm.body" rows="4"
+                        class="w-full px-4 py-2 rounded-lg border border-platinum-300 dark:border-abyss-600 bg-white dark:bg-abyss-700"
+                        placeholder="Message"></textarea>
+                    <input v-model="updateForm.due_at" type="datetime-local"
                         class="w-full px-4 py-2 rounded-lg border border-platinum-300 dark:border-abyss-600 bg-white dark:bg-abyss-700" />
                 </div>
-
                 <div class="flex gap-3">
-                    <button @click="showRecipientDueModal = false"
-                        class="flex-1 px-4 py-2 border border-platinum-300 dark:border-abyss-600 rounded-lg hover:bg-platinum-100 dark:hover:bg-abyss-700">
-                        Cancel
-                    </button>
-                    <button @click="updateRecipientDue" :disabled="updatingRecipient"
-                        class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-kaitoke-green-600 hover:bg-kaitoke-green-700 text-white rounded-lg disabled:opacity-50">
-                        <Loader2 v-if="updatingRecipient" class="w-4 h-4 animate-spin" />
-                        Update
-                    </button>
+                    <button @click="showUpdateModal = false" class="flex-1 px-4 py-2 border rounded-lg">Cancel</button>
+                    <button @click="updateSubmission"
+                        class="flex-1 px-4 py-2 bg-kaitoke-green-600 text-white rounded-lg">Update</button>
                 </div>
             </div>
         </div>
+
+        <div v-if="showRecipientDueModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[60]"
+            @click.self="showRecipientDueModal = false">
+            <div class="bg-white dark:bg-abyss-800 rounded-xl max-w-md w-full p-6">
+                <h3 class="text-lg font-semibold mb-4">Update Due Date</h3>
+                <input v-model="recipientDueForm.due_at" type="datetime-local"
+                    class="w-full px-4 py-2 mb-6 rounded-lg border border-platinum-300 dark:border-abyss-600 bg-white dark:bg-abyss-700" />
+                <div class="flex gap-3">
+                    <button @click="showRecipientDueModal = false"
+                        class="flex-1 px-4 py-2 border rounded-lg">Cancel</button>
+                    <button @click="updateRecipientDue"
+                        class="flex-1 px-4 py-2 bg-kaitoke-green-600 text-white rounded-lg">Update</button>
+                </div>
+            </div>
+        </div>
+
     </div>
 </template>

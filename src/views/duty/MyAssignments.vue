@@ -285,8 +285,24 @@ function canCheckOut(assignment) {
 }
 
 function canRequestSwap(assignment) {
-    return (assignment.status === 'assigned' || assignment.status === 'confirmed') &&
-        new Date(assignment.duty_schedule.date) > new Date()
+    // 1. Must be Pending (assigned) or Confirmed
+    if (!['assigned', 'confirmed'].includes(assignment.status)) {
+        return false;
+    }
+
+    // 2. Must be in the future
+    const schedule = assignment.duty_schedule;
+    if (schedule.date && schedule.start_time) {
+        // Extract YYYY-MM-DD from ISO string (e.g., "2025-12-08T16:00:00.000000Z" -> "2025-12-08")
+        const datePart = schedule.date.split('T')[0];
+        
+        // Construct a valid ISO-like string for local time parsing: "2025-12-08T09:00:00"
+        const start = new Date(`${datePart}T${schedule.start_time}`);
+        
+        return start > new Date(); // Returns true if the duty start time is in the future
+    }
+
+    return false;
 }
 </script>
 

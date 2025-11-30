@@ -1,5 +1,5 @@
 <template>
-    <div class="space-y-8">
+    <div class="max-w-5xl mx-auto space-y-6 p-6">
         <div class="bg-white dark:bg-abyss-800 border border-gray-200 dark:border-abyss-700 rounded-xl p-8">
             <h2 class="text-xl font-semibold text-gray-800 dark:text-platinum-50 mb-6 flex items-center gap-2">
                 <Camera class="w-5 h-5 text-kaitoke-green-600 dark:text-kaitoke-green-400" /> Organization Logo

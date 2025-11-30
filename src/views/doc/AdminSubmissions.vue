@@ -6,8 +6,11 @@ import { useToast } from '@/utils/useToast'
 import {
     FileText, Search, RefreshCw, Clock, Calendar, Building2, User,
     CheckCircle2, XCircle, AlertCircle, Filter, Loader2,
-    Eye, MessageSquare, Ban, ArrowRight, FileEdit, Users
+    Eye, MessageSquare, Ban, ArrowRight, FileEdit, Users, X
 } from 'lucide-vue-next'
+
+// Import the details component
+import ReviewDetails from '@/components/doc/review_details.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -23,9 +26,11 @@ const search = ref('')
 const statusFilter = ref('all')
 const approvalFilter = ref('all')
 
-// Approval modal
+// Modals
 const showApprovalModal = ref(false)
 const showRejectionModal = ref(false)
+const showDetailsModal = ref(false) // New state for details modal
+
 const processingSubmission = ref(null)
 const rejectionReason = ref('')
 const processing = ref(false)
@@ -115,13 +120,19 @@ async function fetchSubmissions() {
     }
 }
 
-async function selectSubmission(submission) {
+// Updated to open modal
+async function viewSubmission(submission) {
     try {
+        loading.value = true
+        // Fetch full details
         const { data } = await axios.get(`/api/org/${orgId.value}/reviews/${submission.id}`)
         selectedSubmission.value = data
+        showDetailsModal.value = true
     } catch (error) {
         console.error('Failed to load submission details:', error)
-        toast.error('Failed to load submission details')
+        toast.error('Failed to load details')
+    } finally {
+        loading.value = false
     }
 }
 
@@ -149,7 +160,7 @@ async function approveSubmission() {
         const index = submissions.value.findIndex(s => s.id === processingSubmission.value.id)
         if (index !== -1) {
             submissions.value[index].approval_status = 'approved'
-            submissions.value[index].approved_by = 'You' // Simplified
+            submissions.value[index].approved_by = 'You'
             submissions.value[index].approved_at = new Date().toISOString()
         }
 
@@ -204,14 +215,6 @@ async function rejectSubmission() {
     }
 }
 
-function viewSubmission(submission) {
-    router.push({
-        name: 'org.my-submissions',
-        params: { id: orgId.value },
-        query: { review_id: submission.id }
-    })
-}
-
 // Lifecycle
 onMounted(() => {
     fetchSubmissions()
@@ -224,7 +227,6 @@ watch(() => route.params.id, () => {
 
 <template>
     <div class="max-w-7xl px-4 sm:px-6 py-6 lg:px-8">
-        <!-- Header -->
         <div class="mb-6">
             <div class="flex items-center justify-between mb-4">
                 <div>
@@ -235,7 +237,6 @@ watch(() => route.params.id, () => {
                 </div>
             </div>
 
-            <!-- Stats Cards -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div
                     class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/50 rounded-xl p-4">
@@ -277,7 +278,6 @@ watch(() => route.params.id, () => {
             </div>
         </div>
 
-        <!-- Filters -->
         <div class="bg-white dark:bg-abyss-800 rounded-xl border border-platinum-200 dark:border-abyss-700 p-4 mb-6">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="relative">
@@ -307,13 +307,11 @@ watch(() => route.params.id, () => {
             </div>
         </div>
 
-        <!-- Loading -->
-        <div v-if="loading" class="flex items-center justify-center py-12">
+        <div v-if="loading && !showDetailsModal" class="flex items-center justify-center py-12">
             <Loader2 class="w-8 h-8 animate-spin text-kaitoke-green-600" />
             <span class="ml-3 text-platinum-700 dark:text-platinum-400">Loading submissions...</span>
         </div>
 
-        <!-- Submissions Grid -->
         <div v-else-if="filteredSubmissions.length === 0"
             class="text-center py-12 bg-white dark:bg-abyss-800 rounded-xl border border-platinum-200 dark:border-abyss-700">
             <FileText class="w-16 h-16 mx-auto text-platinum-400 mb-4" />
@@ -335,7 +333,6 @@ watch(() => route.params.id, () => {
                     </div>
                 </div>
 
-                <!-- Badges -->
                 <div class="flex flex-wrap gap-2 mb-4">
                     <span :class="getStatusColor(submission.status)" class="px-2 py-1 rounded-full text-xs font-medium">
                         {{ submission.status }}
@@ -348,7 +345,6 @@ watch(() => route.params.id, () => {
                     </span>
                 </div>
 
-                <!-- Submitter Info -->
                 <div class="mb-4 flex items-center gap-2 text-sm text-platinum-600 dark:text-platinum-400">
                     <User :size="14" />
                     <span>Submitted by: <strong class="text-abyss-900 dark:text-platinum-100">{{
@@ -358,7 +354,6 @@ watch(() => route.params.id, () => {
                     <span>{{ formatDate(submission.created_at) }}</span>
                 </div>
 
-                <!-- Recipients Preview -->
                 <div class="mb-4">
                     <p class="text-xs font-medium text-platinum-700 dark:text-platinum-300 mb-2">Reviewers:</p>
                     <div class="flex flex-wrap gap-2">
@@ -376,14 +371,12 @@ watch(() => route.params.id, () => {
                     </div>
                 </div>
 
-                <!-- Rejection Reason -->
                 <div v-if="submission.approval_status === 'rejected' && submission.rejection_reason"
                     class="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-lg">
                     <p class="text-xs font-medium text-red-900 dark:text-red-300 mb-1">Rejection Reason:</p>
                     <p class="text-sm text-red-700 dark:text-red-400">{{ submission.rejection_reason }}</p>
                 </div>
 
-                <!-- Actions -->
                 <div class="flex gap-2">
                     <button v-if="submission.approval_status === 'pending'" @click="openApprovalModal(submission)"
                         class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition">
@@ -406,7 +399,41 @@ watch(() => route.params.id, () => {
             </div>
         </div>
 
-        <!-- Approval Modal -->
+        <div v-if="showDetailsModal && selectedSubmission"
+            class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto"
+            @click.self="showDetailsModal = false">
+            <div
+                class="bg-white dark:bg-abyss-800 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto flex flex-col">
+                <div
+                    class="p-4 border-b border-platinum-200 dark:border-abyss-700 flex justify-between items-center bg-white dark:bg-abyss-800 sticky top-0 z-10">
+                    <h3 class="text-lg font-bold text-abyss-900 dark:text-platinum-50">Submission Details</h3>
+                    <button @click="showDetailsModal = false"
+                        class="text-platinum-500 hover:text-abyss-700 dark:hover:text-platinum-300">
+                        <X class="w-6 h-6" />
+                    </button>
+                </div>
+
+                <div class="p-6">
+                    <ReviewDetails :review="selectedSubmission" :org-id="orgId"
+                        @update-review="viewSubmission(selectedSubmission)" />
+
+                    <div v-if="selectedSubmission.approval_status === 'pending'"
+                        class="mt-6 pt-6 border-t border-platinum-200 dark:border-abyss-700 flex gap-4">
+                        <button @click="openApprovalModal(selectedSubmission); showDetailsModal = false"
+                            class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition">
+                            <CheckCircle2 :size="18" />
+                            Approve This Submission
+                        </button>
+                        <button @click="openRejectionModal(selectedSubmission); showDetailsModal = false"
+                            class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition">
+                            <Ban :size="18" />
+                            Reject This Submission
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div v-if="showApprovalModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
             @click.self="showApprovalModal = false">
             <div class="bg-white dark:bg-abyss-800 rounded-xl max-w-md w-full p-6">
@@ -435,7 +462,6 @@ watch(() => route.params.id, () => {
             </div>
         </div>
 
-        <!-- Rejection Modal -->
         <div v-if="showRejectionModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
             @click.self="showRejectionModal = false">
             <div class="bg-white dark:bg-abyss-800 rounded-xl max-w-md w-full p-6">

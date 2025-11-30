@@ -19,7 +19,7 @@
                         Organization Name <span class="text-rose-400">*</span>
                     </label>
                     <input v-model="form.name" type="text" placeholder="e.g., UP Tech Guild"
-                        class="w-full px-3 py-2 rounded-md bg-abyss-900 border border-abyss-700 text-platinum-50 placeholder-platinum-500 focus:border-kaitoke-green-700 focus:outline-none"
+                        class="w-full px-3 py-2 rounded-mdbg-platinum-50 dark:bg-abyss-900 border border-abyss-700 text-platinum-50 placeholder-platinum-500 focus:border-kaitoke-green-700 focus:outline-none"
                         @blur="generateSlug" required maxlength="80" />
                     <p class="text-xs text-platinum-500 mt-1">{{ form.name.length }}/80 characters</p>
                 </div>
@@ -29,7 +29,7 @@
                         Slug/Handle <span class="text-platinum-500">(auto-generated)</span>
                     </label>
                     <input v-model="form.slug" type="text" placeholder="up-tech-guild" readonly
-                        class="w-full px-3 py-2 rounded-md bg-abyss-900/50 border border-abyss-700 text-platinum-400 cursor-not-allowed" />
+                        class="w-full px-3 py-2 rounded-mdbg-platinum-50 dark:bg-abyss-900/50 border border-abyss-700 text-platinum-400 cursor-not-allowed" />
                     <p class="text-xs text-platinum-500 mt-1">URL: /orgs/{{ form.slug || 'your-org-slug' }}</p>
                 </div>
 
@@ -38,7 +38,7 @@
                         Description <span class="text-rose-400">*</span>
                     </label>
                     <textarea v-model="form.description" rows="4" placeholder="What your organization is about..."
-                        class="w-full px-3 py-2 rounded-md bg-abyss-900 border border-abyss-700 text-platinum-50 placeholder-platinum-500 focus:border-kaitoke-green-700 focus:outline-none"
+                        class="w-full px-3 py-2 rounded-mdbg-platinum-50 dark:bg-abyss-900 border border-abyss-700 text-platinum-50 placeholder-platinum-500 focus:border-kaitoke-green-700 focus:outline-none"
                         required maxlength="300"></textarea>
                     <p class="text-xs text-platinum-500 mt-1">{{ form.description.length }}/300 characters</p>
                 </div>

@@ -14,7 +14,7 @@
 
             <div class="p-5">
                 <!-- Tabs -->
-                <div class="flex gap-2 mb-5 bg-abyss-900 p-1 rounded-lg">
+                <div class="flex gap-2 mb-5bg-platinum-50 dark:bg-abyss-900 p-1 rounded-lg">
                     <button @click="activeTab = 'request'" :class="[
                         'flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all',
                         activeTab === 'request'
@@ -38,14 +38,14 @@
                     <div>
                         <label class="block text-sm font-medium text-platinum-300 mb-2">Organization Name</label>
                         <input v-model="joinForm.organization_name" type="text" placeholder="Enter organization name"
-                            class="w-full px-3 py-2 rounded-md bg-abyss-900 border border-abyss-700 text-platinum-50 placeholder-platinum-500 focus:border-kaitoke-green-700 focus:outline-none"
+                            class="w-full px-3 py-2 rounded-mdbg-platinum-50 dark:bg-abyss-900 border border-abyss-700 text-platinum-50 placeholder-platinum-500 focus:border-kaitoke-green-700 focus:outline-none"
                             required />
                     </div>
 
                     <div>
                         <label class="block text-sm font-medium text-platinum-300 mb-2">Message (Optional)</label>
                         <textarea v-model="joinForm.message" rows="3" placeholder="Tell them why you want to join..."
-                            class="w-full px-3 py-2 rounded-md bg-abyss-900 border border-abyss-700 text-platinum-50 placeholder-platinum-500 focus:border-kaitoke-green-700 focus:outline-none"></textarea>
+                            class="w-full px-3 py-2 rounded-mdbg-platinum-50 dark:bg-abyss-900 border border-abyss-700 text-platinum-50 placeholder-platinum-500 focus:border-kaitoke-green-700 focus:outline-none"></textarea>
                     </div>
 
                     <button type="submit" :disabled="isSubmitting"
@@ -68,7 +68,7 @@
                     <div>
                         <label class="block text-sm font-medium text-platinum-300 mb-2">Invite Code</label>
                         <input v-model="inviteForm.code" type="text" placeholder="Enter invite code"
-                            class="w-full px-3 py-2 rounded-md bg-abyss-900 border border-abyss-700 text-platinum-50 placeholder-platinum-500 focus:border-kaitoke-green-700 focus:outline-none uppercase tracking-wider"
+                            class="w-full px-3 py-2 rounded-mdbg-platinum-50 dark:bg-abyss-900 border border-abyss-700 text-platinum-50 placeholder-platinum-500 focus:border-kaitoke-green-700 focus:outline-none uppercase tracking-wider"
                             required />
                         <p class="text-xs text-platinum-500 mt-1">Enter the invite code provided by an admin</p>
                     </div>

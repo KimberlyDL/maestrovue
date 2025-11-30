@@ -141,7 +141,7 @@ const submitInviteCode = async () => {
         // Navigate to the main organizations list after a successful join,
         // which mimics the functionality of handleOrgJoined in the original dashboard.
         setTimeout(() => {
-            router.push({ name: 'orgs.orgs' })
+            router.push({ name: 'home' })
         }, 1500)
 
     } catch (error) {

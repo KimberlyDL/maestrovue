@@ -150,6 +150,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import axios from '@/utils/api'
 import AnnouncementModal from '@/components/org/AnnouncementModal.vue'
+import { useToast } from '@/utils/useToast'
 import {
     Megaphone, Plus, Loader2, MessageSquare, Users, Lock,
     Pencil, Trash2, Hash, Search
@@ -158,7 +159,7 @@ import {
 const props = defineProps({
     organizationId: { type: [String, Number], required: true }
 })
-
+const toast = useToast()
 const R2_WORKER_ENDPOINT = import.meta.env.VITE_R2_WORKER_ENDPOINT
 
 const announcements = ref([])
@@ -277,14 +278,16 @@ function editAnnouncement(announcement) {
 }
 
 // Confirm delete
+// Confirm delete
 async function confirmDelete(id) {
     if (!confirm('Are you sure you want to delete this announcement?')) return
 
     try {
         await axios.delete(`/api/org/${props.organizationId}/announcements/${id}`)
         announcements.value = announcements.value.filter(a => a.id !== id)
+        toast.success('Announcement deleted successfully') // 3. Success Toast
     } catch (error) {
-        alert('Failed to delete announcement')
+        toast.error('Failed to delete announcement') // 4. Error Toast replacing alert
     }
 }
 

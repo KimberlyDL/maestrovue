@@ -15,7 +15,7 @@
 
         <!-- Empty State -->
         <div v-else-if="!organizations.length"
-            class="text-center py-12 bg-abyss-800 rounded-lg border border-abyss-700">
+            class="text-center py-12bg-platinum-50 dark:bg-abyss-800 rounded-lg border border-abyss-700">
             <div class="text-4xl mb-3">🏢</div>
             <p class="text-platinum-400 mb-4">You haven't joined any organizations yet</p>
             <button @click="$emit('join-org')"
@@ -27,7 +27,7 @@
         <!-- Organizations Grid -->
         <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div v-for="org in organizations" :key="org.id"
-                class="rounded-lg border border-abyss-700 bg-abyss-800 p-5 hover:border-kaitoke-green-700/50 transition-all cursor-pointer"
+                class="rounded-lg border border-abyss-700bg-platinum-50 dark:bg-abyss-800 p-5 hover:border-kaitoke-green-700/50 transition-all cursor-pointer"
                 @click="$emit('view-org', org.id)">
                 <div class="flex items-start justify-between mb-3">
                     <h3 class="text-lg font-semibold text-platinum-50">{{ org.name }}</h3>

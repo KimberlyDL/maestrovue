@@ -172,7 +172,7 @@ function canAcceptSwap(swap) {
                     </p>
                 </div>
                 <button @click="loadAvailableSwaps"
-                    class="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-gray-300 dark:border-abyss-600 bg-white dark:bg-abyss-800 text-gray-700 dark:text-platinum-200 hover:bg-gray-100 dark:hover:bg-abyss-700 shadow-sm transition-colors hover:scale-[1.02] active:scale-[0.98]">
+                    class="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-gray-300 dark:border-abyss-600 bg-white dark:bg-abyss-800 text-gray-700 dark:text-platinum-200 hover:bg-gray-100 dark:hover:bg-abyss-700 shadow-sm transition-colors">
                     <RefreshCw class="w-4 h-4" />
                     Refresh
                 </button>
@@ -209,7 +209,7 @@ function canAcceptSwap(swap) {
 
                 <div v-else class="space-y-4">
                     <div v-for="swap in filteredSwaps" :key="swap.id"
-                        class="p-5 bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 hover:border-kaitoke-green-500 shadow-md transition hover:scale-[1.005]">
+                        class="p-5 bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 hover:border-kaitoke-green-500 shadow-md transition">
 
                         <div class="flex items-start justify-between mb-4">
                             <div class="flex-1">
@@ -285,12 +285,12 @@ function canAcceptSwap(swap) {
                         <div v-if="canAcceptSwap(swap)"
                             class="flex gap-3 pt-2 border-t border-gray-200 dark:border-abyss-700">
                             <button @click="openAcceptModal(swap)"
-                                class="flex-1 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold shadow-md transition-colors hover:scale-[1.02] active:scale-[0.98]">
+                                class="flex-1 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold shadow-md transition-colors">
                                 <ThumbsUp class="w-4 h-4" />
                                 Accept Swap
                             </button>
                             <button @click="openDeclineModal(swap)"
-                                class="flex-1 px-4 py-2.5 rounded-xl border border-red-600 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm font-semibold shadow-sm transition-colors hover:scale-[1.02] active:scale-[0.98]">
+                                class="flex-1 px-4 py-2.5 rounded-xl border border-red-600 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm font-semibold shadow-sm transition-colors">
                                 <ThumbsDown class="w-4 h-4" />
                                 Decline
                             </button>
@@ -345,11 +345,11 @@ function canAcceptSwap(swap) {
 
                         <div class="flex gap-3 pt-2">
                             <button @click="showAcceptModal = false"
-                                class="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 dark:border-abyss-600 text-gray-700 dark:text-platinum-200 hover:bg-gray-100 dark:hover:bg-abyss-700 font-medium transition-colors hover:scale-[1.02] active:scale-[0.98]">
+                                class="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 dark:border-abyss-600 text-gray-700 dark:text-platinum-200 hover:bg-gray-100 dark:hover:bg-abyss-700 font-medium transition-colors">
                                 Cancel
                             </button>
                             <button @click="acceptSwap" :disabled="processing"
-                                class="flex-1 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold shadow-md transition-colors disabled:opacity-50 hover:scale-[1.02] active:scale-[0.98]">
+                                class="flex-1 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold shadow-md transition-colors disabled:opacity-50">
                                 {{ processing ? 'Processing...' : 'Confirm Accept' }}
                             </button>
                         </div>
@@ -392,11 +392,11 @@ function canAcceptSwap(swap) {
 
                         <div class="flex gap-3 pt-2">
                             <button @click="showDeclineModal = false"
-                                class="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 dark:border-abyss-600 text-gray-700 dark:text-platinum-200 hover:bg-gray-100 dark:hover:bg-abyss-700 font-medium transition-colors hover:scale-[1.02] active:scale-[0.98]">
+                                class="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 dark:border-abyss-600 text-gray-700 dark:text-platinum-200 hover:bg-gray-100 dark:hover:bg-abyss-700 font-medium transition-colors">
                                 Cancel
                             </button>
                             <button @click="declineSwap" :disabled="processing"
-                                class="flex-1 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-semibold shadow-md transition-colors disabled:opacity-50 hover:scale-[1.02] active:scale-[0.98]">
+                                class="flex-1 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-semibold shadow-md transition-colors disabled:opacity-50">
                                 {{ processing ? 'Processing...' : 'Confirm Decline' }}
                             </button>
                         </div>

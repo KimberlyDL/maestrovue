@@ -185,12 +185,12 @@ function isUpcoming(dateStr) {
             </div>
             <div class="flex gap-3">
                 <button @click="loadAvailability"
-                    class="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-gray-300 dark:border-abyss-600 bg-white dark:bg-abyss-800 text-gray-700 dark:text-platinum-200 hover:bg-gray-100 dark:hover:bg-abyss-700 shadow-sm transition-colors hover:scale-[1.02]">
+                    class="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-gray-300 dark:border-abyss-600 bg-white dark:bg-abyss-800 text-gray-700 dark:text-platinum-200 hover:bg-gray-100 dark:hover:bg-abyss-700 shadow-sm transition-colors">
                     <RefreshCw class="w-4 h-4" />
                     Refresh
                 </button>
                 <button @click="openAddModal"
-                    class="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-kaitoke-green-600 hover:bg-kaitoke-green-500 text-white font-semibold shadow-md transition-colors hover:scale-[1.02]">
+                    class="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-kaitoke-green-600 hover:bg-kaitoke-green-500 text-white font-semibold shadow-md transition-colors">
                     <Plus class="w-4 h-4" />
                     Add Availability
                 </button>
@@ -232,7 +232,7 @@ function isUpcoming(dateStr) {
                 <Calendar class="h-12 w-12 mx-auto text-gray-400 dark:text-platinum-600 mb-4" />
                 <p class="text-gray-600 dark:text-platinum-400 mb-2 font-medium">No availability set</p>
                 <button @click="openAddModal"
-                    class="mt-3 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-kaitoke-green-600 hover:bg-kaitoke-green-500 text-white font-medium mx-auto shadow-md hover:scale-[1.02]">
+                    class="mt-3 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-kaitoke-green-600 hover:bg-kaitoke-green-500 text-white font-medium mx-auto shadow-md">
                     <Plus class="w-4 h-4" /> Add Availability
                 </button>
             </div>

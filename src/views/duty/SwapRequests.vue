@@ -194,7 +194,7 @@ function formatTime(timeStr) {
                     </p>
                 </div>
                 <button @click="loadSwapRequests"
-                    class="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-gray-300 dark:border-abyss-600 bg-white dark:bg-abyss-800 text-gray-700 dark:text-platinum-200 hover:bg-gray-100 dark:hover:bg-abyss-700 transition-colors hover:scale-[1.02] active:scale-[0.98]">
+                    class="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-gray-300 dark:border-abyss-600 bg-white dark:bg-abyss-800 text-gray-700 dark:text-platinum-200 hover:bg-gray-100 dark:hover:bg-abyss-700 transition-colors ">
                     <RefreshCw class="w-4 h-4" />
                     Refresh
                 </button>
@@ -278,7 +278,7 @@ function formatTime(timeStr) {
 
                 <div v-else class="space-y-4">
                     <div v-for="swap in filteredRequests" :key="swap.id"
-                        class="p-5 bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 hover:border-kaitoke-green-500 transition hover:scale-[1.005]">
+                        class="p-5 bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 hover:border-kaitoke-green-500 transition">
 
                         <div class="flex items-start justify-between mb-4">
                             <div class="flex-1">
@@ -307,19 +307,19 @@ function formatTime(timeStr) {
 
                             <div class="flex gap-2 flex-shrink-0">
                                 <button v-if="swap.status === 'pending'" @click="openReviewModal(swap, 'approve')"
-                                    class="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold transition-colors hover:scale-[1.02]"
+                                    class="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold transition-colors"
                                     title="Approve and reassign">
                                     <ThumbsUp class="w-4 h-4" />
                                     Approve
                                 </button>
                                 <button v-if="swap.status === 'pending'" @click="openReviewModal(swap, 'reject')"
-                                    class="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-semibold transition-colors hover:scale-[1.02]"
+                                    class="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-semibold transition-colors"
                                     title="Reject - officer must attend">
                                     <ThumbsDown class="w-4 h-4" />
                                     Reject
                                 </button>
                                 <button v-else @click="openReviewModal(swap, 'view')"
-                                    class="p-2 rounded-xl text-gray-600 dark:text-platinum-400 hover:bg-gray-100 dark:hover:bg-abyss-700 transition-colors hover:scale-[1.05]">
+                                    class="p-2 rounded-xl text-gray-600 dark:text-platinum-400 hover:bg-gray-100 dark:hover:bg-abyss-700 transition-colors">
                                     <Info class="w-5 h-5" />
                                 </button>
                             </div>
@@ -473,13 +473,13 @@ function formatTime(timeStr) {
 
                         <div class="flex gap-3 pt-2">
                             <button @click="showReviewModal = false"
-                                class="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 dark:border-abyss-600 text-gray-700 dark:text-platinum-200 hover:bg-gray-100 dark:hover:bg-abyss-700 font-medium transition-colors hover:scale-[1.02]">
+                                class="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 dark:border-abyss-600 text-gray-700 dark:text-platinum-200 hover:bg-gray-100 dark:hover:bg-abyss-700 font-medium transition-colors">
                                 {{ reviewAction === 'view' ? 'Close' : 'Cancel' }}
                             </button>
                             <button v-if="reviewAction !== 'view'" @click="submitReview"
                                 :disabled="processingReview || (reviewAction === 'approve' && !reviewForm.reassign_to)"
                                 :class="reviewAction === 'approve' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-red-600 hover:bg-red-500'"
-                                class="flex-1 px-4 py-2.5 rounded-xl text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02]">
+                                class="flex-1 px-4 py-2.5 rounded-xl text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                                 {{ processingReview ? 'Processing...' :
                                     (reviewAction === 'approve' ? 'Approve & Reassign'
                                         : 'Reject') }}
