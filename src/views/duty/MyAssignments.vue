@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from '@/utils/api'
+// import { isToday } from '@/utils/dateUtils'
 import { useToast } from '@/utils/useToast'
 import SwapRequestModal from '@/components/duty/swap_request_modal.vue'
 import {
@@ -68,6 +69,22 @@ const stats = computed(() => {
         completed: assignments.value.filter(a => a.status === 'completed').length,
     }
 })
+
+const isPastDuty = (duty) => {
+    if (!duty || !duty.date || !duty.end_time) return false;
+    const dutyEnd = new Date(duty.date + ' ' + duty.end_time);
+    return dutyEnd < Date.now();
+};
+
+const isUpcomingDuty = (duty) => {
+    if (!duty || !duty.date || !duty.start_time) return false;
+    const dutyStart = new Date(duty.date + ' ' + duty.start_time);
+    return dutyStart > Date.now();
+};
+
+const isHappeningDuty = (duty) => {
+    return !isPastDuty(duty) && !isUpcomingDuty(duty) && isToday(duty.date);
+};
 
 onMounted(loadAssignments)
 
@@ -369,6 +386,36 @@ function canRequestSwap(assignment) {
                                         TODAY
                                     </span>
                                 </div>
+
+                                <!-- <div v-for="assignment in filteredAssignments" :key="assignment.id"
+                        class="p-5 bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 shadow-md transition"
+                        :class="{
+                            // NEW: UI Status based on Time (OrgFeed Reference)
+                            'ring-2 ring-emerald-500/50 hover:border-emerald-500': isHappeningDuty(assignment.duty_schedule),
+                            'opacity-70': isPastDuty(assignment.duty_schedule),
+                            'hover:border-kaitoke-green-500': isUpcomingDuty(assignment.duty_schedule)
+                        }">
+
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span v-if="isHappeningDuty(assignment.duty_schedule)"
+                                        class="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">
+                                        HAPPENING NOW
+                                    </span>
+                                    <span v-else-if="isPastDuty(assignment.duty_schedule)"
+                                        class="px-3 py-1 rounded-full text-xs font-semibold bg-gray-200 text-gray-600 dark:bg-abyss-700 dark:text-platinum-400">
+                                        PAST
+                                    </span>
+                                    <span
+                                        v-else-if="isUpcomingDuty(assignment.duty_schedule) && isToday(assignment.duty_schedule.date)"
+                                        class="px-3 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300">
+                                        TODAY
+                                    </span>
+                                </div> -->
+
+
+
                                 <p v-if="assignment.duty_schedule.description"
                                     class="text-sm text-gray-600 dark:text-platinum-400">
                                     {{ assignment.duty_schedule.description }}
@@ -419,7 +466,7 @@ function canRequestSwap(assignment) {
                                     <p v-if="assignment.check_in_at && !assignment.check_out_at && getAttendanceState(assignment, 'out').window !== 'Completed'"
                                         class="mt-2 text-xs text-gray-600 dark:text-platinum-400">
                                         Check-out window: {{ getAttendanceState(assignment, 'out').niceStart }} - {{
-                                        getAttendanceState(assignment, 'out').niceEnd }}
+                                            getAttendanceState(assignment, 'out').niceEnd }}
                                     </p>
                                 </div>
                             </div>
