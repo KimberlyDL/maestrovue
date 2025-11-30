@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import axios from '@/utils/api'
 
 export const useDutyStore = defineStore('duty', () => {
@@ -10,6 +10,20 @@ export const useDutyStore = defineStore('duty', () => {
     const templates = ref([])
     const statistics = ref(null)
     const loading = ref(false)
+
+    const canManageDuties = computed(() => {
+        const orgStore = useOrganizationStore()
+        const user = useAuthStore().user
+        
+        if (!orgStore.currentOrg || !user) return false
+        
+        // Check if user is admin/owner OR has explicit permission
+        const userRole = orgStore.currentOrg.pivot?.role
+        if (['admin', 'owner'].includes(userRole)) return true
+        
+        // Check for explicit permission
+        return orgStore.currentOrg.user_permissions?.includes('manage_duty_system')
+    })
 
     // Fetch duty schedules
     async function fetchSchedules(organizationId, filters = {}) {
@@ -234,5 +248,6 @@ async function fetchCalendar(organizationId, startDate, endDate, axiosCfg = {}) 
         setAvailability,
         requestSwap,
         fetchStatistics,
+        canManageDuties,
     }
 })

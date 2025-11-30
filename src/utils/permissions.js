@@ -37,13 +37,16 @@ export const PERMISSIONS = {
     MANAGE_REVIEWS: 'manage_reviews',
 
     // Duty Management
-    VIEW_DUTY_SCHEDULES: 'view_duty_schedules',
-    CREATE_DUTY_SCHEDULES: 'create_duty_schedules',
-    EDIT_DUTY_SCHEDULES: 'edit_duty_schedules',
-    DELETE_DUTY_SCHEDULES: 'delete_duty_schedules',
-    ASSIGN_DUTIES: 'assign_duties',
-    APPROVE_DUTY_SWAPS: 'approve_duty_swaps',
-    MANAGE_DUTY_TEMPLATES: 'manage_duty_templates',
+    // VIEW_DUTY_SCHEDULES: 'view_duty_schedules',
+    // CREATE_DUTY_SCHEDULES: 'create_duty_schedules',
+    // EDIT_DUTY_SCHEDULES: 'edit_duty_schedules',
+    // DELETE_DUTY_SCHEDULES: 'delete_duty_schedules',
+    // ASSIGN_DUTIES: 'assign_duties',
+    // APPROVE_DUTY_SWAPS: 'approve_duty_swaps',
+    // MANAGE_DUTY_TEMPLATES: 'manage_duty_templates',
+
+    PARTICIPATE_IN_DUTIES: 'participate_in_duties',
+    MANAGE_DUTY_SYSTEM: 'manage_duty_system',
 
     // Analytics & Reports
     VIEW_STATISTICS: 'view_statistics',
@@ -109,14 +112,18 @@ export function getPermissionsByCategory() {
             PERMISSIONS.CREATE_REVIEWS,
             PERMISSIONS.MANAGE_REVIEWS,
         ],
+        // duty: [
+        //     PERMISSIONS.VIEW_DUTY_SCHEDULES,
+        //     PERMISSIONS.CREATE_DUTY_SCHEDULES,
+        //     PERMISSIONS.EDIT_DUTY_SCHEDULES,
+        //     PERMISSIONS.DELETE_DUTY_SCHEDULES,
+        //     PERMISSIONS.ASSIGN_DUTIES,
+        //     PERMISSIONS.APPROVE_DUTY_SWAPS,
+        //     PERMISSIONS.MANAGE_DUTY_TEMPLATES,
+        // ],
         duty: [
-            PERMISSIONS.VIEW_DUTY_SCHEDULES,
-            PERMISSIONS.CREATE_DUTY_SCHEDULES,
-            PERMISSIONS.EDIT_DUTY_SCHEDULES,
-            PERMISSIONS.DELETE_DUTY_SCHEDULES,
-            PERMISSIONS.ASSIGN_DUTIES,
-            PERMISSIONS.APPROVE_DUTY_SWAPS,
-            PERMISSIONS.MANAGE_DUTY_TEMPLATES,
+            PERMISSIONS.PARTICIPATE_IN_DUTIES,
+            PERMISSIONS.MANAGE_DUTY_SYSTEM,
         ],
         analytics: [
             PERMISSIONS.VIEW_STATISTICS,
