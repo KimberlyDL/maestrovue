@@ -10,10 +10,12 @@ import interactionPlugin from '@fullcalendar/interaction'
 import DutyScheduleModal from '@/components/duty/duty_schedule_modal.vue'
 import DutyDetailModal from '@/components/duty/duty_detail_modal.vue'
 import { Calendar, Plus, Filter, Download } from 'lucide-vue-next'
+import { useToast } from '@/utils/useToast'
 
 const route = useRoute()
 const dutyStore = useDutyStore()
 const orgStore = useOrganizationStore()
+const toast = useToast()
 
 const calendarRef = ref(null)
 const showScheduleModal = ref(false)
@@ -235,7 +237,7 @@ async function handleScheduleSaved() {
 }
 
 async function exportCalendar() {
-    alert('Export feature coming soon!')
+    toast.info('Export feature coming soon!')
 }
 </script>
 

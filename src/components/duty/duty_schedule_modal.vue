@@ -3,6 +3,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useDutyStore } from '@/stores/duty'
 import axios from '@/utils/api'
 import { X, Calendar, Clock, MapPin, Users, Repeat, Save } from 'lucide-vue-next'
+import { useToast } from '@/utils/useToast'
 
 const props = defineProps({
     duty: { type: Object, default: null },
@@ -13,6 +14,7 @@ const props = defineProps({
 const emit = defineEmits(['close', 'saved'])
 
 const dutyStore = useDutyStore()
+const toast = useToast()
 const loading = ref(false)
 const officers = ref([])
 const templates = ref([])
@@ -59,6 +61,7 @@ watch(() => props.duty, (newDuty) => {
         // FIX 1: Format date properly for the date input
         const formattedDate = formatDateForInput(newDuty.date)
 
+
         form.value = {
             title: newDuty.title || '',
             description: newDuty.description || '',
@@ -71,10 +74,21 @@ watch(() => props.duty, (newDuty) => {
             recurrence_type: newDuty.recurrence_type || 'none',
             recurrence_days: newDuty.recurrence_days || [],
             recurrence_end_date: newDuty.recurrence_end_date ? formatDateForInput(newDuty.recurrence_end_date) : null,
+            // // FIX 2: Don't include declined officers when editing
+            // officer_ids: (newDuty.assignments || [])
+            //     .filter(a => a.status !== 'declined')
+            //     .map(a => a.officer_id) || []
+
             // FIX 2: Don't include declined officers when editing
             officer_ids: (newDuty.assignments || [])
                 .filter(a => a.status !== 'declined')
-                .map(a => a.officer_id) || []
+                .map(a => a.officer_id) || [],
+
+            // FIX: Map attendance window times from existing duty object
+            check_in_window_start: newDuty.check_in_window_start || '',
+            check_in_window_end: newDuty.check_in_window_end || '',
+            check_out_window_start: newDuty.check_out_window_start || '',
+            check_out_window_end: newDuty.check_out_window_end || '',
         }
     } else if (props.initialDate) {
         form.value.date = formatDateForInput(props.initialDate)
@@ -135,7 +149,7 @@ async function handleSave() {
         emit('saved')
     } catch (error) {
         console.error('Failed to save duty schedule:', error)
-        alert(error.response?.data?.message || 'Failed to save duty schedule')
+        toast.error(error.response?.data?.message || 'Failed to save duty schedule')
     } finally {
         loading.value = false
     }

@@ -45,7 +45,7 @@ const assignedOfficers = computed(() => {
     const assignments = dutyData.value.assignments || []
 
     return assignments
-        .filter(a => ['assigned', 'confirmed'].includes(a.status))
+        .filter(a => ['assigned', 'confirmed', 'completed', 'no_show'].includes(a.status))
         .map(a => ({
             id: a.officer?.id || a.id,
             name: a.officer?.name || a.name || 'Unknown',

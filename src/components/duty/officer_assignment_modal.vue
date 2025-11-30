@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useDutyStore } from '@/stores/duty'
 import axios from '@/utils/api'
 import { X, UserPlus } from 'lucide-vue-next'
+import { useToast } from '@/utils/useToast'
 
 const props = defineProps({
     duty: { type: Object, required: true },
@@ -16,6 +17,7 @@ const officers = ref([])
 const selectedOfficers = ref([])
 const notes = ref('')
 const loading = ref(false)
+const toast = useToast()
 
 onMounted(async () => {
     await loadOfficers()
@@ -43,9 +45,10 @@ async function handleAssign() {
             selectedOfficers.value,
             notes.value || null
         )
+        toast.success(`Assigned ${selectedOfficers.value.length} officer(s) successfully!`)
         emit('assigned')
     } catch (error) {
-        alert('Failed to assign officers')
+        toast.error(error.response?.data?.message || 'Failed to assign officers')
     } finally {
         loading.value = false
     }

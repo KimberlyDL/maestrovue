@@ -6,6 +6,7 @@ import {
     Upload, ChevronDown, ChevronUp, Loader2, CheckCircle,
     AlertCircle, Clock
 } from 'lucide-vue-next'
+import { useToast } from '@/utils/useToast'
 import { useDocumentDownload } from '@/utils/useDocumentDownload'
 const props = defineProps({
     review: { type: Object, required: true },
@@ -13,7 +14,7 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update-review'])
-
+const toast = useToast()
 /* ===========================
    State
 =========================== */
@@ -121,7 +122,7 @@ const downloadVersion = async (verId, filename) => {
     await downloadService(documentId.value, verId, null) 
     
     if (downloadError.value) {
-        alert(downloadError.value) 
+        toast.error(downloadError.value) 
     }
 }
 

@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from '@/utils/api'
+import { useToast } from '@/utils/useToast'
 import { usePermissions, PERMISSIONS } from '@/utils/usePermissions'
 import {
     ArrowLeft, LayoutGrid, Megaphone, Users, MailOpen, Cog, Loader2, Image, Home
@@ -17,6 +18,7 @@ const R2_WORKER_ENDPOINT = import.meta.env.VITE_R2_WORKER_ENDPOINT
 
 const route = useRoute()
 const router = useRouter()
+const toast = useToast()
 
 const organizationId = computed(() => route.params.id)
 const organization = ref(null)
@@ -119,10 +121,11 @@ async function loadOrganization() {
                     logo: data.logo
                 }
             } catch (err) {
-                alert('Failed to load organization details')
+                toast.error('Failed to load organization details')
             }
         } else {
-            alert('Failed to load organization details')
+            toast.error('Failed to load organization data or permissions.')
+            router.push({ name: 'home' })
         }
     } finally {
         loading.value = false

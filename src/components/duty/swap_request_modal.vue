@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useDutyStore } from '@/stores/duty'
 import axios from '@/utils/api'
 import { X, ArrowRightLeft, User } from 'lucide-vue-next'
+import { useToast } from '@/utils/useToast'
 
 const props = defineProps({
     assignment: { type: Object, required: true },
@@ -12,6 +13,7 @@ const props = defineProps({
 const emit = defineEmits(['close', 'requested'])
 
 const dutyStore = useDutyStore()
+const toast = useToast()
 const officers = ref([])
 const selectedOfficer = ref(null)
 const reason = ref('')
@@ -33,7 +35,7 @@ async function loadOfficers() {
 
 async function handleRequest() {
     if (!reason.value.trim()) {
-        alert('Please provide a reason for the swap request')
+        toast.error('Please provide a reason for the swap request')
         return
     }
 
@@ -45,9 +47,10 @@ async function handleRequest() {
             selectedOfficer.value,
             reason.value
         )
+        toast.success('Swap request submitted successfully!')
         emit('requested')
     } catch (error) {
-        alert(error?.response?.data?.message || 'Failed to submit swap request')
+        toast.error(error.response?.data?.message || 'Failed to request swap')
     } finally {
         loading.value = false
     }

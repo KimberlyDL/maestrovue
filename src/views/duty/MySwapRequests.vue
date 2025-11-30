@@ -174,7 +174,7 @@ function formatTime(timeStr) {
                     </p>
                 </div>
                 <button @click="loadSwapRequests"
-                    class="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-gray-300 dark:border-abyss-600 bg-white dark:bg-abyss-800 text-gray-700 dark:text-platinum-200 hover:bg-gray-100 dark:hover:bg-abyss-700 shadow-sm transition-colors hover:scale-[1.02] active:scale-[0.98]">
+                    class="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-gray-300 dark:border-abyss-600 bg-white dark:bg-abyss-800 text-gray-700 dark:text-platinum-200 hover:bg-gray-100 dark:hover:bg-abyss-700 shadow-sm transition-colors hover:-translate-y-0.5 active:translate-y-0">
                     <RefreshCw class="w-4 h-4" />
                     Refresh
                 </button>
@@ -233,7 +233,7 @@ function formatTime(timeStr) {
                 </div>
             </div>
 
-            <div class="flex-1 overflow-y-auto space-y-4">
+            <div class="flex-1 overflow-y-auto space-y-4 pb-4">
                 <div v-if="loading" class="text-center py-12">
                     <RefreshCw
                         class="h-8 w-8 animate-spin mx-auto text-kaitoke-green-600 dark:text-kaitoke-green-400" />
@@ -247,7 +247,7 @@ function formatTime(timeStr) {
 
                 <div v-else class="space-y-4">
                     <div v-for="swap in filteredRequests" :key="swap.id"
-                        class="p-5 bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 hover:border-kaitoke-green-500 shadow-md transition hover:scale-[1.005]">
+                        class="p-5 bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 hover:border-kaitoke-green-500 shadow-md transition-all duration-200 hover:-translate-y-1">
 
                         <div class="flex items-start justify-between mb-4">
                             <div class="flex-1">
@@ -334,12 +334,12 @@ function formatTime(timeStr) {
                         <div v-if="swap.status === 'pending'"
                             class="flex gap-3 pt-2 border-t border-gray-200 dark:border-abyss-700">
                             <button @click="openEditModal(swap)"
-                                class="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-300 dark:border-abyss-600 text-gray-700 dark:text-platinum-200 hover:bg-gray-100 dark:hover:bg-abyss-700 text-sm font-medium shadow-sm transition-colors hover:scale-[1.02]">
+                                class="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-300 dark:border-abyss-600 text-gray-700 dark:text-platinum-200 hover:bg-gray-100 dark:hover:bg-abyss-700 text-sm font-medium shadow-sm transition-colors hover:-translate-y-0.5">
                                 <Edit2 class="w-4 h-4" />
                                 Edit Request
                             </button>
                             <button @click="cancelSwap(swap.id)"
-                                class="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-red-600 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm font-medium shadow-sm transition-colors hover:scale-[1.02]">
+                                class="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-red-600 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm font-medium shadow-sm transition-colors hover:-translate-y-0.5">
                                 <Trash2 class="w-4 h-4" />
                                 Cancel Request
                             </button>

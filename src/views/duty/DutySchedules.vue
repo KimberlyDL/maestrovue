@@ -120,8 +120,9 @@ function formatTime(timeStr) {
 
 function getAssignmentStatus(schedule) {
     const assignments = schedule.assignments || []
+    // FIX: Include 'completed' and 'no_show' statuses for correct staffing check
     const assigned = assignments.filter(a =>
-        ['assigned', 'confirmed'].includes(a.status)
+        ['assigned', 'confirmed', 'completed', 'no_show'].includes(a.status)
     ).length
     const required = schedule.required_officers || 0
 

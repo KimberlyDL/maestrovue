@@ -41,10 +41,13 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from '@/utils/api'
+import { useToast } from '@/utils/useToast'
+
 import MyOrganizations from '@components/user/MyOrganizations.vue' // Assuming this path is correct
 import BrowseOrganizations from '@components/user/BrowseOrganizations.vue' // Assuming this path is correct
 
 const router = useRouter()
+const toast = useToast()
 const activeListTab = ref('mine') // default to My Organizations
 
 // Data
@@ -103,10 +106,10 @@ async function requestJoinOrg(org) {
         await axios.post('/api/organizations/join/request', {
             organization_name: org.name
         })
-        alert(`Join request sent to ${org.name}`)
+        toast.success(`Join request sent to ${org.name}`)
         // Optionally, reload requests or update the UI
     } catch (error) {
-        alert(error.response?.data?.message || 'Failed to send request')
+        toast.error(error.response?.data?.message || 'Failed to send request')
     }
 }
 </script>

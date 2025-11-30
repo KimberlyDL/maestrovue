@@ -5,7 +5,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useOrganizationStore } from '@/stores/organization'
 import NotificationBell from '@/components/notif/notification_bell.vue'
-import { Bell, MessageSquare, ChevronDown, User, Settings, LogOut } from 'lucide-vue-next'
+import { ChevronDown, User, Settings, LogOut } from 'lucide-vue-next' // Removed Bell and MessageSquare imports
 import axios from '@/utils/api'
 
 
@@ -14,10 +14,7 @@ const notifications = ref([
     { id: 1, text: 'New feature deployed successfully.', time: '5m ago' },
     { id: 2, text: 'Your monthly usage report is ready.', time: '1h ago' },
 ])
-const messages = ref([
-    { id: 1, sender: 'Alice', subject: 'Urgent: Project Feedback', time: '10m ago' },
-    { id: 2, sender: 'Bob', subject: 'Meeting Invite', time: '2h ago' },
-])
+// Removed messages ref and mock data
 
 const auth = useAuthStore()
 const orgStore = useOrganizationStore()
@@ -101,7 +98,6 @@ onUnmounted(() => {
                         </router-link>
                     </slot>
                 </div>
-                <!-- Add organization selector -->
                 <div v-if="userOrganizations.length > 0" class="relative">
                     <select :value="orgStore.currentOrgId" @change="switchOrganization($event.target.value)"
                         class="px-3 py-2 rounded-md bg-platinum-50 dark:bg-abyss-900 border-b border-sun-200 dark:border-abyss-700 text-abyss-900 dark:text-platinum-50">
@@ -113,56 +109,9 @@ onUnmounted(() => {
                 </div>
 
                 <div class="flex items-center gap-2 sm:gap-4">
-                    <!-- Notifications --><NotificationBell />
+                    <NotificationBell />
 
-                    <!-- Messages -->
                     <div class="relative">
-                        <button @click.stop="toggleDropdown('messages')" type="button"
-                            :aria-expanded="activeDropdown === 'messages'" aria-label="View messages"
-                            class="relative p-2 rounded-full text-abyss-600/90 dark:text-platinum-200 hover:text-kaitoke-green-700 hover:bg-kaitoke-green-50 dark:hover:bg-abyss-800 focus:outline-none focus:ring-2 focus:ring-kaitoke-green-400"
-                            :class="{ 'bg-kaitoke-green-50 text-kaitoke-green-700': activeDropdown === 'messages' }">
-                            <MessageSquare class="w-5 h-5" />
-                            <span v-if="messages.length"
-                                class="absolute -top-0.5 -right-0.5 inline-flex items-center justify-center h-4 min-w-4 px-1 text-[10px] font-bold text-white bg-red-600 rounded-full ring-2 ring-white dark:ring-abyss-900">{{
-                                    messages.length }}</span>
-                        </button>
-
-                        <Transition enter-active-class="transition ease-out duration-200"
-                            enter-from-class="transform opacity-0 scale-95"
-                            enter-to-class="transform opacity-100 scale-100"
-                            leave-active-class="transition ease-in duration-150"
-                            leave-from-class="transform opacity-100 scale-100"
-                            leave-to-class="transform opacity-0 scale-95">
-                            <div v-if="activeDropdown === 'messages'"
-                                class="absolute right-0 mt-3 w-80 rounded-2xl shadow-2xl ring-1 ring-black/5 bg-white dark:bg-abyss-900 divide-y divide-platinum-200/70 dark:divide-abyss-800">
-                                <div
-                                    class="px-5 py-3 text-base font-bold text-abyss-900 dark:text-white border-b border-platinum-200/70 dark:border-abyss-800">
-                                    Messages</div>
-                                <div class="max-h-[320px] overflow-auto">
-                                    <a v-for="m in messages" :key="m.id" href="#"
-                                        class="block px-5 py-3 hover:bg-kaitoke-green-50/70 dark:hover:bg-abyss-800 transition">
-                                        <p class="text-sm font-bold text-abyss-900 dark:text-platinum-50">{{ m.sender }}
-                                        </p>
-                                        <p class="text-sm text-abyss-700 dark:text-platinum-200 truncate">{{ m.subject
-                                            }}</p>
-                                        <p class="text-xs text-kaitoke-green-700 dark:text-platinum-300 mt-1">{{ m.time
-                                            }}</p>
-                                    </a>
-                                    <div v-if="!messages.length"
-                                        class="px-5 py-3 text-sm text-abyss-500 dark:text-platinum-300">No
-                                        new messages.
-                                    </div>
-                                </div>
-                                <button type="button"
-                                    class="w-full text-center py-2 text-sm font-medium text-kaitoke-green-700 hover:bg-platinum-100 dark:hover:bg-abyss-800 rounded-b-2xl">View
-                                    All</button>
-                            </div>
-                        </Transition>
-                    </div>
-
-                    <!-- Profile -->
-                    <div class="relative">
-                        <!-- Button: JUST avatar + chevron -->
                         <button @click.stop="toggleDropdown('profile')" type="button"
                             :aria-expanded="activeDropdown === 'profile'" aria-haspopup="true"
                             class="group flex items-center gap-2 rounded-full bg-platinum-100 dark:bg-abyss-800 p-1 pr-2 focus:outline-none focus:ring-2 focus:ring-kaitoke-green-400"
@@ -176,7 +125,6 @@ onUnmounted(() => {
                             <ChevronDown class="w-4 h-4 text-abyss-500 group-hover:text-kaitoke-green-700 transition" />
                         </button>
 
-                        <!-- Dropdown: SHOW full profile details here -->
                         <Transition enter-active-class="transition ease-out duration-200"
                             enter-from-class="transform opacity-0 scale-95"
                             enter-to-class="transform opacity-100 scale-100"
@@ -186,7 +134,6 @@ onUnmounted(() => {
                             <div v-if="activeDropdown === 'profile'"
                                 class="absolute right-0 mt-3 w-72 rounded-2xl shadow-2xl ring-1 ring-black/5 bg-white dark:bg-abyss-900 py-1"
                                 role="menu">
-                                <!-- Identity block -->
                                 <div class="px-4 py-3">
                                     <p class="text-sm font-semibold text-abyss-900 dark:text-white">
                                         {{ currentUser?.name || 'Guest' }}
@@ -201,7 +148,6 @@ onUnmounted(() => {
                                 </div>
                                 <div class="my-1 h-px bg-platinum-200/70 dark:bg-abyss-800" />
 
-                                <!-- Actions -->
                                 <button type="button" @click="goProfileSettings"
                                     class="flex w-full items-center gap-2 px-4 py-2 text-sm text-abyss-700 dark:text-platinum-100 hover:bg-kaitoke-green-50/70 dark:hover:bg-abyss-800">
                                     <Settings class="w-4 h-4" /> Profile Settings

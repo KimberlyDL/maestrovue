@@ -80,6 +80,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from '@/utils/api'
 import { useAuthStore } from '@stores/auth'
+import { useToast } from '@/utils/useToast'
 
 import StatCard from '@components/user/StatCard.vue'
 import AnnouncementsList from '@components/user/AnnouncementsList.vue'
@@ -91,6 +92,7 @@ import CreateOrgModal from '@components/user/CreateOrgModal.vue'
 
 const router = useRouter()
 const auth = useAuthStore()
+const toast = useToast()
 const user = computed(() => auth.user)
 
 const tabs = [
@@ -200,19 +202,20 @@ async function requestJoinOrg(org) {
         await axios.post('/api/organizations/join/request', {
             organization_name: org.name
         })
-        alert(`Join request sent to ${org.name}`)
+        toast.success(`Join request sent to ${org.name}`)
         await loadMyRequests()
     } catch (error) {
-        alert(error.response?.data?.message || 'Failed to send request')
+        toast.error(error.response?.data?.message || 'Failed to send request')
     }
 }
 
 async function cancelRequest(requestId) {
     try {
         await axios.delete(`/api/organizations/requests/${requestId}`)
+        toast.info('Join request cancelled.')
         await loadMyRequests()
     } catch (error) {
-        alert('Failed to cancel request')
+        toast.error('Failed to cancel request')
     }
 }
 

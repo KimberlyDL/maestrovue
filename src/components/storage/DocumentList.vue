@@ -69,7 +69,9 @@
 <script setup>
 import { computed } from 'vue'
 import api from '@/utils/api'
+import { useToast } from '@/utils/useToast'
 
+const toast = useToast()
 const props = defineProps({
     documents: { type: Array, default: () => [] },
     isOwner: { type: Boolean, default: false },
@@ -113,7 +115,7 @@ async function downloadDoc(doc) {
         window.URL.revokeObjectURL(url)
     } catch (e) {
         console.error('Download failed:', e)
-        alert('Download failed. Please try again.')
+        toast.error('Download failed. Please try again.')
     }
 }
 </script>

@@ -179,6 +179,7 @@ import { ref, computed, watch, nextTick } from 'vue'
 import { LMap, LTileLayer, LMarker, LPopup, LIcon, LPolyline } from '@vue-leaflet/vue-leaflet'
 import { MapPin, Navigation, X } from 'lucide-vue-next'
 import L from 'leaflet'
+import { useToast } from '@/utils/useToast'
 
 // Fix leaflet default marker icons
 delete L.Icon.Default.prototype._getIconUrl
@@ -201,6 +202,7 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update:lat', 'update:lng', 'update:address', 'location-changed'])
+const toast = useToast()
 
 // Map state
 const mapRef = ref(null)
@@ -409,7 +411,7 @@ function emitChanges() {
 
 async function getCurrentLocation() {
     if (!navigator.geolocation) {
-        alert('Geolocation is not supported by your browser')
+        toast.error('Geolocation is not supported by your browser')
         return
     }
 
@@ -435,13 +437,13 @@ async function getCurrentLocation() {
             mapRef.value.leafletObject.setView([lat, lng], 15)
         }
     } catch (error) {
-        alert('Unable to get your location: ' + error.message)
+        toast.error('Unable to get your location: ' + error.message)
     }
 }
 
 async function calculateDistance() {
     if (!hasLocation.value) {
-        alert('No target location set')
+        toast.error('No target location set')
         return
     }
 
@@ -535,7 +537,7 @@ async function calculateDistance() {
             }
         }
     } catch (error) {
-        alert('Unable to get your location: ' + error.message)
+        toast.error('Unable to get your location: ' + error.message)
     } finally {
         isCalculatingRoute.value = false
     }
