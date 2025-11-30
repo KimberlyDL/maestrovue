@@ -224,7 +224,7 @@ function canRequestSwap(assignment) {
                     </p>
                 </div>
                 <button @click="loadAssignments"
-                    class="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-gray-300 dark:border-abyss-600 bg-white dark:bg-abyss-800 text-gray-700 dark:text-platinum-200 hover:bg-gray-100 dark:hover:bg-abyss-700 shadow-sm transition-colors">
+                    class="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-gray-300 dark:border-abyss-600 bg-white dark:bg-abyss-800 text-gray-700 dark:text-platinum-200 hover:bg-gray-100 dark:hover:bg-abyss-700 transition-colors">
                     <RefreshCw class="w-4 h-4" />
                     Refresh
                 </button>
@@ -232,41 +232,41 @@ function canRequestSwap(assignment) {
 
             <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
                 <div
-                    class="p-4 bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 shadow-lg">
+                    class="p-4 bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700">
                     <p class="text-xs text-gray-600 dark:text-platinum-400">Total</p>
                     <p class="text-3xl font-bold text-gray-800 dark:text-platinum-100">{{ stats.total }}</p>
                 </div>
                 <div
-                    class="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-300 dark:border-blue-900/50 shadow-lg">
+                    class="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-300 dark:border-blue-900/50">
                     <p class="text-xs text-blue-700 dark:text-blue-400">Upcoming</p>
                     <p class="text-3xl font-bold text-blue-900 dark:text-blue-300">{{ stats.upcoming }}</p>
                 </div>
                 <div
-                    class="p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-300 dark:border-emerald-900/50 shadow-lg">
+                    class="p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-300 dark:border-emerald-900/50">
                     <p class="text-xs text-emerald-700 dark:text-emerald-400">Confirmed</p>
                     <p class="text-3xl font-bold text-emerald-900 dark:text-emerald-300">{{ stats.confirmed }}</p>
                 </div>
                 <div
-                    class="p-4 bg-gray-50 dark:bg-gray-900/20 rounded-xl border border-gray-300 dark:border-gray-900/50 shadow-lg">
+                    class="p-4 bg-gray-50 dark:bg-gray-900/20 rounded-xl border border-gray-300 dark:border-gray-900/50">
                     <p class="text-xs text-gray-700 dark:text-gray-400">Completed</p>
                     <p class="text-3xl font-bold text-gray-900 dark:text-gray-300">{{ stats.completed }}</p>
                 </div>
             </div>
 
             <div
-                class="flex items-center gap-4 p-4 bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 shadow-lg">
+                class="flex items-center gap-4 p-4 bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700">
                 <div class="relative flex-1">
                     <input v-model="searchQuery" type="text" placeholder="Search assignments..."
-                        class="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-abyss-600 bg-gray-50 dark:bg-abyss-900 text-gray-800 dark:text-platinum-200 shadow-inner focus:ring-1 focus:ring-kaitoke-green-600 focus:border-kaitoke-green-600 text-sm" />
+                        class="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-abyss-600 bg-gray-50 dark:bg-abyss-900 text-gray-800 dark:text-platinum-200 focus:ring-1 focus:ring-kaitoke-green-600 focus:border-kaitoke-green-600 text-sm" />
                 </div>
                 <select v-model="viewType"
-                    class="px-4 py-2.5 rounded-xl border border-gray-300 dark:border-abyss-600 bg-gray-50 dark:bg-abyss-900 text-gray-800 dark:text-platinum-200 shadow-inner text-sm">
+                    class="px-4 py-2.5 rounded-xl border border-gray-300 dark:border-abyss-600 bg-gray-50 dark:bg-abyss-900 text-gray-800 dark:text-platinum-200 text-sm">
                     <option value="upcoming">Upcoming</option>
                     <option value="past">Past</option>
                     <option value="all">All Dates</option>
                 </select>
                 <select v-model="filterStatus"
-                    class="px-4 py-2.5 rounded-xl border border-gray-300 dark:border-abyss-600 bg-gray-50 dark:bg-abyss-900 text-gray-800 dark:text-platinum-200 shadow-inner text-sm">
+                    class="px-4 py-2.5 rounded-xl border border-gray-300 dark:border-abyss-600 bg-gray-50 dark:bg-abyss-900 text-gray-800 dark:text-platinum-200 text-sm">
                     <option value="all">All Status</option>
                     <option value="assigned">Pending</option>
                     <option value="confirmed">Confirmed</option>
@@ -281,14 +281,14 @@ function canRequestSwap(assignment) {
                 </div>
 
                 <div v-else-if="filteredAssignments.length === 0"
-                    class="text-center py-12 bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 shadow-lg">
+                    class="text-center py-12 bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700">
                     <Calendar class="h-12 w-12 mx-auto text-gray-400 dark:text-platinum-600 mb-4" />
                     <p class="text-gray-600 dark:text-platinum-400">No assignments found</p>
                 </div>
 
                 <div v-else class="space-y-4">
                     <div v-for="assignment in filteredAssignments" :key="assignment.id"
-                        class="p-5 bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 hover:border-kaitoke-green-500 shadow-md transition"
+                        class="p-5 bg-white dark:bg-abyss-800 rounded-xl border border-gray-200 dark:border-abyss-700 hover:border-kaitoke-green-500 transition"
                         :class="isToday(assignment.duty_schedule.date) && 'ring-2 ring-kaitoke-green-500/50'">
 
                         <div class="flex items-start justify-between mb-3">
@@ -393,30 +393,30 @@ function canRequestSwap(assignment) {
                         <div class="flex gap-3 flex-wrap">
                             <template v-if="canRespond(assignment)">
                                 <button @click="respond(assignment, 'confirm')"
-                                    class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold shadow-md transition-colors">
+                                    class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold transition-colors">
                                     <ThumbsUp class="w-4 h-4" />
                                     Confirm
                                 </button>
                                 <button @click="respond(assignment, 'decline')"
-                                    class="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 text-sm font-semibold shadow-sm transition-colors">
+                                    class="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 text-sm font-semibold transition-colors">
                                     <ThumbsDown class="w-4 h-4" />
                                     Decline
                                 </button>
                             </template>
 
                             <button v-if="canCheckIn(assignment)" @click="checkIn(assignment)"
-                                class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-kaitoke-green-600 hover:bg-kaitoke-green-500 text-white text-sm font-semibold shadow-md transition-colors">
+                                class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-kaitoke-green-600 hover:bg-kaitoke-green-500 text-white text-sm font-semibold transition-colors">
                                 <LogIn class="w-4 h-4" />
                                 Check In
                             </button>
                             <button v-if="canCheckOut(assignment)" @click="checkOut(assignment)"
-                                class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold shadow-md transition-colors">
+                                class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold transition-colors">
                                 <LogOut class="w-4 h-4" />
                                 Check Out
                             </button>
 
                             <button v-if="canRequestSwap(assignment)" @click="openSwapModal(assignment)"
-                                class="ml-auto flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-300 dark:border-abyss-600 text-gray-700 dark:text-platinum-200 hover:bg-gray-100 dark:hover:bg-abyss-700 text-sm font-medium shadow-sm transition-colors">
+                                class="ml-auto flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-300 dark:border-abyss-600 text-gray-700 dark:text-platinum-200 hover:bg-gray-100 dark:hover:bg-abyss-700 text-sm font-medium transition-colors">
                                 <ArrowRightLeft class="w-4 h-4" />
                                 Request Swap
                             </button>

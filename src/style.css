@@ -129,7 +129,7 @@
 /* Open Sans Regular (400) */
 @font-face {
   font-family: "OpenSans";
-  src: url("/fonts/OpenSans-Regular.ttf") format("truetype");
+  src: url('/fonts/OpenSans-VariableFont_wdth,wght.ttf') format('truetype');
   font-weight: 400;
   font-style: normal;
   font-display: swap;

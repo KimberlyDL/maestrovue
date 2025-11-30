@@ -1,28 +1,22 @@
 <template>
     <div class="max-w-5xl mx-auto space-y-6 p-6">
-        <!-- Organization Header Card -->
-        <div
-            class="bg-white dark:bg-abyss-800 rounded-xl border border-sun-200 dark:border-abyss-700 overflow-hidden shadow-lg">
-            <!-- Header Banner -->
+        <div class="bg-white dark:bg-abyss-800 rounded-xl border border-sun-200 overflow-hidden">
             <div class="h-32 bg-gradient-to-r from-kaitoke-green-500 via-electric-lime-500 to-sun-500"></div>
 
-            <!-- Content -->
             <div class="p-8 -mt-16">
                 <div class="flex items-start gap-6">
-                    <!-- Logo -->
                     <div class="flex-shrink-0">
                         <div v-if="organization?.logo"
-                            class="w-24 h-24 rounded-xl overflow-hidden border-4 border-white dark:border-abyss-800 shadow-lg bg-white">
+                            class="w-24 h-24 rounded-xl overflow-hidden border-4 border-white dark:border-abyss-800 bg-white">
                             <img :src="getLogoUrl(organization.logo)" :alt="organization.name"
                                 class="w-full h-full object-cover" />
                         </div>
                         <div v-else
-                            class="w-24 h-24 rounded-xl border-4 border-white dark:border-abyss-800 bg-kaitoke-green-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
+                            class="w-24 h-24 rounded-xl border-4 border-white dark:border-abyss-800 bg-kaitoke-green-600 flex items-center justify-center text-white text-3xl font-bold">
                             {{ getInitials(organization?.name) }}
                         </div>
                     </div>
 
-                    <!-- Info -->
                     <div class="flex-1 pt-6">
                         <div class="flex items-start justify-between mb-2">
                             <div>
@@ -34,7 +28,7 @@
                                 </p>
                             </div>
                             <router-link v-if="isAdmin" :to="{ name: 'org.settings', params: { id: organizationId } }"
-                                class="px-4 py-2 rounded-lg bg-kaitoke-green-600 hover:bg-kaitoke-green-500 text-white font-medium transition-colors shadow-md flex items-center gap-2">
+                                class="px-4 py-2 rounded-lg bg-kaitoke-green-600 hover:bg-kaitoke-green-500 text-white font-medium transition-colors  flex items-center gap-2">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -43,7 +37,6 @@
                             </router-link>
                         </div>
 
-                        <!-- Quick Links -->
                         <div class="flex flex-wrap gap-4 mt-4">
                             <a v-if="organization?.website" :href="organization.website" target="_blank"
                                 class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-sun-100 dark:bg-abyss-700 text-abyss-900 dark:text-platinum-200 hover:bg-sun-200 dark:hover:bg-abyss-600 transition-colors text-sm">
@@ -69,10 +62,8 @@
             </div>
         </div>
 
-        <!-- Mission & Vision Cards -->
         <div class="grid md:grid-cols-2 gap-6">
-            <div
-                class="bg-white dark:bg-abyss-800 rounded-xl border border-sun-200 dark:border-abyss-700 p-6 shadow-md">
+            <div class="bg-white dark:bg-abyss-800 rounded-xl border border-sun-200 p-6 ">
                 <div class="flex items-center gap-3 mb-4">
                     <div
                         class="w-10 h-10 rounded-lg bg-kaitoke-green-100 dark:bg-kaitoke-green-900/30 flex items-center justify-center">
@@ -89,8 +80,7 @@
                 </p>
             </div>
 
-            <div
-                class="bg-white dark:bg-abyss-800 rounded-xl border border-sun-200 dark:border-abyss-700 p-6 shadow-md">
+            <div class="bg-white dark:bg-abyss-800 rounded-xl border border-sun-200 p-6 ">
                 <div class="flex items-center gap-3 mb-4">
                     <div
                         class="w-10 h-10 rounded-lg bg-electric-lime-100 dark:bg-electric-lime-900/30 flex items-center justify-center">
@@ -110,10 +100,8 @@
             </div>
         </div>
 
-        <!-- Members Section -->
-        <div
-            class="bg-white dark:bg-abyss-800 rounded-xl border border-sun-200 dark:border-abyss-700 overflow-hidden shadow-md">
-            <div class="p-6 border-b border-sun-200 dark:border-abyss-700">
+        <div class="bg-white dark:bg-abyss-800 rounded-xl border border-sun-200 overflow-hidden ">
+            <div class="p-6 border-b border-sun-200">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-3">
                         <div
@@ -133,7 +121,6 @@
                 </div>
             </div>
 
-            <!-- Loading State -->
             <div v-if="loadingMembers" class="p-8">
                 <div class="space-y-3">
                     <div v-for="i in 3" :key="i" class="animate-pulse h-16 bg-sun-100 dark:bg-abyss-900 rounded-lg">
@@ -141,7 +128,6 @@
                 </div>
             </div>
 
-            <!-- Members List -->
             <div v-else-if="recentMembers.length > 0" class="divide-y divide-sun-200 dark:divide-abyss-700">
                 <div v-for="member in recentMembers" :key="member.id" @click="goToMemberProfile(member.id)"
                     class="p-4 hover:bg-sun-50 dark:hover:bg-abyss-900 transition-colors cursor-pointer">
@@ -177,10 +163,8 @@
             </div>
         </div>
 
-        <!-- Recent Announcements -->
-        <div
-            class="bg-white dark:bg-abyss-800 rounded-xl border border-sun-200 dark:border-abyss-700 overflow-hidden shadow-md">
-            <div class="p-6 border-b border-sun-200 dark:border-abyss-700">
+        <div class="bg-white dark:bg-abyss-800 rounded-xl border border-sun-200 overflow-hidden ">
+            <div class="p-6 border-b border-sun-200">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-3">
                         <div
@@ -201,7 +185,6 @@
                 </div>
             </div>
 
-            <!-- Loading State -->
             <div v-if="loadingAnnouncements" class="p-8">
                 <div class="space-y-4">
                     <div v-for="i in 3" :key="i" class="animate-pulse h-24 bg-sun-100 dark:bg-abyss-900 rounded-lg">
@@ -209,7 +192,6 @@
                 </div>
             </div>
 
-            <!-- Announcements List -->
             <div v-else-if="recentAnnouncements.length > 0" class="divide-y divide-sun-200 dark:divide-abyss-700">
                 <div v-for="announcement in recentAnnouncements" :key="announcement.id"
                     class="p-6 hover:bg-sun-50 dark:hover:bg-abyss-900 transition-colors">
@@ -223,19 +205,16 @@
                     </div>
                     <h4 class="text-lg font-bold text-abyss-900 dark:text-platinum-50 mb-2">{{ announcement.title }}
                     </h4>
-                    <!-- Content -->
                     <div class="prose prose-sm dark:prose-invert max-w-none mb-4">
                         <p class="text-abyss-800 dark:text-platinum-200 whitespace-pre-wrap">{{ announcement.content }}
                         </p>
                     </div>
 
-                    <!-- Image -->
                     <div v-if="announcement.image_path" class="mb-4 rounded-lg overflow-hidden">
                         <img :src="getImageUrl(announcement.image_path)" :alt="announcement.title"
-                            class="w-full h-auto object-cover max-h-96 rounded-lg shadow-md" />
+                            class="w-full h-auto object-cover max-h-96 rounded-lg " />
                     </div>
 
-                    <!-- Tags -->
                     <div v-if="announcement.tags && announcement.tags.length" class="flex flex-wrap gap-2 mb-2">
                         <span v-for="tag in announcement.tags" :key="tag"
                             class="px-3 py-1 text-xs font-medium rounded-full bg-sun-100 text-abyss-900 dark:bg-abyss-700 dark:text-platinum-300 border border-sun-200 dark:border-abyss-600">
@@ -263,6 +242,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useOrganizationStore } from '@/stores/organization'
 import { usePermissionStore } from '@/stores/permission'
+import { Hash } from 'lucide-vue-next'
 import { PERMISSIONS } from '@/utils/permissions'
 import api from '@/utils/api'
 

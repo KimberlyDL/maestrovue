@@ -25,12 +25,10 @@ export const PERMISSIONS = {
     EDIT_ANNOUNCEMENTS: 'edit_announcements',
     DELETE_ANNOUNCEMENTS: 'delete_announcements',
 
-    // Document Storage (Simplified)
+    // Document Storage (Consolidated)
     VIEW_STORAGE: 'view_storage',
-    UPLOAD_DOCUMENTS: 'upload_documents', // Also grants: create folders, share own docs
-    CREATE_FOLDERS: 'create_folders',
-    DELETE_DOCUMENTS: 'delete_documents', // Delete own documents
-    ADMIN_DELETE_DOCUMENTS: 'admin_delete_documents', // Admin: delete any document
+    CONTRIBUTE_TO_STORAGE: 'contribute_to_storage',
+    MANAGE_STORAGE_SYSTEM: 'manage_storage_system',
 
     // Review System
     CREATE_REVIEWS: 'create_reviews',
@@ -100,10 +98,8 @@ export function getPermissionsByCategory() {
         ],
         storage: [
             PERMISSIONS.VIEW_STORAGE,
-            PERMISSIONS.UPLOAD_DOCUMENTS,
-            PERMISSIONS.CREATE_FOLDERS,
-            PERMISSIONS.DELETE_DOCUMENTS,
-            PERMISSIONS.ADMIN_DELETE_DOCUMENTS,
+            PERMISSIONS.CONTRIBUTE_TO_STORAGE,
+            PERMISSIONS.MANAGE_STORAGE_SYSTEM,
         ],
         reviews: [
             PERMISSIONS.CREATE_REVIEWS,

@@ -294,8 +294,8 @@ const authenticatedRoutes = [
 
 
       {
-        path: '/notifications',
-        name: 'notifications',
+        path: '/org/:id/notifications',
+        name: 'org.notifications',
         component: () => import('@/views/duty/NotificationPage.vue'),
         meta: { requiresAuth: true, title: 'Notifications' }
       }

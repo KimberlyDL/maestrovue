@@ -1,6 +1,5 @@
 <template>
     <div class="max-w-5xl mx-auto space-y-6 p-6">
-        <!-- Header -->
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
                 <h1 class="text-3xl font-bold text-abyss-900 dark:text-platinum-50 flex items-center gap-3">
@@ -13,13 +12,12 @@
                 <p class="text-platinum-600 dark:text-platinum-400 mt-1">Stay updated with organization news</p>
             </div>
             <button @click="showCreateModal = true"
-                class="px-5 py-2.5 rounded-xl bg-kaitoke-green-600 hover:bg-kaitoke-green-500 text-white font-medium transition-all shadow-md hover:shadow-lg flex items-center gap-2">
+                class="px-5 py-2.5 rounded-xl bg-kaitoke-green-600 hover:bg-kaitoke-green-500 text-white font-medium transition-all flex items-center gap-2">
                 <Plus class="w-5 h-5" /> Create Announcement
             </button>
         </div>
 
-        <!-- Filters -->
-        <div class="bg-white dark:bg-abyss-800 border border-sun-200 dark:border-abyss-700 rounded-xl p-5 shadow-lg">
+        <div class="bg-white dark:bg-abyss-800 border border-sun-200 dark:border-abyss-700 rounded-xl p-5">
             <div class="flex flex-col md:flex-row gap-4">
                 <div class="flex-1 relative">
                     <Search class="absolute left-3 top-3 w-5 h-5 text-platinum-400 dark:text-platinum-600" />
@@ -36,10 +34,9 @@
             </div>
         </div>
 
-        <!-- Loading State -->
         <div v-if="initialLoading" class="space-y-4">
             <div v-for="i in 3" :key="i"
-                class="animate-pulse bg-white dark:bg-abyss-800 rounded-xl border border-sun-200 dark:border-abyss-700 p-6 shadow-md">
+                class="animate-pulse bg-white dark:bg-abyss-800 rounded-xl border border-sun-200 dark:border-abyss-700 p-6">
                 <div class="flex items-start justify-between mb-4">
                     <div class="flex-1">
                         <div class="h-6 bg-sun-200 dark:bg-abyss-700 rounded w-3/4 mb-2"></div>
@@ -53,25 +50,22 @@
             </div>
         </div>
 
-        <!-- Empty State -->
         <div v-else-if="!announcements.length && !initialLoading"
-            class="text-center py-16 bg-white dark:bg-abyss-800 rounded-xl border border-sun-200 dark:border-abyss-700 shadow-xl">
+            class="text-center py-16 bg-white dark:bg-abyss-800 rounded-xl border border-sun-200 dark:border-abyss-700">
             <MessageSquare class="w-12 h-12 text-platinum-400 dark:text-platinum-600 mx-auto mb-4" />
             <p class="text-platinum-600 dark:text-platinum-400 mb-6 text-lg">
                 {{ filters.search ? 'No announcements match your search.' : 'No announcements have been posted yet.' }}
             </p>
             <button v-if="!filters.search" @click="showCreateModal = true"
-                class="px-6 py-3 rounded-xl bg-kaitoke-green-600 hover:bg-kaitoke-green-500 text-white font-semibold transition-all shadow-lg flex items-center gap-2 mx-auto">
+                class="px-6 py-3 rounded-xl bg-kaitoke-green-600 hover:bg-kaitoke-green-500 text-white font-semibold transition-all flex items-center gap-2 mx-auto">
                 <Plus class="w-5 h-5" /> Create First Announcement
             </button>
         </div>
 
-        <!-- Announcements List -->
         <div v-else class="space-y-4" ref="scrollContainer">
             <div v-for="announcement in announcements" :key="announcement.id"
-                class="rounded-xl border border-sun-200 dark:border-abyss-700 bg-white dark:bg-abyss-800 overflow-hidden shadow-md hover:shadow-lg transition-all duration-200">
+                class="rounded-xl border border-sun-200 dark:border-abyss-700 bg-white dark:bg-abyss-800 overflow-hidden transition-all duration-200">
 
-                <!-- Priority Badge -->
                 <div v-if="announcement.priority" class="bg-gradient-to-r from-sun-500 to-electric-lime-500 px-4 py-2">
                     <div class="flex items-center gap-2 text-abyss-900">
                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -83,7 +77,6 @@
                 </div>
 
                 <div class="p-6">
-                    <!-- Header -->
                     <div class="flex items-start justify-between mb-4">
                         <div class="flex-1">
                             <h2
@@ -116,19 +109,16 @@
                         </div>
                     </div>
 
-                    <!-- Content -->
                     <div class="prose prose-sm dark:prose-invert max-w-none mb-4">
                         <p class="text-abyss-800 dark:text-platinum-200 whitespace-pre-wrap">{{ announcement.content }}
                         </p>
                     </div>
 
-                    <!-- Image -->
                     <div v-if="announcement.image_path" class="mb-4 rounded-lg overflow-hidden">
                         <img :src="getImageUrl(announcement.image_path)" :alt="announcement.title"
-                            class="w-full h-auto object-cover max-h-96 rounded-lg shadow-md" />
+                            class="w-full h-auto object-cover max-h-96 rounded-lg" />
                     </div>
 
-                    <!-- Tags -->
                     <div v-if="announcement.tags && announcement.tags.length" class="flex flex-wrap gap-2">
                         <span v-for="tag in announcement.tags" :key="tag"
                             class="px-3 py-1 text-xs font-medium rounded-full bg-sun-100 text-abyss-900 dark:bg-abyss-700 dark:text-platinum-300 border border-sun-200 dark:border-abyss-600">
@@ -138,7 +128,6 @@
                 </div>
             </div>
 
-            <!-- Load More Indicator -->
             <div v-if="loadingMore" class="py-8 flex justify-center">
                 <div class="flex items-center gap-3 text-platinum-600 dark:text-platinum-400">
                     <Loader2 class="w-5 h-5 animate-spin" />
@@ -146,14 +135,12 @@
                 </div>
             </div>
 
-            <!-- End of List -->
             <div v-if="!hasMore && announcements.length > 0"
                 class="py-8 text-center text-platinum-500 dark:text-platinum-500 text-sm">
                 You've reached the end
             </div>
         </div>
 
-        <!-- Create/Edit Modal -->
         <AnnouncementModal v-if="showCreateModal" :announcement="editingAnnouncement" :organization-id="organizationId"
             @close="closeModal" @saved="handleSaved" />
     </div>

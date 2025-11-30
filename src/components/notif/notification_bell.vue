@@ -1,11 +1,11 @@
-<!-- frontend\src\components\notif\notification_bell.vue -->
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useNotificationStore } from '@/stores/notification'
 import { Bell, X, Check, CheckCheck, Trash2, Settings, Clock } from 'lucide-vue-next'
 
 const router = useRouter()
+const route = useRoute()
 const notificationStore = useNotificationStore()
 
 const showDropdown = ref(false)
@@ -110,6 +110,15 @@ function handleClickOutside(event) {
     }
 }
 
+function viewAllNotifications() {
+    showDropdown.value = false
+    // Navigate using the Named Route and pass the current Org ID
+    router.push({ 
+        name: 'org.notifications', 
+        params: { id: route.params.id } 
+    })
+}
+
 onMounted(() => {
     document.addEventListener('click', handleClickOutside)
 })
@@ -117,7 +126,6 @@ onMounted(() => {
 
 <template>
     <div class="relative">
-        <!-- Notification Bell Button -->
         <button 
             id="notification-button"
             @click="toggleDropdown"
@@ -126,7 +134,6 @@ onMounted(() => {
         >
             <Bell class="w-5 h-5 text-gray-700 dark:text-platinum-300" />
             
-            <!-- Unread Badge -->
             <span 
                 v-if="notificationStore.hasUnread"
                 class="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-rose-500 rounded-full"
@@ -135,7 +142,6 @@ onMounted(() => {
             </span>
         </button>
 
-        <!-- Dropdown Panel -->
         <Transition
             enter-active-class="transition ease-out duration-200"
             enter-from-class="opacity-0 scale-95"
@@ -147,9 +153,8 @@ onMounted(() => {
             <div 
                 v-if="showDropdown"
                 id="notification-dropdown"
-                class="absolute right-0 mt-2 w-96 bg-white dark:bg-abyss-900 rounded-xl shadow-2xl border border-gray-200 dark:border-abyss-700 z-50 max-h-[600px] flex flex-col"
+                class="absolute right-0 mt-2 w-96 bg-white dark:bg-abyss-900 rounded-xl border border-gray-200 dark:border-abyss-700 z-50 max-h-[600px] flex flex-col"
             >
-                <!-- Header -->
                 <div class="p-4 border-b border-gray-200 dark:border-abyss-700">
                     <div class="flex items-center justify-between mb-3">
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-platinum-50">
@@ -163,7 +168,6 @@ onMounted(() => {
                         </button>
                     </div>
 
-                    <!-- Filter Tabs -->
                     <div class="flex gap-2">
                         <button 
                             @click="filter = 'all'"
@@ -186,7 +190,6 @@ onMounted(() => {
                     </div>
                 </div>
 
-                <!-- Actions Bar -->
                 <div v-if="notificationStore.hasUnread" class="px-4 py-2 border-b border-gray-200 dark:border-abyss-700 flex justify-end gap-2">
                     <button 
                         @click="markAllAsRead"
@@ -197,7 +200,6 @@ onMounted(() => {
                     </button>
                 </div>
 
-                <!-- Notifications List -->
                 <div class="flex-1 overflow-y-auto">
                     <div v-if="loading" class="p-8 text-center">
                         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-kaitoke-green-600 mx-auto"></div>
@@ -221,12 +223,10 @@ onMounted(() => {
                             ]"
                         >
                             <div class="flex items-start gap-3">
-                                <!-- Icon -->
                                 <div class="flex-shrink-0 text-2xl">
                                     {{ getNotificationIcon(notification.type) }}
                                 </div>
 
-                                <!-- Content -->
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-start justify-between gap-2 mb-1">
                                         <p class="text-sm font-semibold text-gray-900 dark:text-platinum-50">
@@ -269,10 +269,9 @@ onMounted(() => {
                     </div>
                 </div>
 
-                <!-- Footer -->
                 <div class="p-3 border-t border-gray-200 dark:border-abyss-700">
                     <button 
-                        @click="router.push('/notifications'); showDropdown = false"
+                        @click="viewAllNotifications"
                         class="w-full px-4 py-2 text-sm font-medium text-kaitoke-green-600 dark:text-kaitoke-green-400 hover:bg-kaitoke-green-50 dark:hover:bg-kaitoke-green-900/20 rounded-lg transition-colors"
                     >
                         View all notifications

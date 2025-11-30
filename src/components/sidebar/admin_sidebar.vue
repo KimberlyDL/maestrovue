@@ -1,4 +1,3 @@
-// admin_sidebar.vue - FIXED VERSION
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
@@ -58,12 +57,12 @@ function hasPermission(permissionKey) {
 // Role badge display
 const userRoleBadge = computed(() => {
     const roleMap = {
-        admin: 'ðŸ›¡ï¸ Admin',
-        owner: 'ðŸ‘‘ Owner',
-        member: 'ðŸ‘¤ Member',
-        viewer: 'ðŸ‘ï¸ Viewer'
+        admin: '🛡️ Admin',   // Shield
+        owner: '👑 Owner',   // Crown
+        member: '👤 Member',  // Person
+        viewer: '👁️ Viewer'   // Eye
     }
-    return roleMap[userRole.value] || 'ðŸ‘¤ Member'
+    return roleMap[userRole.value] || '👤 Member'
 })
 
 // Computed permissions
@@ -90,7 +89,7 @@ async function loadOrganizationData() {
 
     loading.value = true
     try {
-        console.log('ðŸ“Š Loading organization data for:', currentOrgId.value)
+        console.log('📊 Loading organization data for:', currentOrgId.value)
 
         // 1. Load organization basic info
         const orgResponsePromise = axios.get(`/api/organizations/${currentOrgId.value}`)
@@ -105,11 +104,11 @@ async function loadOrganizationData() {
 
         organization.value = orgResponse.data
 
-        // âœ… CRITICAL: Store organization data in Pinia store AND set as current
+        // ✅ CRITICAL: Store organization data in Pinia store AND set as current
         orgStore.setCurrentOrg(currentOrgId.value, orgResponse.data)
 
-        console.log('âœ… Organization loaded:', organization.value.name)
-        console.log('âœ… Current org ID set:', currentOrgId.value)
+        console.log('✅ Organization loaded:', organization.value.name)
+        console.log('✅ Current org ID set:', currentOrgId.value)
 
         // Load pending requests count for those with permission
         if (canManageRequests.value) {
@@ -123,7 +122,7 @@ async function loadOrganizationData() {
             }
         }
     } catch (error) {
-        console.error('âŒ Failed to load organization:', error)
+        console.error('❌ Failed to load organization:', error)
     } finally {
         loading.value = false
     }
@@ -131,14 +130,14 @@ async function loadOrganizationData() {
 
 // Watch for org ID changes
 watch(currentOrgId, (newId) => {
-    console.log('ðŸ”„ Org ID changed to:', newId)
+    console.log('🔄 Org ID changed to:', newId)
     if (newId) {
         loadOrganizationData()
     }
 }, { immediate: false })
 
 onMounted(() => {
-    console.log('ðŸš€ Sidebar mounted, current org ID:', currentOrgId.value)
+    console.log('🚀 Sidebar mounted, current org ID:', currentOrgId.value)
     if (currentOrgId.value) {
         loadOrganizationData()
     } else {
@@ -242,14 +241,6 @@ onMounted(() => {
                             <Upload :size="16" :stroke-width="1.25" />
                         </template>
                     </SidebarNavItem>
-
-                    <!-- <SidebarNavItem v-if="hasPermission(PERMISSIONS.MANAGE_REVIEWS)"
-                        :to="{ name: 'org.doc-submission', params: { id: currentOrgId } }" 
-                        title="All Org Submissions">
-                        <template #icon>
-                            <FolderKanban :size="16" :stroke-width="1.25" />
-                        </template>
-                    </SidebarNavItem> -->
                 </template>
 
                 <template v-if="hasCurrentOrg && isMember">
@@ -262,14 +253,6 @@ onMounted(() => {
                 </template>
 
                 <template v-if="hasCurrentOrg && isMember">
-                    <!-- <SidebarGroupLabel text="Duty Schedule" />
-
-                    <SidebarNavItem :to="{ name: 'duty.calendar', params: { id: currentOrgId } }" title="Calendar">
-                        <template #icon>
-                            <Calendar :size="16" :stroke-width="1.25" />
-                        </template>
-</SidebarNavItem> -->
-
                     <template v-if="hasPermission('participate_in_duties')">
                         <SidebarGroupLabel text="My Duties" />
 
@@ -279,13 +262,6 @@ onMounted(() => {
                                 <ClipboardCheck :size="16" :stroke-width="1.25" />
                             </template>
                         </SidebarNavItem>
-
-                        <!-- <SidebarNavItem :to="{ name: 'duty.availability', params: { id: currentOrgId } }"
-                            title="My Availability">
-                            <template #icon>
-                                <CalendarClock :size="16" :stroke-width="1.25" />
-                            </template>
-                        </SidebarNavItem> -->
 
                         <SidebarNavItem :to="{ name: 'duty.my_swap', params: { id: currentOrgId } }"
                             title="My Swap Requests">

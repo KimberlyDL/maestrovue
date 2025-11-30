@@ -2,33 +2,36 @@
 import { computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useRoute } from 'vue-router'
+import { PERMISSIONS as SHARED_PERMISSIONS } from '@/utils/permissions'
+
 
 // Define all available permissions
-export const PERMISSIONS = {
-    // Organization Management
-    MANAGE_ORG_SETTINGS: 'manage_organization_settings',
-    MANAGE_ORG_MEMBERS: 'manage_organization_members',
-    INVITE_MEMBERS: 'invite_members',
-    REMOVE_MEMBERS: 'remove_members',
+export const PERMISSIONS = SHARED_PERMISSIONS;
+// export const PERMISSIONS = {
+//     // Organization Management
+//     MANAGE_ORG_SETTINGS: 'manage_organization_settings',
+//     MANAGE_ORG_MEMBERS: 'manage_organization_members',
+//     INVITE_MEMBERS: 'invite_members',
+//     REMOVE_MEMBERS: 'remove_members',
     
-    // Duty Management
-    MANAGE_DUTY_SCHEDULES: 'manage_duty_schedules',
-    VIEW_DUTY_SCHEDULES: 'view_duty_schedules',
-    ASSIGN_DUTIES: 'assign_duties',
+//     // Duty Management
+//     MANAGE_DUTY_SCHEDULES: 'manage_duty_schedules',
+//     VIEW_DUTY_SCHEDULES: 'view_duty_schedules',
+//     ASSIGN_DUTIES: 'assign_duties',
     
-    // Document Management
-    MANAGE_DOCUMENTS: 'manage_documents',
-    VIEW_DOCUMENTS: 'view_documents',
-    UPLOAD_DOCUMENTS: 'upload_documents',
+//     // Document Management
+//     MANAGE_DOCUMENTS: 'manage_documents',
+//     VIEW_DOCUMENTS: 'view_documents',
+//     UPLOAD_DOCUMENTS: 'upload_documents',
     
-    // Review System
-    CREATE_REVIEWS: 'create_reviews',
-    MANAGE_REVIEWS: 'manage_reviews',
+//     // Review System
+//     CREATE_REVIEWS: 'create_reviews',
+//     MANAGE_REVIEWS: 'manage_reviews',
     
-    // Announcements
-    CREATE_ANNOUNCEMENTS: 'create_announcements',
-    MANAGE_ANNOUNCEMENTS: 'manage_announcements',
-}
+//     // Announcements
+//     CREATE_ANNOUNCEMENTS: 'create_announcements',
+//     MANAGE_ANNOUNCEMENTS: 'manage_announcements',
+// }
 
 // Role-based permission mappings
 const ROLE_PERMISSIONS = {
@@ -47,16 +50,19 @@ const ROLE_PERMISSIONS = {
         PERMISSIONS.MANAGE_REVIEWS,
         PERMISSIONS.CREATE_ANNOUNCEMENTS,
         PERMISSIONS.MANAGE_ANNOUNCEMENTS,
+        PERMISSIONS.VIEW_STORAGE,
+        PERMISSIONS.CONTRIBUTE_TO_STORAGE,
+        PERMISSIONS.MANAGE_STORAGE_SYSTEM,
     ],
     member: [
         PERMISSIONS.VIEW_DUTY_SCHEDULES,
-        PERMISSIONS.VIEW_DOCUMENTS,
-        PERMISSIONS.UPLOAD_DOCUMENTS,
+        PERMISSIONS.VIEW_STORAGE,
+        PERMISSIONS.CONTRIBUTE_TO_STORAGE, // If members are contributors by default
         PERMISSIONS.CREATE_REVIEWS,
     ],
     viewer: [
         PERMISSIONS.VIEW_DUTY_SCHEDULES,
-        PERMISSIONS.VIEW_DOCUMENTS,
+        PERMISSIONS.VIEW_STORAGE,
     ],
 }
 

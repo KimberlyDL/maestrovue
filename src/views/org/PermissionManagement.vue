@@ -10,14 +10,13 @@
                 </p>
             </div>
             <button @click="loadData" :disabled="loading"
-                class="flex items-center gap-2 px-5 py-2.5 rounded-lg border border-platinum-300 dark:border-abyss-600 text-abyss-900 dark:text-platinum-200 bg-white dark:bg-abyss-800 hover:bg-platinum-100 dark:hover:bg-abyss-700 transition-colors disabled:opacity-50 text-sm font-medium shadow-sm">
+                class="flex items-center gap-2 px-5 py-2.5 rounded-lg border border-platinum-300 dark:border-abyss-600 text-abyss-900 dark:text-platinum-200 bg-white dark:bg-abyss-800 hover:bg-platinum-100 dark:hover:bg-abyss-700 transition-colors disabled:opacity-50 text-sm font-medium">
                 <RefreshCw :size="18" :class="{ 'animate-spin': loading }" />
                 Refresh Data
             </button>
         </header>
 
         <div class="flex-1 flex flex-col gap-6 overflow-hidden">
-            <!-- Loading State -->
             <div v-if="loading" class="flex-1 flex items-center justify-center min-h-[400px]">
                 <div class="text-center">
                     <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-kaitoke-green-600 mx-auto mb-4">
@@ -26,9 +25,8 @@
                 </div>
             </div>
 
-            <!-- Error State -->
             <div v-else-if="error"
-                class="p-6 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-900/50 shadow-md">
+                class="p-6 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-900/50">
                 <div class="flex items-center gap-2 text-red-700 dark:text-red-400 mb-3">
                     <AlertCircle :size="20" />
                     <span class="font-bold font-heading text-lg">Error loading data</span>
@@ -40,11 +38,9 @@
                 </button>
             </div>
 
-            <!-- Content -->
             <div v-else class="flex-1 flex flex-col gap-6 overflow-hidden">
-                <!-- Search and Filter -->
                 <div
-                    class="flex flex-col sm:flex-row gap-4 p-4 bg-white dark:bg-abyss-800 rounded-xl shadow-md border border-platinum-200 dark:border-abyss-700">
+                    class="flex flex-col sm:flex-row gap-4 p-4 bg-white dark:bg-abyss-800 rounded-xl border border-platinum-200 dark:border-abyss-700">
                     <div class="relative flex-1">
                         <Search class="absolute left-3 top-2.5 h-4 w-4 text-platinum-600 dark:text-platinum-400" />
                         <input v-model="searchQuery" type="text" placeholder="Search members by name or email..."
@@ -59,12 +55,11 @@
                     </select>
                 </div>
 
-                <!-- Members Table -->
                 <div
-                    class="flex-1 bg-white dark:bg-abyss-800 rounded-xl shadow-lg border border-platinum-200 dark:border-abyss-700 overflow-hidden flex flex-col min-h-0">
+                    class="flex-1 bg-white dark:bg-abyss-800 rounded-xl border border-platinum-200 dark:border-abyss-700 overflow-hidden flex flex-col min-h-0">
                     <div class="overflow-x-auto overflow-y-auto flex-1">
                         <table class="min-w-full divide-y divide-platinum-200 dark:divide-abyss-700">
-                            <thead class="bg-platinum-50 dark:bg-abyss-700 sticky top-0 z-10 shadow-sm">
+                            <thead class="bg-platinum-50 dark:bg-abyss-700 sticky top-0 z-10">
                                 <tr>
                                     <th
                                         class="px-6 py-3 text-left text-xs font-semibold font-heading text-platinum-700 dark:text-platinum-300 uppercase tracking-wider min-w-[200px]">
@@ -87,7 +82,8 @@
                             <tbody class="divide-y divide-platinum-200 dark:divide-abyss-700">
                                 <tr v-if="filteredMembers.length === 0">
                                     <td colspan="4" class="px-6 py-20 text-center">
-                                        <Users class="h-14 w-14 mx-auto text-platinum-400 dark:text-abyss-600 mb-4" />
+                                        <Users
+                                            class="h-14 w-14 mx-auto text-platinum-400 dark:text-abyss-600 mb-4" />
                                         <p
                                             class="text-base font-medium font-body text-platinum-600 dark:text-platinum-400">
                                             No members found</p>
@@ -108,7 +104,8 @@
                                                     class="text-sm font-medium font-body text-abyss-900 dark:text-platinum-200">
                                                     {{ member.name }}
                                                 </div>
-                                                <div class="text-xs text-platinum-600 dark:text-platinum-400 font-body">
+                                                <div
+                                                    class="text-xs text-platinum-600 dark:text-platinum-400 font-body">
                                                     {{ member.email }}
                                                 </div>
                                             </div>
@@ -167,13 +164,11 @@
             </div>
         </div>
 
-        <!-- Permission Modal -->
         <div v-if="showModal"
             class="fixed inset-0 bg-black/70 dark:bg-black/80 flex items-center justify-center z-50 p-4"
             @click.self="closeModal">
             <div
-                class="bg-white dark:bg-abyss-900 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-                <!-- Modal Header -->
+                class="bg-white dark:bg-abyss-900 rounded-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
                 <div class="px-6 py-4 border-b border-platinum-200 dark:border-abyss-700">
                     <div class="flex items-center justify-between">
                         <div>
@@ -192,7 +187,6 @@
                     </div>
                 </div>
 
-                <!-- Modal Body -->
                 <div class="flex-1 overflow-y-auto px-6 py-6">
                     <div v-if="loadingPermissions" class="flex justify-center py-12">
                         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-kaitoke-green-600"></div>
@@ -227,7 +221,8 @@
                                             class="text-sm font-medium font-body text-abyss-900 dark:text-platinum-200 group-hover:text-kaitoke-green-700 dark:group-hover:text-kaitoke-green-300 transition-colors">
                                             {{ perm.display_name }}
                                         </div>
-                                        <div class="text-xs text-platinum-600 dark:text-platinum-400 font-body mt-0.5">
+                                        <div
+                                            class="text-xs text-platinum-600 dark:text-platinum-400 font-body mt-0.5">
                                             {{ perm.description }}
                                         </div>
                                     </div>
@@ -237,7 +232,6 @@
                     </div>
                 </div>
 
-                <!-- Modal Footer -->
                 <div
                     class="px-6 py-4 border-t border-platinum-200 dark:border-abyss-700 flex flex-col sm:flex-row justify-between items-center gap-3">
                     <div class="text-sm text-platinum-600 dark:text-platinum-400 font-body order-2 sm:order-1">
@@ -251,7 +245,7 @@
                             Cancel
                         </button>
                         <button @click="savePermissions" :disabled="savingPermissions"
-                            class="px-5 py-2 rounded-lg text-sm font-medium text-white bg-kaitoke-green-600 hover:bg-kaitoke-green-700 dark:bg-kaitoke-green-500 dark:hover:bg-kaitoke-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 shadow-md shadow-kaitoke-green-500/20 font-body">
+                            class="px-5 py-2 rounded-lg text-sm font-medium text-white bg-kaitoke-green-600 hover:bg-kaitoke-green-700 dark:bg-kaitoke-green-500 dark:hover:bg-kaitoke-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 font-body">
                             <Save v-if="!savingPermissions" :size="16" />
                             <div v-else class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                             {{ savingPermissions ? 'Saving...' : 'Save Changes' }}
